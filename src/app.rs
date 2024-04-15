@@ -163,6 +163,7 @@ struct FrontEnd {
     pub windows: Vec<Box<dyn PanelController>>,
     pub data: Rc<RefCell<Data>>,
     pub connected: bool,
+    pub connecting: bool,
     pub error: bool,
     pub error_str: String,
 }
@@ -208,6 +209,7 @@ impl FrontEnd {
             ws_receiver: ref_ws_receiver,
             windows: wins,
             connected: false,
+            connecting: true,
             error: false,
             error_str: "".to_string(),
         }
@@ -216,43 +218,56 @@ impl FrontEnd {
     fn ui(&mut self, ctx: &egui::Context) {
         while let Some(event) = self.ws_receiver.borrow_mut().try_recv() {
             match event {
-                WsEvent::Message(msg) => match msg {
-                    WsMessage::Text(event_text) => {
-                        let decoded: Result<WebSocketLog, serde_json::Error> =
-                            serde_json::from_str(&event_text);
-                        if let Ok(decoded) = decoded {
-                            self.data.borrow_mut().events.extend(decoded.logs);
+                WsEvent::Message(msg) => {
+                    self.connecting = false;
+                    match msg {
+                        WsMessage::Text(event_text) => {
+                            let decoded: Result<WebSocketLog, serde_json::Error> =
+                                serde_json::from_str(&event_text);
+                            if let Ok(decoded) = decoded {
+                                self.data.borrow_mut().events.extend(decoded.logs);
+                            }
+                        }
+                        WsMessage::Unknown(str_error) => {
+                            self.error = true;
+                            log::error!("Unknown message: {:?}", str_error);
+                            self.error_str = str_error;
+                        }
+                        WsMessage::Binary(bin) => {
+                            self.error = true;
+                            self.error_str = format!("{:?}", bin);
+                        }
+                        _ => {
+                            self.error = true;
+                            self.error_str = "Received Ping-Pong".to_string();
                         }
                     }
-                    WsMessage::Unknown(str_error) => {
-                        self.error = true;
-                        log::error!("Unknown message: {:?}", str_error);
-                        self.error_str = str_error;
-                    }
-                    WsMessage::Binary(bin) => {
-                        self.error = true;
-                        self.error_str = format!("{:?}", bin);
-                    }
-                    _ => {
-                        self.error = true;
-                        self.error_str = "Received Ping-Pong".to_string();
-                    }
-                },
+                }
                 WsEvent::Opened => {
                     self.connected = true;
+                    self.connecting = false;
                 }
                 WsEvent::Closed => {
                     self.connected = false;
+                    self.connecting = false;
                 }
                 WsEvent::Error(str_err) => {
                     self.connected = false;
+                    self.connecting = false;
                     self.error = true;
                     log::error!("Unknown message: {:?}", str_err);
                     self.error_str = str_err;
                 }
             }
         }
-        if self.connected {
+        if self.connecting {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Connecting...");
+                    ui.spinner();
+                });
+            });
+        } else if self.connected {
             for one_window in self.windows.iter_mut() {
                 let mut is_open: bool = self.data.borrow().open_windows.contains(one_window.name());
                 one_window.show(ctx, &mut is_open);
