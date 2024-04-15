@@ -2,6 +2,9 @@
 name = "tramex"
 version = "0.1.0"
 edition = "2021"
+description = "Tramex is a 4G frame analyser"
+license = "MIT"
+authors = ["n4n5 <its.just.n4n5@gmail.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
