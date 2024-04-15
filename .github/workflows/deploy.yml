@@ -1,0 +1,39 @@
+name: Deploy
+
+on:
+    push:
+        branches: ["main"]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        permissions:
+            pages: write # to deploy to Pages
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - uses: actions/checkout@v3
+            - name: Setup Pages
+              uses: actions/configure-pages@v5
+              with:
+                  enablement: true
+            - uses: jetli/trunk-action@v0.5.0
+            - uses: jetli/wasm-bindgen-action@v0.2.0
+            - name: Set up cargo cache
+              uses: Swatinem/rust-cache@v2
+            - name: Build
+              run: trunk build --release --public-url ./
+            # - uses: taiki-e/install-action@cargo-llvm-cov
+            # - name: Run coverage
+            #   run: cargo llvm-cov --html
+            #   env:
+            #       CARGO_LLVM_COV_TARGET_DIR: dist/coverage
+            - name: Upload coverage artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: "dist"
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

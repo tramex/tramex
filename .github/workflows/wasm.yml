@@ -1,0 +1,31 @@
+name: Wasm Actions
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+env:
+    RUST_CHANNEL: 1.75.0
+
+jobs:
+    check_wasm:
+        name: Check wasm32
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: ${{ env.RUST_CHANNEL }}
+                  target: wasm32-unknown-unknown
+                  override: true
+            - name: Set up cargo cache
+              uses: Swatinem/rust-cache@v2
+            - name: Check wasm32
+              uses: actions-rs/cargo@v1
+              with:
+                  toolchain: ${{ env.RUST_CHANNEL }}
+                  command: check
+                  args: --all-features --lib --target wasm32-unknown-unknown
