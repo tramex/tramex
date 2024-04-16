@@ -1,12 +1,13 @@
 use eframe::egui;
 use poll_promise::Promise;
+use tramex_tools::types::file_handler::File;
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
 pub struct FileHandler {
     #[serde(skip)]
     pub picked_path: Option<String>,
     #[serde(skip)]
-    pub file_upload: Option<Promise<Result<(String, String), String>>>,
+    pub file_upload: Option<Promise<Result<File, String>>>,
     pub is_open: bool,
     error: Option<String>,
 }
@@ -32,7 +33,7 @@ impl FileHandler {
                 if let Some(file) = file_selected {
                     let buf = file.read().await;
                     return match std::str::from_utf8(&buf) {
-                        Ok(v) => Ok((v.to_string(), file.file_name())),
+                        Ok(v) => Ok(File::new(v.to_string(), file.file_name())),
                         Err(e) => Err(e.to_string()),
                     };
                 }
@@ -55,7 +56,7 @@ impl FileHandler {
                             }
                         };
                         return match std::str::from_utf8(&buf) {
-                            Ok(v) => Ok((v.to_string(), path)),
+                            Ok(v) => Ok(File::new(path, v.to_string())),
                             Err(e) => Err(e.to_string()),
                         };
                     }
@@ -95,7 +96,7 @@ impl super::PanelView for FileHandler {
             if let Some(result) = &self.file_upload {
                 if let Some(ready) = result.ready() {
                     if let Ok(file) = &ready {
-                        self.picked_path = Some(file.1.clone());
+                        self.picked_path = Some(file.file_path.clone());
                     } else if let Err(e) = ready {
                         self.error = Some(e.to_owned());
                     }
