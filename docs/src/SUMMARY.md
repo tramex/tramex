@@ -1,3 +1,9 @@
 # Summary
 
-- [Chapter 1](./chapter_1.md)
+- [Introduction](./introduction.md)
+- [Development](./development.md)
+- [Documentation](./documentation.md)
+
+---
+
+- [Contributors](./contributors.md)
