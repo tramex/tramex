@@ -1,5 +1,6 @@
 use crate::panels::{AboutPanel, LogicalChannels, MessageBox, PanelController, SocketManager};
 use crate::set_open;
+use egui::Ui;
 use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
 use tramex_tools::types::internals::Interface;
@@ -39,6 +40,17 @@ impl FrontEnd {
             open_windows,
             windows: wins,
             error_str: None,
+        }
+    }
+    pub fn menu_bar(&mut self, ui: &mut Ui) {
+        if self.connector.borrow().available {
+            ui.menu_button("Windows", |ui| {
+                for one_window in self.windows.iter_mut() {
+                    let mut is_open: bool = self.open_windows.contains(one_window.name());
+                    ui.checkbox(&mut is_open, one_window.name());
+                    set_open(&mut self.open_windows, one_window.name(), is_open);
+                }
+            });
         }
     }
 

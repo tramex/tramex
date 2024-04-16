@@ -25,7 +25,7 @@ pub struct Trace {
 }
 #[derive(Debug)]
 pub struct MessageType {
-    pub timestamp: String,
+    pub timestamp: u64,
     pub msgtype: String,
     pub direction: Direction,
     pub canal: String,

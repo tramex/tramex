@@ -40,8 +40,9 @@ impl File {
             rgx.captures_iter(&hay).map(|c| c.extract())
         {
             let dir = if direction == "DL" { DL } else { UL };
+            let date = chrono::DateTime::parse_from_rfc2822(timestamp);
             let m = MessageType {
-                timestamp: timestamp.to_owned(), // TODO use u64 and convert to float timestamp
+                timestamp: date.unwrap_or_default().timestamp() as u64,
                 msgtype: msgtype.to_owned(),
                 direction: dir,
                 canal: canal.to_owned(),

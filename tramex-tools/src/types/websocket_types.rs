@@ -1,4 +1,4 @@
-use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
+use ewebsock::{WsReceiver, WsSender};
 
 // deserialize the message
 #[derive(serde::Deserialize, Debug)]

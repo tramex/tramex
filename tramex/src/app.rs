@@ -1,19 +1,20 @@
 use eframe::egui::{self};
+use tramex_tools::types::internals::Interface;
 
 use crate::frontend::FrontEnd;
+use crate::make_hyperlink;
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 use crate::panels::FileHandler;
-use crate::{make_hyperlink, set_open};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct ExampleApp {
     pub url: String,
     #[serde(skip)]
-    pub error: String,
-    #[serde(skip)]
     frontend: Option<FrontEnd>,
     file_upload: Option<FileHandler>,
+    #[serde(skip)]
+    error_panel: Option<String>,
 }
 
 impl ExampleApp {
@@ -29,7 +30,7 @@ impl ExampleApp {
 
         Default::default()
     }
-    fn menu_bart(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    fn menu_bart(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::widgets::global_dark_light_mode_switch(ui);
         ui.separator();
         ui.menu_button("File", |ui| {
@@ -47,7 +48,7 @@ impl ExampleApp {
             #[cfg(not(target_arch = "wasm32"))]
             {
                 if ui.button("Quit").clicked() {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    _ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 }
             }
         });
@@ -67,15 +68,49 @@ impl ExampleApp {
             make_hyperlink(ui, "Repository", "https://github.com/tramex/tramex", true);
         });
     }
+
+    fn ui_file_handler(&mut self, ctx: &egui::Context) {
+        if let Some(file_handle) = &mut self.file_upload {
+            use crate::panels::PanelController; // to use show();
+            let mut file_handle_open = true;
+            file_handle.show(ctx, &mut file_handle_open);
+            if let Ok(result) = file_handle.get_result() {
+                log::info!("File upload result: {:?}", result);
+                // create fake websocket handler
+                // self.frontend = Some(FrontEnd::new(ws_sender, ws_receiver));
+                self.file_upload = None;
+            }
+            if !file_handle_open {
+                log::debug!("Closing file windows");
+                self.file_upload = None;
+            }
+        }
+    }
+    fn ui_error_panel(&mut self, ctx: &egui::Context) {
+        if let Some(error_text) = &self.error_panel {
+            let mut error_panel_open = true;
+            egui::Window::new("Errors")
+                .default_width(320.0)
+                .default_height(480.0)
+                .open(&mut error_panel_open)
+                .show(ctx, |ui| {
+                    ui.colored_label(egui::Color32::RED, error_text);
+                });
+            if !error_panel_open {
+                log::debug!("Closing file windows");
+                self.error_panel = None;
+            }
+        }
+    }
 }
 
 impl Default for ExampleApp {
     fn default() -> Self {
         Self {
             url: "ws://137.194.194.51:9001".to_owned(),
-            error: Default::default(),
             frontend: None,
             file_upload: None,
+            error_panel: None,
         }
     }
 }
@@ -86,20 +121,7 @@ impl eframe::App for ExampleApp {
             ui.horizontal_wrapped(|ui| {
                 self.menu_bart(ctx, ui);
                 if let Some(current_frontend) = &mut self.frontend {
-                    if current_frontend.connector.borrow().available {
-                        ui.menu_button("Windows", |ui| {
-                            for one_window in current_frontend.windows.iter_mut() {
-                                let mut is_open: bool =
-                                    current_frontend.open_windows.contains(one_window.name());
-                                ui.checkbox(&mut is_open, one_window.name());
-                                set_open(
-                                    &mut current_frontend.open_windows,
-                                    one_window.name(),
-                                    is_open,
-                                );
-                            }
-                        });
-                    }
+                    current_frontend.menu_bar(ui);
                 }
             });
         });
@@ -107,11 +129,21 @@ impl eframe::App for ExampleApp {
         egui::TopBottomPanel::top("server").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("URL:");
-                if self.frontend.is_some() {
+                if let Some(curr_front) = &self.frontend {
                     ui.label(&self.url);
-                    if ui.button("Close").clicked() {
-                        // TODO close connection
-                        self.frontend = None;
+                    let connected = curr_front.connector.borrow().available;
+                    if connected {
+                        if ui.button("Close").clicked() {
+                            // close connection
+                            if let Interface::Ws(interface_ws) =
+                                &mut curr_front.connector.borrow_mut().interface
+                            {
+                                if let Err(err) = interface_ws.ws_sender.close() {
+                                    log::error!("Error closing WebSocket: {}", err);
+                                }
+                            }
+                            self.frontend = None;
+                        }
                     }
                 } else {
                     if (ui.text_edit_singleline(&mut self.url).lost_focus()
@@ -124,30 +156,13 @@ impl eframe::App for ExampleApp {
             });
         });
 
-        if !self.error.is_empty() {
-            egui::TopBottomPanel::top("error").show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label("Error:");
-                    ui.colored_label(egui::Color32::RED, &self.error);
-                });
-            });
-        }
-
         if let Some(frontend) = &mut self.frontend {
             frontend.ui(ctx);
         } else {
             egui::CentralPanel::default().show(ctx, |ui| ui.horizontal(|ui| ui.vertical(|_ui| {})));
         }
-        if let Some(fu) = &mut self.file_upload {
-            use crate::panels::PanelController; // to use show();
-            fu.show(ctx, &mut true);
-            if let Ok(result) = fu.get_result() {
-                log::info!("File upload result: {:?}", result);
-                // create fake websocket handler
-                // self.frontend = Some(FrontEnd::new(ws_sender, ws_receiver));
-                self.file_upload = None;
-            }
-        }
+        self.ui_file_handler(ctx);
+        self.ui_error_panel(ctx);
     }
 }
 
@@ -160,11 +175,11 @@ impl ExampleApp {
         match ewebsock::connect_with_wakeup(&self.url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
                 self.frontend = Some(FrontEnd::new(ws_sender, ws_receiver));
-                self.error.clear();
+                self.error_panel = None;
             }
             Err(error) => {
                 log::error!("Failed to connect to {:?}: {}", &self.url, error);
-                self.error = error;
+                self.error_panel = Some(error);
             }
         }
     }

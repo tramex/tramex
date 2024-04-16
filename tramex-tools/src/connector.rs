@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use crate::functions::extract_hexe;
 use crate::types::file_handler::File;
 use crate::types::internals::{Data, Interface, MessageType, Trace};
@@ -58,11 +56,11 @@ impl Connector {
                                     if let Ok(decoded) = decoded {
                                         for one_log in decoded.logs {
                                             let msg_type = MessageType {
-                                                timestamp: one_log.timestamp.to_string(), // TODO use u64
-                                                msgtype: "TODO".to_string(), // TODO use u64
-                                                direction: one_log.dir.unwrap(), // TODO use u64
-                                                canal: "TODO".to_string(),   // TODO use u64
-                                                canal_msg: "TODO".to_string(), // TODO use u64
+                                                timestamp: one_log.timestamp.to_owned(),
+                                                msgtype: "TODO".to_string(), // TODO
+                                                direction: one_log.dir.unwrap(),
+                                                canal: "TODO".to_string(), // TODO
+                                                canal_msg: "TODO".to_string(), // TODO
                                             };
                                             let hexa = extract_hexe(&one_log.data);
                                             let trace = Trace {
