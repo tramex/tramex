@@ -2,6 +2,8 @@ use crate::functions::extract_hexe;
 use crate::types::internals::MessageType;
 use crate::types::internals::Trace;
 use crate::types::websocket_types::Direction::{DL, UL};
+use chrono::NaiveTime;
+use chrono::Timelike;
 use regex::Regex;
 
 const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<msgtype>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
@@ -22,6 +24,14 @@ impl Default for File {
         }
     }
 }
+fn time_to_milliseconds(time: &NaiveTime) -> i64 {
+    let hours_in_ms = time.hour() as i64 * 3600_000;
+    let minutes_in_ms = time.minute() as i64 * 60_000;
+    let seconds_in_ms = time.second() as i64 * 1000;
+    let milliseconds = time.nanosecond() as i64 / 1_000_000; // convert nanoseconds to milliseconds
+
+    hours_in_ms + minutes_in_ms + seconds_in_ms + milliseconds
+}
 
 impl File {
     pub fn new(file_path: String, file_content: String) -> Self {
@@ -40,9 +50,11 @@ impl File {
             rgx.captures_iter(&hay).map(|c| c.extract())
         {
             let dir = if direction == "DL" { DL } else { UL };
-            let date = chrono::DateTime::parse_from_rfc2822(timestamp);
+            let date =
+                chrono::NaiveTime::parse_from_str(timestamp, "%H:%M:%S%.3f").unwrap_or_default();
+            let date = time_to_milliseconds(&date) as u64;
             let m = MessageType {
-                timestamp: date.unwrap_or_default().timestamp() as u64,
+                timestamp: date,
                 msgtype: msgtype.to_owned(),
                 direction: dir,
                 canal: canal.to_owned(),

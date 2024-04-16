@@ -45,7 +45,7 @@ mod tests {
             assert!(oked);
         }
         if let Ok(ws_log) = ws_log {
-            println!("{:?}", ws_log.logs[0])
+            println!("{:?}", ws_log.logs[0]);
         }
     }
 

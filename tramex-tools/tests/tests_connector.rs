@@ -17,10 +17,12 @@ mod tests {
         assert!(event.trace_type.canal == "BCCH");
         assert!(event.trace_type.canal_msg == "SIB");
         assert!(event.trace_type.msgtype == "RRC");
-        assert!(event.trace_type.timestamp == "11:01:08.668");
+        println!("{:?}", event.trace_type.timestamp);
+        assert!(event.trace_type.timestamp == 39668668);
         assert!(f.data.events.len() == 14);
         let f_event = &f.data.events[0];
-        assert!(f_event.trace_type.timestamp == "11:01:08.348");
+        println!("{:?}", f_event.trace_type.timestamp);
+        assert!(f_event.trace_type.timestamp == 39668348);
         assert!(f_event.trace_type.msgtype == "RRC");
         assert!(f_event.trace_type.canal == "BCCH");
         assert!(f_event.trace_type.canal_msg == "SIB");
