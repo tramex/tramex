@@ -41,7 +41,7 @@ jobs:
             #       CARGO_LLVM_COV_TARGET_DIR: dist/coverage
             - name: Setup mdBook
               uses: peaceiris/actions-mdbook@v2
-            - name: build mdBook
+            - name: build mdBook docs/
               run: mdbook build
             - name: Upload coverage artifact
               uses: actions/upload-pages-artifact@v3
