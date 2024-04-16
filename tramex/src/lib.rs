@@ -1,9 +1,12 @@
 mod app;
 pub mod panels;
 pub use app::ExampleApp;
+mod frontend;
 
 use ewebsock::WsSender;
 use std::collections::BTreeSet;
+mod utils;
+pub use utils::*;
 
 pub struct Data {
     pub ws_sender: WsSender,
@@ -33,58 +36,3 @@ pub struct WebSocketLog {
 
 use egui::text::LayoutJob;
 use egui::{Color32, TextFormat, Ui};
-
-fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) {
-    let default_color = if ui.visuals().dark_mode {
-        Color32::LIGHT_GRAY
-    } else {
-        Color32::DARK_GRAY
-    };
-    let background = if need_color {
-        Color32::DARK_BLUE
-    } else {
-        Color32::DARK_RED
-    };
-    job.append(
-        label,
-        0.0,
-        TextFormat {
-            color: default_color,
-            background: background,
-            ..Default::default()
-        },
-    );
-}
-
-pub fn display_log(ui: &mut Ui, log: &OneLog) {
-    let job = LayoutJob::default();
-    let data_type = match log.data.len() {
-        0 => None,
-        _ => Some(&log.data[0]),
-    };
-    if let Some(data_type) = data_type {
-        ui.label(data_type);
-    }
-
-    let data: Vec<&str> = log
-        .data
-        .iter()
-        .filter(|one_string| {
-            if let Some(first_char) = one_string.chars().next() {
-                return first_char.is_numeric();
-            }
-            return false;
-        })
-        .map(|one_string| {
-            if one_string.len() > 57 {
-                let str = &one_string[6..57];
-                return str;
-            }
-            return "";
-        })
-        .collect();
-    for one_data in data {
-        ui.label(one_data);
-    }
-    ui.label(job);
-}

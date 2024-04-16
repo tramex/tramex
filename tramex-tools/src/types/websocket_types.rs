@@ -1,3 +1,5 @@
+use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
+
 // deserialize the message
 #[derive(serde::Deserialize, Debug)]
 pub struct WebSocketLog {
@@ -77,54 +79,9 @@ impl<'de> serde::Deserialize<'de> for LogLevel {
     }
 }
 
-// TODO does type duplication will work ?
-/// A web-socket message.
-#[derive(Clone, Debug)]
-pub enum WsMessage {
-    /// Binary message.
-    Binary(Vec<u8>),
-
-    /// Text message.
-    Text(String),
-
-    /// Incoming message of unknown type.
-    /// You cannot send these.
-    Unknown(String),
-
-    /// Only for native.
-    Ping(Vec<u8>),
-
-    /// Only for native.
-    Pong(Vec<u8>),
-}
-
-/// Something happening with the connection.
-#[derive(Clone, Debug)]
-pub enum WsEvent {
-    /// The connection has been established, and you can start sending messages.
-    Opened,
-
-    /// A message has been received.
-    Message(WsMessage),
-
-    /// An error occurred.
-    Error(String),
-
-    /// The connection has been closed.
-    Closed,
-}
-
-pub trait WsSenderType {
-    fn send(&self, _: WsMessage);
-}
-pub trait WsReceiverType {
-    fn try_recv(&self) -> Option<WsEvent>;
-}
-
 pub struct WsConnection {
-    pub ws_sender: Box<dyn WsSenderType>,
-    pub ws_receiver: Box<dyn WsReceiverType>,
-    pub connected: bool,
-    pub error: bool,
-    pub errorstr: String,
+    pub ws_sender: Box<WsSender>,
+    pub ws_receiver: Box<WsReceiver>,
+    pub connecting: bool,
+    pub error_str: Option<String>,
 }

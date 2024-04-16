@@ -1,15 +1,15 @@
-use crate::Data;
 use eframe::egui::{self, Color32, TextFormat};
 use std::cell::RefCell;
 use std::rc::Rc;
+use tramex_tools::connector::Connector;
 
 pub struct LogicalChannels {
-    data: Rc<RefCell<Data>>,
+    data: Rc<RefCell<Connector>>,
     channel: String,
 }
 
 impl LogicalChannels {
-    pub fn new(ref_data: Rc<RefCell<Data>>) -> Self {
+    pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self {
             data: ref_data,
             channel: "".to_string(),
@@ -29,11 +29,9 @@ impl super::PanelController for LogicalChannels {
         {
             // in a closure to avoid borrow checker
             let borrowed = &self.data.borrow();
-            let events = &borrowed.events;
-            if let Some(one_log) = events.get(borrowed.current_index) {
-                if let Some(log) = &one_log.channel {
-                    self.channel = log.to_owned();
-                }
+            let events = &borrowed.data.events;
+            if let Some(one_log) = events.get(borrowed.data.current_index) {
+                self.channel = one_log.trace_type.canal.to_owned();
             }
         }
         egui::Window::new(self.window_title())

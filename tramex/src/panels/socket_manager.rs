@@ -1,17 +1,17 @@
-use crate::Data;
 use eframe::egui;
 use ewebsock::WsMessage;
 use std::cell::RefCell;
 use std::rc::Rc;
+use tramex_tools::{connector::Connector, types::internals::send_to_interface};
 
 pub struct SocketManager {
-    data: Rc<RefCell<Data>>,
+    data: Rc<RefCell<Connector>>,
     msg_id: u64,
     layers: Layers,
 }
 
 impl SocketManager {
-    pub fn new(ws_sender: Rc<RefCell<Data>>) -> Self {
+    pub fn new(ws_sender: Rc<RefCell<Connector>>) -> Self {
         Self {
             data: ws_sender,
             msg_id: 1,
@@ -23,10 +23,10 @@ impl SocketManager {
         self.msg_id += 1;
         if let Ok(msg_stringed) = serde_json::to_string(&msg) {
             log::info!("{}", msg_stringed);
-            self.data
-                .borrow_mut()
-                .ws_sender
-                .send(WsMessage::Text(msg_stringed));
+            send_to_interface(
+                &mut self.data.borrow_mut().interface,
+                WsMessage::Text(msg_stringed),
+            )
         }
     }
 }
@@ -141,14 +141,15 @@ impl super::PanelView for SocketManager {
         ui.horizontal(|ui| {
             if ui.button("Previous").clicked() {
                 log::info!("Previous");
-                if self.data.borrow().current_index > 0 {
-                    self.data.borrow_mut().current_index -= 1;
+                if self.data.borrow().data.current_index > 0 {
+                    self.data.borrow_mut().data.current_index -= 1;
                 }
             }
             if ui.button("Next").clicked() {
                 log::info!("Next");
-                if self.data.borrow().events.len() > self.data.borrow().current_index + 1 {
-                    self.data.borrow_mut().current_index += 1;
+                if self.data.borrow().data.events.len() > self.data.borrow().data.current_index + 1
+                {
+                    self.data.borrow_mut().data.current_index += 1;
                 } else {
                     self.get_more_logs();
                 }
