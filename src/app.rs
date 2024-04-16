@@ -20,6 +20,13 @@ pub struct ExampleApp {
     file_upload: Option<FileHandler>,
 }
 
+fn make_hyperlink(ui: &mut egui::Ui, label: &str, url: &str, new_tab: bool) {
+    use egui::widgets::*; // to use ui();
+    egui::Hyperlink::from_label_and_url(label, url)
+        .open_in_new_tab(new_tab)
+        .ui(ui);
+}
+
 impl ExampleApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -32,6 +39,46 @@ impl ExampleApp {
         }
 
         Default::default()
+    }
+    fn menu_bart(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            egui::widgets::global_dark_light_mode_switch(ui);
+            ui.separator();
+            ui.menu_button("File", |ui| {
+                if ui.button("Upload a file").clicked() {
+                    // TODO open file dialog
+                    if self.file_upload.is_none() {
+                        self.file_upload = Some(FileHandler::new());
+                    } else {
+                        self.file_upload = None;
+                    }
+                }
+                if ui.button("Organize windows").clicked() {
+                    ui.ctx().memory_mut(|mem| mem.reset_areas());
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    if ui.button("Quit").clicked() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                }
+            });
+            ui.menu_button("About", |ui| {
+                make_hyperlink(
+                    ui,
+                    "General documentation",
+                    "https://tramex.github.io/tramex/docs/",
+                    true,
+                );
+                make_hyperlink(
+                    ui,
+                    "Rust types documentation",
+                    "https://docs.rs/crate/tramex/latest",
+                    true,
+                );
+                make_hyperlink(ui, "Repository", "https://github.com/tramex/tramex", true);
+            });
+        });
     }
 }
 
@@ -49,48 +96,26 @@ impl Default for ExampleApp {
 impl eframe::App for ExampleApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.horizontal_wrapped(|ui| {
-                egui::widgets::global_dark_light_mode_switch(ui);
-                ui.separator();
-                ui.menu_button("File", |ui| {
-                    if ui.button("Upload a file").clicked() {
-                        // TODO open file dialog
-                        if self.file_upload.is_none() {
-                            self.file_upload = Some(FileHandler::new());
-                        } else {
-                            self.file_upload = None;
+            self.menu_bart(ctx, ui);
+            if let Some(current_frontend) = &mut self.frontend {
+                if current_frontend.connected {
+                    ui.menu_button("Windows", |ui| {
+                        for one_window in current_frontend.windows.iter_mut() {
+                            let mut is_open: bool = current_frontend
+                                .data
+                                .borrow()
+                                .open_windows
+                                .contains(one_window.name());
+                            ui.checkbox(&mut is_open, one_window.name());
+                            set_open(
+                                &mut current_frontend.data.borrow_mut().open_windows,
+                                one_window.name(),
+                                is_open,
+                            );
                         }
-                    }
-                    if ui.button("Organize windows").clicked() {
-                        ui.ctx().memory_mut(|mem| mem.reset_areas());
-                    }
-                    #[cfg(not(target_arch = "wasm32"))]
-                    {
-                        if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                    }
-                });
-                if let Some(current_frontend) = &mut self.frontend {
-                    if current_frontend.connected {
-                        ui.menu_button("Windows", |ui| {
-                            for one_window in current_frontend.windows.iter_mut() {
-                                let mut is_open: bool = current_frontend
-                                    .data
-                                    .borrow()
-                                    .open_windows
-                                    .contains(one_window.name());
-                                ui.checkbox(&mut is_open, one_window.name());
-                                set_open(
-                                    &mut current_frontend.data.borrow_mut().open_windows,
-                                    one_window.name(),
-                                    is_open,
-                                );
-                            }
-                        });
-                    }
+                    });
                 }
-            });
+            }
         });
 
         egui::TopBottomPanel::top("server").show(ctx, |ui| {
