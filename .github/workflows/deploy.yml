@@ -23,7 +23,7 @@ jobs:
             name: github-pages
             url: ${{ steps.deployment.outputs.page_url }}
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - name: Setup Pages
               uses: actions/configure-pages@v5
               with:
@@ -43,6 +43,12 @@ jobs:
               uses: peaceiris/actions-mdbook@v2
             - name: build mdBook
               run: mdbook build docs/
+            # https://github.com/actions/deploy-pages/issues/303
+            - name: build crates docs
+              run: |
+                  cargo doc --no-deps
+                  rsync -a target/doc/ dist/crates/
+                  rm dist/crates/.lock
             - name: Upload coverage artifact
               uses: actions/upload-pages-artifact@v3
               with:

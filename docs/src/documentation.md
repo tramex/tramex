@@ -12,3 +12,10 @@ To start the development server for the documentation, you can run
 # in the tramex repository
 mdbook serve docs/
 ```
+
+## Crates documentation
+
+Latest crates documentation is deployed and available on the local website:
+
+- tramex at <https://tramex.github.io/tramex/crates/tramex/>
+- tramex-tools at <https://tramex.github.io/tramex/crates/tramex_tools>
