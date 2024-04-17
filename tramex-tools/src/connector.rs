@@ -1,13 +1,23 @@
 use crate::functions::extract_hexe;
 use crate::types::file_handler::File;
 use crate::types::internals::{Data, Interface, MessageType, Trace};
-use crate::types::websocket_types::{WebSocketLog, WsConnection};
+use crate::types::websocket_types::{Layers, LogGet, WebSocketLog, WsConnection};
 use ewebsock::{WsEvent, WsMessage};
 
 pub struct Connector {
     pub interface: Interface,
     pub data: Data,
     pub available: bool,
+}
+
+impl Drop for Connector {
+    fn drop(&mut self) {
+        if let Interface::Ws(ws) = &mut self.interface {
+            if let Err(err) = ws.ws_sender.close() {
+                log::error!("Error closing WebSocket: {}", err);
+            }
+        }
+    }
 }
 
 impl Connector {
@@ -42,10 +52,21 @@ impl Connector {
         }
     }
 
+    pub fn get_more_data(&mut self, msg_id: u64, layers: Layers) {
+        if let Interface::Ws(interface_ws) = &mut self.interface {
+            let msg = LogGet::new(msg_id, layers);
+            if let Ok(msg_stringed) = serde_json::to_string(&msg) {
+                log::info!("{}", msg_stringed);
+                interface_ws.ws_sender.send(WsMessage::Text(msg_stringed));
+            }
+        }
+    }
+
     pub fn try_recv(&mut self) {
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
                 while let Some(event) = ws.ws_receiver.try_recv() {
+                    ws.connecting = false;
                     match event {
                         WsEvent::Message(msg) => {
                             self.available = true;

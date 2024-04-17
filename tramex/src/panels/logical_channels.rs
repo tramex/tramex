@@ -38,6 +38,7 @@ impl super::PanelController for LogicalChannels {
             .default_width(320.0)
             .default_height(480.0)
             .open(open)
+            .resizable([true, false])
             .show(ctx, |ui| {
                 use super::PanelView as _;
                 self.ui(ui);
@@ -45,13 +46,13 @@ impl super::PanelController for LogicalChannels {
     }
 }
 
-pub fn make_label(ui: &mut egui::Ui, label: &str, state: &str, color: &str) {
+pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: &str) {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
     let mut format = TextFormat {
         ..Default::default()
     };
-    if label == state {
+    if show {
         format.color = Color32::BLACK;
         format.background = match color {
             "red" => Color32::from_rgb(255, 84, 84),
@@ -74,53 +75,63 @@ pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
     });
 }
 
+fn num_to_bool(num: u32) -> bool {
+    num == 1
+}
+
 impl super::PanelView for LogicalChannels {
     fn ui(&mut self, ui: &mut egui::Ui) {
+        //TODO CHANGE
+        let state = match self.channel.as_str() {
+            "PCCH" => 0x00000001,
+            _ => 0x00000000,
+        };
+
         egui::Grid::new("some_unique_id")
-            .max_col_width(120.0)
+            .min_col_width(60.0)
             .show(ui, |ui| {
-                make_label(ui, "PCCH", &self.channel, "red");
-                make_label(ui, "BCCH", &self.channel, "red");
-                make_label(ui, "CCCH", &self.channel, "green");
-                make_label(ui, "DCCH", &self.channel, "red");
-                make_label(ui, "DTCH", &self.channel, "red");
-                make_label(ui, "MCCH", &self.channel, "red");
-                make_label(ui, "MTCH", &self.channel, "red");
+                make_label(ui, "PCCH", num_to_bool(state & 0x0001), "red");
+                make_label(ui, "BCCH", num_to_bool(state & 0x0002), "red");
+                make_label(ui, "CCCH", num_to_bool(state & 0x0002), "green");
+                make_label(ui, "DCCH", num_to_bool(state & 0x0002), "red");
+                make_label(ui, "DTCH", num_to_bool(state & 0x0002), "red");
+                make_label(ui, "MCCH", num_to_bool(state & 0x0002), "red");
+                make_label(ui, "MTCH", num_to_bool(state & 0x0002), "red");
                 print_on_grid(ui, "----");
                 print_on_grid(ui, "Canaux Logiques");
                 print_on_grid(ui, "----");
-                make_label(ui, "CCCH", &self.channel, "red");
-                make_label(ui, "DCCH", &self.channel, "red");
-                make_label(ui, "DTCH", &self.channel, "red");
+                make_label(ui, "CCCH", num_to_bool(state & 0x0010), "red");
+                make_label(ui, "DCCH", num_to_bool(state & 0x0010), "red");
+                make_label(ui, "DTCH", num_to_bool(state & 0x0010), "red");
                 ui.end_row();
 
-                make_label(ui, "PCH", &self.channel, "red");
-                make_label(ui, "BCH", &self.channel, "red");
+                make_label(ui, "PCH", num_to_bool(state & 0x0010), "red");
+                make_label(ui, "BCH", num_to_bool(state & 0x0010), "red");
                 print_on_grid(ui, "");
                 print_on_grid(ui, "");
-                make_label(ui, "DL-SCH", &self.channel, "red");
+                make_label(ui, "DL-SCH", num_to_bool(state & 0x0010), "red");
                 print_on_grid(ui, "");
-                make_label(ui, "MCH", &self.channel, "red");
+                make_label(ui, "MCH", num_to_bool(state & 0x0010), "red");
                 print_on_grid(ui, "----");
                 print_on_grid(ui, "Canaux de Transport");
                 print_on_grid(ui, "----");
-                make_label(ui, "RACH", &self.channel, "blue");
-                make_label(ui, "UL-SCH", &self.channel, "blue");
+                make_label(ui, "RACH", num_to_bool(state & 0x0010), "blue");
+                make_label(ui, "UL-SCH", num_to_bool(state & 0x0010), "blue");
                 ui.end_row();
 
-                make_label(ui, "PDSCH", &self.channel, "blue");
-                make_label(ui, "PBCH", &self.channel, "orange");
+                make_label(ui, "PDSCH", num_to_bool(state & 0x0010), "blue");
+                make_label(ui, "PBCH", num_to_bool(state & 0x0010), "orange");
                 print_on_grid(ui, "");
                 print_on_grid(ui, "");
-                make_label(ui, "PDCCH", &self.channel, "orange");
+                make_label(ui, "PDCCH", num_to_bool(state & 0x0010), "orange");
                 print_on_grid(ui, "");
-                make_label(ui, "PMCH", &self.channel, "orange");
+                make_label(ui, "PMCH", num_to_bool(state & 0x0010), "orange");
                 print_on_grid(ui, "----");
                 print_on_grid(ui, "Canaux Logiques");
                 print_on_grid(ui, "----");
-                make_label(ui, "PRACH", &self.channel, "blue");
-                make_label(ui, "PUSCH", &self.channel, "blue");
-                make_label(ui, "PUCCH", &self.channel, "orange");
+                make_label(ui, "PRACH", num_to_bool(state & 0x0010), "blue");
+                make_label(ui, "PUSCH", num_to_bool(state & 0x0010), "blue");
+                make_label(ui, "PUCCH", num_to_bool(state & 0x0010), "orange");
                 ui.end_row();
 
                 print_on_grid(ui, "----");

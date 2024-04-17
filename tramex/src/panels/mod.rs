@@ -2,13 +2,13 @@ pub mod about;
 pub mod file_handler;
 pub mod logical_channels;
 pub mod message;
-pub mod socket_manager;
+pub mod trame_manager;
 
 pub use about::AboutPanel;
 pub use file_handler::FileHandler;
 pub use logical_channels::LogicalChannels;
 pub use message::MessageBox;
-pub use socket_manager::SocketManager;
+pub use trame_manager::TrameManager;
 
 use eframe::egui;
 

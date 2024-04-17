@@ -1,8 +1,6 @@
 use crate::types::file_handler::File;
 use crate::types::websocket_types::{Direction, WsConnection};
 
-use ewebsock::WsMessage;
-
 #[derive(Debug)]
 pub struct Data {
     pub events: Vec<Trace>,
@@ -35,10 +33,4 @@ pub struct MessageType {
 pub enum Interface {
     Ws(WsConnection),
     File(File),
-}
-
-pub fn send_to_interface(inter: &mut Interface, msg: WsMessage) {
-    if let Interface::Ws(interface_ws) = inter {
-        interface_ws.ws_sender.send(msg);
-    }
 }

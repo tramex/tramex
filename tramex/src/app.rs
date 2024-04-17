@@ -12,6 +12,7 @@ pub struct ExampleApp {
     pub url: String,
     #[serde(skip)]
     frontend: Option<FrontEnd>,
+    #[serde(skip)]
     file_upload: Option<FileHandler>,
     #[serde(skip)]
     error_panel: Option<String>,
@@ -30,7 +31,7 @@ impl ExampleApp {
 
         Default::default()
     }
-    fn menu_bart(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
+    fn menu_bar(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::widgets::global_dark_light_mode_switch(ui);
         ui.separator();
         ui.menu_button("File", |ui| {
@@ -93,8 +94,18 @@ impl ExampleApp {
                 .default_width(320.0)
                 .default_height(480.0)
                 .open(&mut error_panel_open)
+                .resizable([true, false])
                 .show(ctx, |ui| {
                     ui.colored_label(egui::Color32::RED, error_text);
+                    if ui.button("Copy error").clicked() {
+                        ui.output_mut(|o| o.copied_text = error_text.clone());
+                    };
+                    make_hyperlink(
+                        ui,
+                        "Report the issue",
+                        "https://github.com/tramex/tramex/issues/new",
+                        true,
+                    );
                 });
             if !error_panel_open {
                 log::debug!("Closing file windows");
@@ -107,7 +118,7 @@ impl ExampleApp {
 impl Default for ExampleApp {
     fn default() -> Self {
         Self {
-            url: "ws://137.194.194.51:9001".to_owned(),
+            url: "ws://127.0.0.1:9001".to_owned(),
             frontend: None,
             file_upload: None,
             error_panel: None,
@@ -119,7 +130,7 @@ impl eframe::App for ExampleApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
-                self.menu_bart(ctx, ui);
+                self.menu_bar(ctx, ui);
                 if let Some(current_frontend) = &mut self.frontend {
                     current_frontend.menu_bar(ui);
                 }
@@ -131,19 +142,16 @@ impl eframe::App for ExampleApp {
                 ui.label("URL:");
                 if let Some(curr_front) = &self.frontend {
                     ui.label(&self.url);
-                    let connected = curr_front.connector.borrow().available;
-                    if connected {
-                        if ui.button("Close").clicked() {
-                            // close connection
-                            if let Interface::Ws(interface_ws) =
-                                &mut curr_front.connector.borrow_mut().interface
-                            {
-                                if let Err(err) = interface_ws.ws_sender.close() {
-                                    log::error!("Error closing WebSocket: {}", err);
-                                }
+                    if ui.button("Close").clicked() {
+                        // close connection
+                        if let Interface::Ws(interface_ws) =
+                            &mut curr_front.connector.borrow_mut().interface
+                        {
+                            if let Err(err) = interface_ws.ws_sender.close() {
+                                log::error!("Error closing WebSocket: {}", err);
                             }
-                            self.frontend = None;
                         }
+                        self.frontend = None;
                     }
                 } else {
                     if (ui.text_edit_singleline(&mut self.url).lost_focus()
