@@ -98,7 +98,7 @@ impl ExampleApp {
                 .show(ctx, |ui| {
                     ui.colored_label(egui::Color32::RED, error_text);
                     if ui.button("Copy error").clicked() {
-                        ui.output_mut(|o| o.copied_text = error_text.clone());
+                        ui.output_mut(|o| o.copied_text = error_text.to_string());
                     };
                     make_hyperlink(
                         ui,
@@ -118,7 +118,7 @@ impl ExampleApp {
 impl Default for ExampleApp {
     fn default() -> Self {
         Self {
-            url: "ws://127.0.0.1:9001".to_owned(),
+            url: "ws://137.194.194.51:9001".to_owned(),
             frontend: None,
             file_upload: None,
             error_panel: None,
