@@ -1,4 +1,4 @@
-pub fn extract_hexe<T: AsRef<str>>(data: &Vec<T>) -> Option<Vec<u8>> {
+pub fn extract_hexe<T: AsRef<str>>(data: &Vec<T>) -> Vec<u8> {
     let data: Vec<String> = data
         .iter()
         .filter(|one_string| {
@@ -26,5 +26,5 @@ pub fn extract_hexe<T: AsRef<str>>(data: &Vec<T>) -> Option<Vec<u8>> {
             i += 2;
         }
     }
-    Some(hexe)
+    return hexe;
 }

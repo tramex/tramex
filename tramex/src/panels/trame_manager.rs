@@ -22,10 +22,10 @@ impl TrameManager {
 
 impl super::PanelController for TrameManager {
     fn window_title(&self) -> &'static str {
-        "Socket Manager"
+        "Trame Manager"
     }
     fn name(&self) -> &'static str {
-        "Socket Manager"
+        "Trame Manager"
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool) {

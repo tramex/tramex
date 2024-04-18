@@ -44,9 +44,7 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
 
 pub fn display_log(ui: &mut Ui, log: &Trace) {
     let job = LayoutJob::default();
-
-    for one_data in &log.hexa {
-        ui.label(format!("{}", one_data));
-    }
+    ui.label(format!("{:?}", &log.trace_type));
+    ui.label(format!("{:?}", &log.hexa));
     ui.label(job);
 }

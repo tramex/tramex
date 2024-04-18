@@ -1,31 +1,71 @@
-use crate::functions::extract_hexe;
 use crate::types::file_handler::File;
 use crate::types::internals::{Data, Interface, MessageType, Trace};
 use crate::types::websocket_types::{Layers, LogGet, WebSocketLog, WsConnection};
 use ewebsock::{WsEvent, WsMessage};
 
+#[derive(Debug, Default)]
 pub struct Connector {
     pub interface: Interface,
     pub data: Data,
     pub available: bool,
+    pub internal_buffer_size: u64,
+    pub asking_size_max: u64,
 }
 
 impl Drop for Connector {
     fn drop(&mut self) {
-        if let Interface::Ws(ws) = &mut self.interface {
-            if let Err(err) = ws.ws_sender.close() {
-                log::error!("Error closing WebSocket: {}", err);
+        log::debug!("Cleaning connector");
+        match &mut self.interface {
+            Interface::Ws(ref mut ws) => {
+                if let Err(err) = ws.ws_sender.close() {
+                    log::error!("Error closing WebSocket: {}", err);
+                }
             }
+            Interface::File(ref mut file) => {
+                file.file_content.clear();
+            }
+            _ => {}
         }
     }
 }
 
 impl Connector {
+    pub fn new() -> Self {
+        Self {
+            interface: Interface::None,
+            data: Data::default(),
+            available: false,
+            ..Connector::default()
+        }
+    }
+    pub fn connect(
+        &mut self,
+        url: &str,
+        wakeup: impl Fn() + Send + Sync + 'static,
+    ) -> Result<(), String> {
+        let options = ewebsock::Options::default();
+        match ewebsock::connect_with_wakeup(url, options, wakeup) {
+            Ok((ws_sender, ws_receiver)) => {
+                self.interface = Interface::Ws(WsConnection {
+                    ws_sender: Box::new(ws_sender),
+                    ws_receiver: Box::new(ws_receiver),
+                    connecting: true,
+                    error_str: None,
+                });
+                Ok(())
+            }
+            Err(error) => {
+                log::error!("Failed to connect to {:?}: {}", url, error);
+                Err(error.to_string())
+            }
+        }
+    }
     pub fn new_ws(ws: WsConnection) -> Self {
         Self {
             interface: Interface::Ws(ws),
             data: Data::default(),
             available: false,
+            ..Default::default()
         }
     }
     pub fn new_file(file_path: String) -> Self {
@@ -38,6 +78,7 @@ impl Connector {
             }),
             data: Data::default(),
             available: false,
+            ..Default::default()
         }
     }
     pub fn new_file_content(file_path: String, file_content: String) -> Self {
@@ -49,16 +90,24 @@ impl Connector {
             }),
             data: Data::default(),
             available: true,
+            ..Default::default()
         }
     }
 
     pub fn get_more_data(&mut self, msg_id: u64, layers: Layers) {
-        if let Interface::Ws(interface_ws) = &mut self.interface {
-            let msg = LogGet::new(msg_id, layers);
-            if let Ok(msg_stringed) = serde_json::to_string(&msg) {
-                log::info!("{}", msg_stringed);
-                interface_ws.ws_sender.send(WsMessage::Text(msg_stringed));
+        log::info!("Get more data");
+        match &mut self.interface {
+            Interface::Ws(ref mut ws) => {
+                let msg = LogGet::new(msg_id, layers, self.asking_size_max);
+                if let Ok(msg_stringed) = serde_json::to_string(&msg) {
+                    log::info!("{}", msg_stringed);
+                    ws.ws_sender.send(WsMessage::Text(msg_stringed));
+                }
             }
+            Interface::File(ref mut _file) => {
+                //TODO READ
+            }
+            _ => {}
         }
     }
 
@@ -74,21 +123,31 @@ impl Connector {
                                 WsMessage::Text(event_text) => {
                                     let decoded: Result<WebSocketLog, serde_json::Error> =
                                         serde_json::from_str(&event_text);
-                                    if let Ok(decoded) = decoded {
-                                        for one_log in decoded.logs {
-                                            let msg_type = MessageType {
-                                                timestamp: one_log.timestamp.to_owned(),
-                                                msgtype: "TODO".to_string(), // TODO
-                                                direction: one_log.dir.unwrap(),
-                                                canal: "TODO".to_string(), // TODO
-                                                canal_msg: "TODO".to_string(), // TODO
-                                            };
-                                            let hexa = extract_hexe(&one_log.data);
-                                            let trace = Trace {
-                                                trace_type: msg_type,
-                                                hexa: hexa.unwrap(),
-                                            };
-                                            self.data.events.push(trace);
+                                    match decoded {
+                                        Ok(decoded_data) => {
+                                            for one_log in decoded_data.logs {
+                                                let canal_msg = one_log
+                                                    .extract_canal_msg()
+                                                    .unwrap_or("".to_owned());
+                                                let hexa = one_log.extract_hexe();
+                                                let msg_type = MessageType {
+                                                    timestamp: one_log.timestamp.to_owned(),
+                                                    layer: one_log.layer,
+                                                    direction: one_log.dir.unwrap(),
+                                                    canal: one_log.channel.unwrap_or_default(),
+                                                    canal_msg: canal_msg,
+                                                };
+                                                let trace = Trace {
+                                                    trace_type: msg_type,
+                                                    hexa: hexa,
+                                                };
+                                                self.data.events.push(trace);
+                                            }
+                                        }
+                                        Err(err) => {
+                                            log::error!("Error decoding message: {:?}", err);
+                                            log::error!("Message: {:?}", event_text);
+                                            ws.error_str = Some(err.to_string());
                                         }
                                     }
                                 }
@@ -97,6 +156,7 @@ impl Connector {
                                     ws.error_str = Some(str_error);
                                 }
                                 WsMessage::Binary(bin) => {
+                                    log::error!("Unknown binary message: {:?}", bin);
                                     ws.error_str = Some(format!("{:?}", bin));
                                 }
                                 _ => {
@@ -128,6 +188,7 @@ impl Connector {
                 file.readed = true;
                 self.available = true;
             }
+            _ => {}
         }
     }
 }

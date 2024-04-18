@@ -2,7 +2,10 @@
 #[cfg(test)]
 mod tests {
     use connector::Connector;
-    use tramex_tools::{connector, types};
+    use tramex_tools::{
+        connector,
+        types::{self, websocket_types::Layer},
+    };
 
     #[test]
     fn test_file() {
@@ -16,14 +19,14 @@ mod tests {
         assert!(event.trace_type.direction == types::websocket_types::Direction::DL);
         assert!(event.trace_type.canal == "BCCH");
         assert!(event.trace_type.canal_msg == "SIB");
-        assert!(event.trace_type.msgtype == "RRC");
+        assert!(event.trace_type.layer == Layer::RRC);
         println!("{:?}", event.trace_type.timestamp);
         assert!(event.trace_type.timestamp == 39668668);
         assert!(f.data.events.len() == 14);
         let f_event = &f.data.events[0];
         println!("{:?}", f_event.trace_type.timestamp);
         assert!(f_event.trace_type.timestamp == 39668348);
-        assert!(f_event.trace_type.msgtype == "RRC");
+        assert!(f_event.trace_type.layer == Layer::RRC);
         assert!(f_event.trace_type.canal == "BCCH");
         assert!(f_event.trace_type.canal_msg == "SIB");
         assert!(f_event.trace_type.direction == types::websocket_types::Direction::DL);

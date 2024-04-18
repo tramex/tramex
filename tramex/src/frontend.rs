@@ -3,8 +3,8 @@ use crate::set_open;
 use egui::Ui;
 use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
+use tramex_tools::connector::Connector;
 use tramex_tools::types::internals::Interface;
-use tramex_tools::{connector::Connector, types::websocket_types::WsConnection};
 
 pub struct FrontEnd {
     pub connector: Rc<RefCell<Connector>>,
@@ -14,14 +14,8 @@ pub struct FrontEnd {
 }
 
 impl FrontEnd {
-    pub fn new(ws_sender: ewebsock::WsSender, ws_receiver: ewebsock::WsReceiver) -> Self {
-        let ws = WsConnection {
-            ws_receiver: Box::new(ws_receiver),
-            ws_sender: Box::new(ws_sender),
-            connecting: true,
-            error_str: None,
-        };
-        let connector = Connector::new_ws(ws);
+    pub fn new() -> Self {
+        let connector = Connector::new();
         let ref_connector = Rc::new(RefCell::new(connector));
         let mb = MessageBox::new(Rc::clone(&ref_connector));
         let sm = TrameManager::new(Rc::clone(&ref_connector));
@@ -41,6 +35,11 @@ impl FrontEnd {
             open_windows,
             windows: wins,
             error_str: None,
+        }
+    }
+    pub fn connect(&mut self, url: &str, wakup_fn: impl Fn() + Send + Sync + 'static) {
+        if let Err(err) = self.connector.borrow_mut().connect(url, wakup_fn) {
+            self.error_str = Some(err);
         }
     }
     pub fn menu_bar(&mut self, ui: &mut Ui) {

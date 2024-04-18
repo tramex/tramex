@@ -118,7 +118,7 @@ impl ExampleApp {
 impl Default for ExampleApp {
     fn default() -> Self {
         Self {
-            url: "ws://137.194.194.51:9001".to_owned(),
+            url: "ws://127.0.0.1:9001".to_owned(),
             frontend: None,
             file_upload: None,
             error_panel: None,
@@ -158,7 +158,11 @@ impl eframe::App for ExampleApp {
                         && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                         || ui.button("Connect").clicked()
                     {
-                        self.connect(ctx.clone());
+                        let mut frontend = FrontEnd::new();
+                        let new_ctx = ctx.clone();
+                        let wakeup = move || new_ctx.request_repaint(); // wake up UI thread on new message
+                        frontend.connect(&self.url, wakeup);
+                        self.frontend = Some(frontend);
                     }
                 }
             });
@@ -171,24 +175,5 @@ impl eframe::App for ExampleApp {
         }
         self.ui_file_handler(ctx);
         self.ui_error_panel(ctx);
-    }
-}
-
-impl ExampleApp {
-    fn connect(&mut self, ctx: egui::Context) {
-        let wakeup = move || ctx.request_repaint(); // wake up UI thread on new message
-        let options = ewebsock::Options {
-            max_incoming_frame_size: 500,
-        };
-        match ewebsock::connect_with_wakeup(&self.url, options, wakeup) {
-            Ok((ws_sender, ws_receiver)) => {
-                self.frontend = Some(FrontEnd::new(ws_sender, ws_receiver));
-                self.error_panel = None;
-            }
-            Err(error) => {
-                log::error!("Failed to connect to {:?}: {}", &self.url, error);
-                self.error_panel = Some(error);
-            }
-        }
     }
 }

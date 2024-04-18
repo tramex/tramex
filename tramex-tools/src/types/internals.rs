@@ -1,5 +1,6 @@
 use crate::types::file_handler::File;
-use crate::types::websocket_types::{Direction, WsConnection};
+use crate::types::websocket_types::{Direction, Layer, WsConnection};
+use core::fmt::Debug;
 
 #[derive(Debug)]
 pub struct Data {
@@ -24,7 +25,7 @@ pub struct Trace {
 #[derive(Debug)]
 pub struct MessageType {
     pub timestamp: u64,
-    pub msgtype: String,
+    pub layer: Layer,
     pub direction: Direction,
     pub canal: String,
     pub canal_msg: String,
@@ -33,4 +34,26 @@ pub struct MessageType {
 pub enum Interface {
     Ws(WsConnection),
     File(File),
+    None,
+}
+
+impl Default for Interface {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+impl core::fmt::Debug for Interface {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Interface")
+            .field(
+                "field",
+                match self {
+                    Interface::Ws(ws) => ws,
+                    Interface::File(file) => file,
+                    Interface::None => &"None",
+                },
+            )
+            .finish()
+    }
 }

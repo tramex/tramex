@@ -6,7 +6,9 @@ use chrono::NaiveTime;
 use chrono::Timelike;
 use regex::Regex;
 
-const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<msgtype>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
+use super::websocket_types::Layer;
+
+const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
 
 #[derive(Debug)]
 pub struct File {
@@ -46,26 +48,23 @@ impl File {
         //A FAIRE Compile Regex only one time
         let rgx = Regex::new(RGX).unwrap();
         let mut vtraces: Vec<Trace> = vec![];
-        for (_, [timestamp, msgtype, direction, _id, canal, messagecanal, hexa]) in
+        for (_, [timestamp, layer, direction, _id, canal, messagecanal, hexa]) in
             rgx.captures_iter(&hay).map(|c| c.extract())
         {
             let dir = if direction == "DL" { DL } else { UL };
             let date =
                 chrono::NaiveTime::parse_from_str(timestamp, "%H:%M:%S%.3f").unwrap_or_default();
             let date = time_to_milliseconds(&date) as u64;
+            use std::str::FromStr;
             let m = MessageType {
                 timestamp: date,
-                msgtype: msgtype.to_owned(),
+                layer: Layer::from_str(layer).unwrap_or(Layer::None),
                 direction: dir,
                 canal: canal.to_owned(),
                 canal_msg: messagecanal.to_owned(),
             };
             let splitted = hexa.split("\n").collect();
-            let bytes: Vec<u8> = if let Some(byte) = extract_hexe(&splitted) {
-                byte
-            } else {
-                vec![]
-            };
+            let bytes: Vec<u8> = extract_hexe(&splitted);
             vtraces.push(Trace {
                 trace_type: m,
                 hexa: bytes,

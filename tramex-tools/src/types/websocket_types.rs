@@ -1,4 +1,5 @@
 use ewebsock::{WsReceiver, WsSender};
+use std::str::FromStr;
 
 // deserialize the message
 #[derive(serde::Deserialize, Debug)]
@@ -26,6 +27,31 @@ pub enum Layer {
     LPPA,
     NRPPA,
     GTPU,
+    None, // is good idea ?
+}
+
+impl FromStr for Layer {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Layer, Self::Err> {
+        match input {
+            "PHY" => Ok(Layer::PHY),
+            "MAC" => Ok(Layer::MAC),
+            "RLC" => Ok(Layer::RLC),
+            "PDCP" => Ok(Layer::PDCP),
+            "RRC" => Ok(Layer::RRC),
+            "NAS" => Ok(Layer::NAS),
+            "S1AP" => Ok(Layer::S1AP),
+            "NGAP" => Ok(Layer::NGAP),
+            "X2AP" => Ok(Layer::X2AP),
+            "XNAP" => Ok(Layer::XNAP),
+            "M2AP" => Ok(Layer::M2AP),
+            "LPPA" => Ok(Layer::LPPA),
+            "NRPPA" => Ok(Layer::NRPPA),
+            "GTPU" => Ok(Layer::GTPU),
+            _ => Ok(Layer::None),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -63,6 +89,20 @@ pub struct OneLog {
     pub idx: u64,
 }
 
+impl OneLog {
+    pub fn extract_hexe(&self) -> Vec<u8> {
+        return extract_hexe(&self.data);
+    }
+
+    pub fn extract_canal_msg(&self) -> Option<String> {
+        if let Some(data_line) = self.data.first() {
+            log::info!("{:?}", data_line);
+            return Some(data_line.to_owned());
+        }
+        None
+    }
+}
+
 impl<'de> serde::Deserialize<'de> for LogLevel {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -86,7 +126,20 @@ pub struct WsConnection {
     pub error_str: Option<String>,
 }
 
+impl core::fmt::Debug for WsConnection {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Interface")
+            .field("ws_sender", &"Box<WsSender>")
+            .field("ws_receiver", &"Box<WsReceiver>")
+            .field("connecting", &self.connecting)
+            .field("error_str", &self.error_str)
+            .finish()
+    }
+}
+
 use serde::{Deserialize, Serialize};
+
+use crate::functions::extract_hexe;
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Layers {
@@ -158,11 +211,11 @@ pub struct LogGet {
 }
 
 impl LogGet {
-    pub fn new(id: u64, layers: Layers) -> Self {
+    pub fn new(id: u64, layers: Layers, max_size: u64) -> Self {
         Self {
             timeout: 1,
             min: 64,
-            max: 2048,
+            max: max_size,
             layers: layers,
             message: "log_get".to_owned(),
             headers: false,
