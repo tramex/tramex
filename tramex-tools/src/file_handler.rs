@@ -1,12 +1,12 @@
 use crate::functions::extract_hexe;
 use crate::types::internals::MessageType;
 use crate::types::internals::Trace;
-use crate::types::websocket_types::Direction::{DL, UL};
+use crate::websocket::types::Direction::{DL, UL};
 use chrono::NaiveTime;
 use chrono::Timelike;
 use regex::Regex;
 
-use super::websocket_types::Layer;
+use crate::websocket::layer::Layer;
 
 const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
 

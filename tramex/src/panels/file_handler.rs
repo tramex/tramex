@@ -1,6 +1,6 @@
 use eframe::egui;
 use poll_promise::Promise;
-use tramex_tools::types::file_handler::File;
+use tramex_tools::file_handler::File;
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
 pub struct FileHandler {

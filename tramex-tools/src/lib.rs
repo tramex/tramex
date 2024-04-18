@@ -1,10 +1,17 @@
 pub mod connector;
+pub mod file_handler;
 pub mod functions;
 
+pub mod websocket {
+    pub mod layer;
+    pub mod log_get;
+    pub mod onelog;
+    pub mod types;
+    pub mod ws_connection;
+}
+
 pub mod types {
-    pub mod file_handler;
     pub mod internals;
-    pub mod websocket_types;
 }
 
 // mod rrc {

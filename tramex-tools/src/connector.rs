@@ -1,6 +1,8 @@
-use crate::types::file_handler::File;
+use crate::file_handler::File;
 use crate::types::internals::{Data, Interface, MessageType, Trace};
-use crate::types::websocket_types::{Layers, LogGet, WebSocketLog, WsConnection};
+use crate::websocket::{
+    layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection,
+};
 use ewebsock::{WsEvent, WsMessage};
 
 #[derive(Debug, Default)]
@@ -8,7 +10,6 @@ pub struct Connector {
     pub interface: Interface,
     pub data: Data,
     pub available: bool,
-    pub internal_buffer_size: u64,
     pub asking_size_max: u64,
 }
 
@@ -35,7 +36,7 @@ impl Connector {
             interface: Interface::None,
             data: Data::default(),
             available: false,
-            ..Connector::default()
+            asking_size_max: 500,
         }
     }
     pub fn connect(
@@ -94,11 +95,11 @@ impl Connector {
         }
     }
 
-    pub fn get_more_data(&mut self, msg_id: u64, layers: Layers) {
+    pub fn get_more_data(&mut self, msg_id: u64, layers_list: Layers) {
         log::info!("Get more data");
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
-                let msg = LogGet::new(msg_id, layers, self.asking_size_max);
+                let msg = LogGet::new(msg_id, layers_list, self.asking_size_max);
                 if let Ok(msg_stringed) = serde_json::to_string(&msg) {
                     log::info!("{}", msg_stringed);
                     ws.ws_sender.send(WsMessage::Text(msg_stringed));

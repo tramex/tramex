@@ -2,12 +2,12 @@ use eframe::egui;
 use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
-use tramex_tools::types::websocket_types::Layers;
+use tramex_tools::websocket::layer::Layers;
 
 pub struct TrameManager {
     data: Rc<RefCell<Connector>>,
     msg_id: u64,
-    layers: Layers,
+    layers_list: Layers,
 }
 
 impl TrameManager {
@@ -15,7 +15,7 @@ impl TrameManager {
         Self {
             data: connector,
             msg_id: 1,
-            layers: Layers::new(),
+            layers_list: Layers::new(),
         }
     }
 }
@@ -64,28 +64,36 @@ impl super::PanelView for TrameManager {
                 should_get_more_log = true;
             }
         });
-        ui.collapsing("Layers options", |ui| {
-            checkbox(ui, &mut self.layers.phy, "PHY");
-            checkbox(ui, &mut self.layers.mac, "MAC");
-            checkbox(ui, &mut self.layers.rlc, "RLC");
-            checkbox(ui, &mut self.layers.pdcp, "PDCP");
-            checkbox(ui, &mut self.layers.rrc, "RRC");
-            checkbox(ui, &mut self.layers.nas, "NAS");
-            checkbox(ui, &mut self.layers.s72, "S72");
-            checkbox(ui, &mut self.layers.s1ap, "S1AP");
-            checkbox(ui, &mut self.layers.ngap, "NGAP");
-            checkbox(ui, &mut self.layers.gtpu, "GTPU");
-            checkbox(ui, &mut self.layers.x2ap, "X2AP");
-            checkbox(ui, &mut self.layers.xnap, "XnAP");
-            checkbox(ui, &mut self.layers.m2ap, "M2AP");
-            checkbox(ui, &mut self.layers.lppa, "LPPa");
-            checkbox(ui, &mut self.layers.nrppa, "NRPPa");
-            checkbox(ui, &mut self.layers.trx, "TRX");
+        ui.collapsing("Options", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Asking size: ");
+                ui.add(
+                    egui::DragValue::new(&mut self.data.borrow_mut().asking_size_max)
+                        .speed(2.0)
+                        .clamp_range(64.0..=4096.0),
+                );
+            });
+            checkbox(ui, &mut self.layers_list.phy, "PHY");
+            checkbox(ui, &mut self.layers_list.mac, "MAC");
+            checkbox(ui, &mut self.layers_list.rlc, "RLC");
+            checkbox(ui, &mut self.layers_list.pdcp, "PDCP");
+            checkbox(ui, &mut self.layers_list.rrc, "RRC");
+            checkbox(ui, &mut self.layers_list.nas, "NAS");
+            checkbox(ui, &mut self.layers_list.s72, "S72");
+            checkbox(ui, &mut self.layers_list.s1ap, "S1AP");
+            checkbox(ui, &mut self.layers_list.ngap, "NGAP");
+            checkbox(ui, &mut self.layers_list.gtpu, "GTPU");
+            checkbox(ui, &mut self.layers_list.x2ap, "X2AP");
+            checkbox(ui, &mut self.layers_list.xnap, "XnAP");
+            checkbox(ui, &mut self.layers_list.m2ap, "M2AP");
+            checkbox(ui, &mut self.layers_list.lppa, "LPPa");
+            checkbox(ui, &mut self.layers_list.nrppa, "NRPPa");
+            checkbox(ui, &mut self.layers_list.trx, "TRX");
         });
         if should_get_more_log {
             self.data
                 .borrow_mut()
-                .get_more_data(self.msg_id, self.layers.clone());
+                .get_more_data(self.msg_id, self.layers_list.clone());
             self.msg_id += 1;
         }
     }

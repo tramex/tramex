@@ -1,5 +1,5 @@
-use crate::types::file_handler::File;
-use crate::types::websocket_types::{Direction, Layer, WsConnection};
+use crate::file_handler::File;
+use crate::websocket::{layer::Layer, types::Direction, ws_connection::WsConnection};
 use core::fmt::Debug;
 
 #[derive(Debug)]
