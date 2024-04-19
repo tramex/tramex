@@ -4,6 +4,7 @@ use egui::Ui;
 use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
 use tramex_tools::connector::Connector;
+use tramex_tools::errors::TramexError;
 use tramex_tools::types::internals::Interface;
 
 pub struct FrontEnd {
@@ -39,7 +40,7 @@ impl FrontEnd {
         &mut self,
         url: &str,
         wakup_fn: impl Fn() + Send + Sync + 'static,
-    ) -> Result<(), String> {
+    ) -> Result<(), TramexError> {
         self.connector.borrow_mut().connect(url, wakup_fn)
     }
     pub fn menu_bar(&mut self, ui: &mut Ui) {
@@ -54,8 +55,9 @@ impl FrontEnd {
         }
     }
 
-    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), String> {
+    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
         if let Err(err) = self.connector.borrow_mut().try_recv() {
+            egui::CentralPanel::default().show(ctx, |ui| ui.horizontal(|ui| ui.vertical(|_ui| {})));
             return Err(err);
         }
         if self.connector.borrow().available {

@@ -1,4 +1,5 @@
 use eframe::egui::{self};
+use tramex_tools::errors::TramexError;
 use tramex_tools::types::internals::Interface;
 
 use crate::frontend::FrontEnd;
@@ -15,7 +16,7 @@ pub struct ExampleApp {
     #[serde(skip)]
     file_upload: Option<FileHandler>,
     #[serde(skip)]
-    error_panel: Option<String>,
+    error_panel: Option<TramexError>,
 }
 
 impl ExampleApp {
@@ -62,13 +63,13 @@ impl ExampleApp {
             );
             make_hyperlink(
                 ui,
-                "tramex types documentation",
+                "tramex types",
                 "https://tramex.github.io/tramex/crates/tramex/",
                 true,
             );
             make_hyperlink(
                 ui,
-                "tramex-tools types documentation",
+                "tramex-tools types",
                 "https://tramex.github.io/tramex/crates/tramex_tools/",
                 true,
             );
@@ -99,7 +100,7 @@ impl ExampleApp {
         }
     }
     fn ui_error_panel(&mut self, ctx: &egui::Context) {
-        if let Some(error_text) = &self.error_panel {
+        if let Some(error_item) = &self.error_panel {
             let mut error_panel_open = true;
             egui::Window::new("Errors")
                 .default_width(320.0)
@@ -107,9 +108,9 @@ impl ExampleApp {
                 .open(&mut error_panel_open)
                 .resizable([true, false])
                 .show(ctx, |ui| {
-                    ui.colored_label(egui::Color32::RED, error_text);
+                    ui.colored_label(egui::Color32::RED, &error_item.message);
                     if ui.button("Copy error").clicked() {
-                        ui.output_mut(|o| o.copied_text = error_text.to_string());
+                        ui.output_mut(|o| o.copied_text = error_item.message.clone());
                     };
                     make_hyperlink(
                         ui,
@@ -117,8 +118,11 @@ impl ExampleApp {
                         "https://github.com/tramex/tramex/issues/new",
                         true,
                     );
+                    if error_item.recoverable {
+                        ui.label("Recoverable error !");
+                    }
                 });
-            if !error_panel_open {
+            if error_item.recoverable && !error_panel_open {
                 log::debug!("Closing file windows");
                 self.error_panel = None;
             }

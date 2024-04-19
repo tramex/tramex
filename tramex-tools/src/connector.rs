@@ -1,3 +1,4 @@
+use crate::errors::TramexError;
 use crate::file_handler::File;
 use crate::types::internals::{Data, Interface, MessageType, Trace};
 use crate::websocket::{
@@ -43,7 +44,7 @@ impl Connector {
         &mut self,
         url: &str,
         wakeup: impl Fn() + Send + Sync + 'static,
-    ) -> Result<(), String> {
+    ) -> Result<(), TramexError> {
         let options = ewebsock::Options::default();
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
@@ -56,7 +57,11 @@ impl Connector {
             }
             Err(error) => {
                 log::error!("Failed to connect to {:?}: {}", url, error);
-                Err(error.to_string())
+                Err(TramexError {
+                    message: error.to_string(),
+                    code: 0,
+                    recoverable: true,
+                })
             }
         }
     }
@@ -111,7 +116,7 @@ impl Connector {
         }
     }
 
-    pub fn try_recv(&mut self) -> Result<(), String> {
+    pub fn try_recv(&mut self) -> Result<(), TramexError> {
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
                 while let Some(event) = ws.ws_receiver.try_recv() {
@@ -147,17 +152,29 @@ impl Connector {
                                         Err(err) => {
                                             log::error!("Error decoding message: {:?}", err);
                                             log::error!("Message: {:?}", event_text);
-                                            return Err(err.to_string());
+                                            return Err(TramexError {
+                                                message: err.to_string(),
+                                                code: 0,
+                                                recoverable: true,
+                                            });
                                         }
                                     }
                                 }
                                 WsMessage::Unknown(str_error) => {
                                     log::error!("Unknown message: {:?}", str_error);
-                                    return Err(str_error);
+                                    return Err(TramexError {
+                                        message: str_error,
+                                        code: 0,
+                                        recoverable: true,
+                                    });
                                 }
                                 WsMessage::Binary(bin) => {
                                     log::error!("Unknown binary message: {:?}", bin);
-                                    return Err(format!("Unknown binary message: {:?}", bin));
+                                    return Err(TramexError {
+                                        message: format!("Unknown binary message: {:?}", bin),
+                                        code: 0,
+                                        recoverable: true,
+                                    });
                                 }
                                 _ => {
                                     log::info!("Received Ping-Pong")
@@ -173,7 +190,11 @@ impl Connector {
                         WsEvent::Error(str_err) => {
                             self.available = false;
                             log::error!("Unknown message: {:?}", str_err);
-                            return Err(str_err);
+                            return Err(TramexError {
+                                message: str_err,
+                                code: 0,
+                                recoverable: true,
+                            });
                         }
                     }
                 }

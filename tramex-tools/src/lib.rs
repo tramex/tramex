@@ -1,4 +1,5 @@
 pub mod connector;
+pub mod errors;
 pub mod file_handler;
 pub mod functions;
 

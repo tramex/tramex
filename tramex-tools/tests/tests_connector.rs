@@ -13,7 +13,7 @@ mod tests {
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         if let Err(err) = f.try_recv() {
-            eprint!("{}", err);
+            eprint!("{:?}", err);
             assert!(false);
         }
         //eprint!("{:?}", f.data.events)
