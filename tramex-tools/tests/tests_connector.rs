@@ -12,7 +12,10 @@ mod tests {
         let filename = "tests/enb.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
-        f.try_recv();
+        if let Err(err) = f.try_recv() {
+            eprint!("{}", err);
+            assert!(false);
+        }
         //eprint!("{:?}", f.data.events)
         assert!(f.data.events.len() == 15);
         let event = f.data.events.pop().unwrap();

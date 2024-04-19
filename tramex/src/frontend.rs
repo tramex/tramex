@@ -10,7 +10,6 @@ pub struct FrontEnd {
     pub connector: Rc<RefCell<Connector>>,
     pub open_windows: BTreeSet<String>,
     pub windows: Vec<Box<dyn PanelController>>,
-    pub error_str: Option<String>,
 }
 
 impl FrontEnd {
@@ -34,13 +33,14 @@ impl FrontEnd {
             connector: ref_connector,
             open_windows,
             windows: wins,
-            error_str: None,
         }
     }
-    pub fn connect(&mut self, url: &str, wakup_fn: impl Fn() + Send + Sync + 'static) {
-        if let Err(err) = self.connector.borrow_mut().connect(url, wakup_fn) {
-            self.error_str = Some(err);
-        }
+    pub fn connect(
+        &mut self,
+        url: &str,
+        wakup_fn: impl Fn() + Send + Sync + 'static,
+    ) -> Result<(), String> {
+        self.connector.borrow_mut().connect(url, wakup_fn)
     }
     pub fn menu_bar(&mut self, ui: &mut Ui) {
         if self.connector.borrow().available {
@@ -54,8 +54,10 @@ impl FrontEnd {
         }
     }
 
-    pub fn ui(&mut self, ctx: &egui::Context) {
-        self.connector.borrow_mut().try_recv();
+    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), String> {
+        if let Err(err) = self.connector.borrow_mut().try_recv() {
+            return Err(err);
+        }
         if self.connector.borrow().available {
             for one_window in self.windows.iter_mut() {
                 let mut is_open: bool = self.open_windows.contains(one_window.name());
@@ -64,11 +66,7 @@ impl FrontEnd {
             }
             egui::CentralPanel::default().show(ctx, |_ui| {});
         } else if let Interface::Ws(interface_ws) = &self.connector.borrow().interface {
-            if let Some(err) = &interface_ws.error_str {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label(err);
-                });
-            } else if interface_ws.connecting {
+            if interface_ws.connecting {
                 egui::CentralPanel::default().show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.label("Connecting...");
@@ -85,5 +83,6 @@ impl FrontEnd {
                 ui.label("File lol");
             });
         }
+        Ok(())
     }
 }

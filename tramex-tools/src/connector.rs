@@ -36,7 +36,7 @@ impl Connector {
             interface: Interface::None,
             data: Data::default(),
             available: false,
-            asking_size_max: 500,
+            asking_size_max: 1024,
         }
     }
     pub fn connect(
@@ -51,7 +51,6 @@ impl Connector {
                     ws_sender: Box::new(ws_sender),
                     ws_receiver: Box::new(ws_receiver),
                     connecting: true,
-                    error_str: None,
                 });
                 Ok(())
             }
@@ -112,7 +111,7 @@ impl Connector {
         }
     }
 
-    pub fn try_recv(&mut self) {
+    pub fn try_recv(&mut self) -> Result<(), String> {
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
                 while let Some(event) = ws.ws_receiver.try_recv() {
@@ -148,20 +147,20 @@ impl Connector {
                                         Err(err) => {
                                             log::error!("Error decoding message: {:?}", err);
                                             log::error!("Message: {:?}", event_text);
-                                            ws.error_str = Some(err.to_string());
+                                            return Err(err.to_string());
                                         }
                                     }
                                 }
                                 WsMessage::Unknown(str_error) => {
                                     log::error!("Unknown message: {:?}", str_error);
-                                    ws.error_str = Some(str_error);
+                                    return Err(str_error);
                                 }
                                 WsMessage::Binary(bin) => {
                                     log::error!("Unknown binary message: {:?}", bin);
-                                    ws.error_str = Some(format!("{:?}", bin));
+                                    return Err(format!("Unknown binary message: {:?}", bin));
                                 }
                                 _ => {
-                                    ws.error_str = Some("Received Ping-Pong".to_string());
+                                    log::info!("Received Ping-Pong")
                                 }
                             }
                         }
@@ -174,14 +173,14 @@ impl Connector {
                         WsEvent::Error(str_err) => {
                             self.available = false;
                             log::error!("Unknown message: {:?}", str_err);
-                            ws.error_str = Some(str_err);
+                            return Err(str_err);
                         }
                     }
                 }
             }
             Interface::File(ref mut file) => {
                 if file.readed {
-                    return;
+                    return Ok(());
                 }
                 //TODO Un buffer ou on recupere une partie du fichier ?
                 let processed = &mut File::process_string(&file.file_content);
@@ -191,5 +190,6 @@ impl Connector {
             }
             _ => {}
         }
+        Ok(())
     }
 }

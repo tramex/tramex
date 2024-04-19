@@ -56,17 +56,28 @@ impl ExampleApp {
         ui.menu_button("About", |ui| {
             make_hyperlink(
                 ui,
-                "General documentation",
+                "User documentation",
                 "https://tramex.github.io/tramex/docs/",
                 true,
             );
             make_hyperlink(
                 ui,
-                "Rust types documentation",
-                "https://docs.rs/crate/tramex/latest",
+                "tramex types documentation",
+                "https://tramex.github.io/tramex/crates/tramex/",
                 true,
             );
-            make_hyperlink(ui, "Repository", "https://github.com/tramex/tramex", true);
+            make_hyperlink(
+                ui,
+                "tramex-tools types documentation",
+                "https://tramex.github.io/tramex/crates/tramex_tools/",
+                true,
+            );
+            make_hyperlink(
+                ui,
+                "tramex repository",
+                "https://github.com/tramex/tramex",
+                true,
+            );
         });
     }
 
@@ -161,7 +172,9 @@ impl eframe::App for ExampleApp {
                         let mut frontend = FrontEnd::new();
                         let new_ctx = ctx.clone();
                         let wakeup = move || new_ctx.request_repaint(); // wake up UI thread on new message
-                        frontend.connect(&self.url, wakeup);
+                        if let Err(err) = frontend.connect(&self.url, wakeup) {
+                            self.error_panel = Some(err);
+                        }
                         self.frontend = Some(frontend);
                     }
                 }
@@ -169,7 +182,9 @@ impl eframe::App for ExampleApp {
         });
 
         if let Some(frontend) = &mut self.frontend {
-            frontend.ui(ctx);
+            if let Err(err) = frontend.ui(ctx) {
+                self.error_panel = Some(err);
+            }
         } else {
             egui::CentralPanel::default().show(ctx, |ui| ui.horizontal(|ui| ui.vertical(|_ui| {})));
         }
