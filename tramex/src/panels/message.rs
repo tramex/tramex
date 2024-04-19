@@ -20,7 +20,7 @@ impl super::PanelController for MessageBox {
     }
 
     fn window_title(&self) -> &'static str {
-        "Socket Message"
+        "Current Message"
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
@@ -44,7 +44,7 @@ impl super::PanelView for MessageBox {
             ui.label(format!("Received events: {}", events.len()));
         });
         let current_index = borrowed.data.current_index;
-        ui.label(format!("Current msg index: {}", current_index));
+        ui.label(format!("Current msg index: {}", current_index + 1));
 
         if let Some(one_log) = events.get(current_index) {
             display_log(ui, &one_log);

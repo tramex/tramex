@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::errors::TramexError;
 use crate::file_handler::File;
 use crate::types::internals::{Data, Interface, MessageType, Trace};
@@ -6,29 +8,17 @@ use crate::websocket::{
 };
 use ewebsock::{WsEvent, WsMessage};
 
-#[derive(Debug, Default)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
+#[serde(default)]
 pub struct Connector {
+    #[serde(skip)]
     pub interface: Interface,
+    #[serde(skip)]
     pub data: Data,
+    #[serde(skip)]
     pub available: bool,
     pub asking_size_max: u64,
-}
-
-impl Drop for Connector {
-    fn drop(&mut self) {
-        log::debug!("Cleaning connector");
-        match &mut self.interface {
-            Interface::Ws(ref mut ws) => {
-                if let Err(err) = ws.ws_sender.close() {
-                    log::error!("Error closing WebSocket: {}", err);
-                }
-            }
-            Interface::File(ref mut file) => {
-                file.file_content.clear();
-            }
-            _ => {}
-        }
-    }
+    pub url: String,
 }
 
 impl Connector {
@@ -38,8 +28,15 @@ impl Connector {
             data: Data::default(),
             available: false,
             asking_size_max: 1024,
+            url: "ws://127.0.0.1:9001".to_owned(),
         }
     }
+
+    pub fn clear_interface(&mut self) {
+        self.interface = Interface::None;
+        self.available = false;
+    }
+
     pub fn connect(
         &mut self,
         url: &str,
@@ -51,6 +48,7 @@ impl Connector {
                 self.interface = Interface::Ws(WsConnection {
                     ws_sender: Box::new(ws_sender),
                     ws_receiver: Box::new(ws_receiver),
+                    msg_id: 1,
                     connecting: true,
                 });
                 Ok(())
@@ -61,6 +59,13 @@ impl Connector {
             }
         }
     }
+
+    pub fn set_file(&mut self, file: File) {
+        log::debug!("Set file available");
+        self.interface = Interface::File(file);
+        self.available = true;
+    }
+
     pub fn new_ws(ws: WsConnection) -> Self {
         Self {
             interface: Interface::Ws(ws),
@@ -69,7 +74,7 @@ impl Connector {
             ..Default::default()
         }
     }
-    pub fn new_file(file_path: String) -> Self {
+    pub fn new_file(file_path: PathBuf) -> Self {
         Self {
             interface: Interface::File(File {
                 file_path,
@@ -82,7 +87,7 @@ impl Connector {
             ..Default::default()
         }
     }
-    pub fn new_file_content(file_path: String, file_content: String) -> Self {
+    pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
             interface: Interface::File(File {
                 file_path,
@@ -95,18 +100,27 @@ impl Connector {
         }
     }
 
-    pub fn get_more_data(&mut self, msg_id: u64, layers_list: Layers) {
-        log::info!("Get more data");
+    pub fn get_more_data(&mut self, layers_list: Layers) {
+        log::debug!("Get more data");
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
-                let msg = LogGet::new(msg_id, layers_list, self.asking_size_max);
+                let msg = LogGet::new(ws.msg_id, layers_list, self.asking_size_max);
                 if let Ok(msg_stringed) = serde_json::to_string(&msg) {
-                    log::info!("{}", msg_stringed);
+                    log::debug!("{}", msg_stringed);
                     ws.ws_sender.send(WsMessage::Text(msg_stringed));
+                    ws.msg_id += 1;
                 }
             }
-            Interface::File(ref mut _file) => {
-                //TODO READ
+            Interface::File(ref mut curr_file) => {
+                if curr_file.readed {
+                    return;
+                }
+                //TODO Un buffer ou on recupere une partie du fichier ?
+                let processed = &mut curr_file.process();
+                log::debug!("Processed: {} trames", processed.len());
+                self.data.events.append(processed);
+                curr_file.readed = true;
+                self.available = true;
             }
             _ => {}
         }
@@ -164,17 +178,17 @@ impl Connector {
                                     ));
                                 }
                                 _ => {
-                                    log::info!("Received Ping-Pong")
+                                    log::debug!("Received Ping-Pong")
                                 }
                             }
                         }
                         WsEvent::Opened => {
                             self.available = true;
-                            log::info!("WebSocket opened");
+                            log::debug!("WebSocket opened");
                         }
                         WsEvent::Closed => {
                             self.available = false;
-                            log::info!("WebSocket closed");
+                            log::debug!("WebSocket closed");
                             return Err(TramexError::new("WebSocket closed".to_string(), 6));
                         }
                         WsEvent::Error(str_err) => {
@@ -189,11 +203,7 @@ impl Connector {
                 if file.readed {
                     return Ok(());
                 }
-                //TODO Un buffer ou on recupere une partie du fichier ?
-                let processed = &mut File::process_string(&file.file_content);
-                self.data.events.append(processed);
-                file.readed = true;
-                self.available = true;
+                self.get_more_data(Layers::new()); //TODO change
             }
             _ => {}
         }

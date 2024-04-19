@@ -24,8 +24,9 @@ impl OneLog {
     }
 
     pub fn extract_canal_msg(&self) -> Option<String> {
+        // TODO implement this function correctly
         if let Some(data_line) = self.data.first() {
-            log::info!("{:?}", data_line);
+            log::debug!("{:?}", data_line);
             return Some(data_line.to_owned());
         }
         None

@@ -1,3 +1,4 @@
+use crate::errors::TramexError;
 use crate::file_handler::File;
 use crate::websocket::{layer::Layer, types::Direction, ws_connection::WsConnection};
 use core::fmt::Debug;
@@ -35,6 +36,34 @@ pub enum Interface {
     Ws(WsConnection),
     File(File),
     None,
+}
+
+impl Interface {
+    pub fn close(&mut self) -> Result<(), TramexError> {
+        match self {
+            Interface::Ws(interface_ws) => {
+                if let Err(err) = interface_ws.ws_sender.close() {
+                    log::error!("Error closing WebSocket: {}", err);
+                    return Err(TramexError::new(err.to_string(), 7));
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    pub const fn is_some(&self) -> bool {
+        match self {
+            Interface::Ws(_) => true,
+            Interface::File(_) => true,
+            Interface::None => false,
+        }
+    }
+    pub const fn is_none(&self) -> bool {
+        match self {
+            Interface::None => true,
+            _ => false,
+        }
+    }
 }
 
 impl Default for Interface {

@@ -8,8 +8,6 @@ pub struct FileHandler {
     pub picked_path: Option<String>,
     #[serde(skip)]
     pub file_upload: Option<Promise<Result<File, String>>>,
-    pub is_open: bool,
-    error: Option<String>,
 }
 
 impl FileHandler {
@@ -17,23 +15,42 @@ impl FileHandler {
         Self {
             picked_path: None,
             file_upload: None,
-            is_open: false,
-            error: None,
         }
     }
-    pub fn get_result(&mut self) -> Result<String, String> {
-        return Err("Not implemented".to_string());
+
+    pub fn clear(&mut self) {
+        self.file_upload = None;
     }
+
+    pub fn get_result(&mut self) -> Result<File, String> {
+        return match &self.file_upload {
+            Some(result) => {
+                if let Some(ready) = result.ready() {
+                    match ready {
+                        Ok(file) => Ok(file.clone()),
+                        Err(e) => Err(e.to_owned()),
+                    }
+                } else {
+                    Err("Reading file didn't finish".to_string())
+                }
+            }
+            None => Err("No file selected".to_string()),
+        };
+    }
+
+    pub fn get_picket_path(&self) -> Option<String> {
+        self.picked_path.clone()
+    }
+
     fn handle_dialog(&mut self) {
         #[cfg(target_arch = "wasm32")]
         {
-            self.error = None;
             self.file_upload = Some(Promise::spawn_local(async {
                 let file_selected = rfd::AsyncFileDialog::new().pick_file().await;
-                if let Some(file) = file_selected {
-                    let buf = file.read().await;
+                if let Some(curr_file) = file_selected {
+                    let buf = curr_file.read().await;
                     return match std::str::from_utf8(&buf) {
-                        Ok(v) => Ok(File::new(v.to_string(), file.file_name())),
+                        Ok(v) => Ok(File::new(curr_file.file_name().into(), v.to_string())),
                         Err(e) => Err(e.to_string()),
                     };
                 }
@@ -43,9 +60,9 @@ impl FileHandler {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.file_upload = Some(Promise::spawn_thread("slow", move || {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                if let Some(path_buf) = rfd::FileDialog::new().pick_file() {
                     // read file as string
-                    if let Some(path) = path.to_str() {
+                    if let Some(path) = path_buf.to_str() {
                         let path = path.to_string();
                         let buf = std::fs::read(path.clone());
                         let buf = match buf {
@@ -56,7 +73,7 @@ impl FileHandler {
                             }
                         };
                         return match std::str::from_utf8(&buf) {
-                            Ok(v) => Ok(File::new(path, v.to_string())),
+                            Ok(v) => Ok(File::new(path_buf, v.to_string())),
                             Err(e) => Err(e.to_string()),
                         };
                     }
@@ -65,40 +82,25 @@ impl FileHandler {
             }))
         }
     }
-}
 
-impl super::PanelController for FileHandler {
-    fn name(&self) -> &'static str {
-        "File Handler"
-    }
-    fn window_title(&self) -> &'static str {
-        "File Handler"
-    }
-
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
-        egui::Window::new(self.window_title())
-            .default_width(320.0)
-            .default_height(480.0)
-            .open(open)
-            .show(ctx, |ui| {
-                use super::PanelView as _;
-                self.ui(ui);
-            });
-    }
-}
-
-impl super::PanelView for FileHandler {
-    fn ui(&mut self, ui: &mut egui::Ui) {
+    pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, String> {
         if ui.button("Open file…").clicked() {
             self.handle_dialog();
         }
+        // TODO change, this should return Result<> I think
         if self.picked_path.is_none() {
             if let Some(result) = &self.file_upload {
                 if let Some(ready) = result.ready() {
                     if let Ok(file) = &ready {
-                        self.picked_path = Some(file.file_path.clone());
+                        let path_filename = file
+                            .file_path
+                            .file_name()
+                            .and_then(|f| f.to_str())
+                            .map(|f| f.to_string())
+                            .unwrap_or_default();
+                        self.picked_path = Some(path_filename);
                     } else if let Err(e) = ready {
-                        self.error = Some(e.to_owned());
+                        return Err(e.to_owned());
                     }
                 }
             }
@@ -109,10 +111,10 @@ impl super::PanelView for FileHandler {
                 ui.label("Picked file:");
                 ui.monospace(picked_path);
             });
-        } else if let Some(err) = &self.error {
-            ui.colored_label(egui::Color32::RED, err);
+            return Ok(true);
         } else if self.file_upload.is_some() {
             ui.add(egui::Spinner::new());
         }
+        return Ok(false);
     }
 }

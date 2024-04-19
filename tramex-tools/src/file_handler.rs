@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::functions::extract_hexe;
 use crate::types::internals::MessageType;
 use crate::types::internals::Trace;
@@ -10,9 +12,9 @@ use crate::websocket::layer::Layer;
 
 const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct File {
-    pub file_path: String,
+    pub file_path: PathBuf,
     pub file_content: String,
     pub readed: bool,
 }
@@ -20,7 +22,7 @@ pub struct File {
 impl Default for File {
     fn default() -> Self {
         Self {
-            file_path: "".to_string(),
+            file_path: PathBuf::from(""),
             file_content: "".to_string(),
             readed: false,
         }
@@ -36,12 +38,16 @@ fn time_to_milliseconds(time: &NaiveTime) -> i64 {
 }
 
 impl File {
-    pub fn new(file_path: String, file_content: String) -> Self {
+    pub fn new(file_path: PathBuf, file_content: String) -> Self {
         Self {
             file_path,
             file_content,
-            readed: true,
+            readed: false,
         }
+    }
+
+    pub fn process(&self) -> Vec<Trace> {
+        return File::process_string(&self.file_content);
     }
 
     pub fn process_string(hay: &String) -> Vec<Trace> {

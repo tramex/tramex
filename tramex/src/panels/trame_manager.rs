@@ -6,7 +6,6 @@ use tramex_tools::websocket::layer::Layers;
 
 pub struct TrameManager {
     data: Rc<RefCell<Connector>>,
-    msg_id: u64,
     layers_list: Layers,
 }
 
@@ -14,7 +13,6 @@ impl TrameManager {
     pub fn new(connector: Rc<RefCell<Connector>>) -> Self {
         Self {
             data: connector,
-            msg_id: 1,
             layers_list: Layers::new(),
         }
     }
@@ -45,13 +43,13 @@ impl super::PanelView for TrameManager {
         let mut should_get_more_log = false;
         ui.horizontal(|ui| {
             if ui.button("Previous").clicked() {
-                log::info!("Previous");
+                log::debug!("Previous");
                 if self.data.borrow().data.current_index > 0 {
                     self.data.borrow_mut().data.current_index -= 1;
                 }
             }
             if ui.button("Next").clicked() {
-                log::info!("Next");
+                log::debug!("Next");
                 if self.data.borrow().data.events.len() > self.data.borrow().data.current_index + 1
                 {
                     self.data.borrow_mut().data.current_index += 1;
@@ -60,7 +58,7 @@ impl super::PanelView for TrameManager {
                 }
             }
             if ui.button("More").clicked() {
-                log::info!("More");
+                log::debug!("More");
                 should_get_more_log = true;
             }
         });
@@ -93,8 +91,7 @@ impl super::PanelView for TrameManager {
         if should_get_more_log {
             self.data
                 .borrow_mut()
-                .get_more_data(self.msg_id, self.layers_list.clone());
-            self.msg_id += 1;
+                .get_more_data(self.layers_list.clone());
         }
     }
 }
