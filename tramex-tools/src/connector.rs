@@ -57,11 +57,7 @@ impl Connector {
             }
             Err(error) => {
                 log::error!("Failed to connect to {:?}: {}", url, error);
-                Err(TramexError {
-                    message: error.to_string(),
-                    code: 0,
-                    recoverable: true,
-                })
+                Err(TramexError::new(error.to_string(), 1))
             }
         }
     }
@@ -152,29 +148,20 @@ impl Connector {
                                         Err(err) => {
                                             log::error!("Error decoding message: {:?}", err);
                                             log::error!("Message: {:?}", event_text);
-                                            return Err(TramexError {
-                                                message: err.to_string(),
-                                                code: 0,
-                                                recoverable: true,
-                                            });
+                                            return Err(TramexError::new(err.to_string(), 2));
                                         }
                                     }
                                 }
                                 WsMessage::Unknown(str_error) => {
                                     log::error!("Unknown message: {:?}", str_error);
-                                    return Err(TramexError {
-                                        message: str_error,
-                                        code: 0,
-                                        recoverable: true,
-                                    });
+                                    return Err(TramexError::new(str_error, 3));
                                 }
                                 WsMessage::Binary(bin) => {
                                     log::error!("Unknown binary message: {:?}", bin);
-                                    return Err(TramexError {
-                                        message: format!("Unknown binary message: {:?}", bin),
-                                        code: 0,
-                                        recoverable: true,
-                                    });
+                                    return Err(TramexError::new(
+                                        format!("Unknown binary message: {:?}", bin),
+                                        4,
+                                    ));
                                 }
                                 _ => {
                                     log::info!("Received Ping-Pong")
@@ -189,12 +176,8 @@ impl Connector {
                         }
                         WsEvent::Error(str_err) => {
                             self.available = false;
-                            log::error!("Unknown message: {:?}", str_err);
-                            return Err(TramexError {
-                                message: str_err,
-                                code: 0,
-                                recoverable: true,
-                            });
+                            log::error!("WebSocket error: {:?}", str_err);
+                            return Err(TramexError::new(str_err, 5));
                         }
                     }
                 }

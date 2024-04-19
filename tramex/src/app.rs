@@ -118,11 +118,12 @@ impl ExampleApp {
                         "https://github.com/tramex/tramex/issues/new",
                         true,
                     );
-                    if error_item.recoverable {
+                    ui.label(format!("Error code: {}", error_item.get_code()));
+                    if error_item.is_recoverable() {
                         ui.label("Recoverable error !");
                     }
                 });
-            if error_item.recoverable && !error_panel_open {
+            if error_item.is_recoverable() && !error_panel_open {
                 log::debug!("Closing file windows");
                 self.error_panel = None;
             }
