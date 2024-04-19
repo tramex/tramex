@@ -55,6 +55,30 @@ impl FrontEnd {
         }
     }
 
+    pub fn show_url(&mut self, ui: &mut Ui) -> Result<(), ()> {
+        if ui.button("Close").clicked() {
+            // close connection
+            match &mut self.connector.borrow_mut().interface {
+                Interface::Ws(interface_ws) => {
+                    if let Err(err) = interface_ws.ws_sender.close() {
+                        log::error!("Error closing WebSocket: {}", err);
+                    }
+                }
+                _ => {}
+            }
+        }
+        match &self.connector.borrow().interface {
+            Interface::Ws(interface_ws) => {
+                if interface_ws.connecting {
+                    ui.label("Connecting...");
+                    ui.spinner();
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
         if let Err(err) = self.connector.borrow_mut().try_recv() {
             egui::CentralPanel::default().show(ctx, |ui| ui.horizontal(|ui| ui.vertical(|_ui| {})));
@@ -67,22 +91,13 @@ impl FrontEnd {
                 set_open(&mut self.open_windows, one_window.name(), is_open);
             }
             egui::CentralPanel::default().show(ctx, |_ui| {});
-        } else if let Interface::Ws(interface_ws) = &self.connector.borrow().interface {
-            if interface_ws.connecting {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Connecting...");
-                        ui.spinner();
-                    });
-                });
-            } else {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label("Not connected");
-                });
-            }
+        } else if let Interface::Ws(_interface_ws) = &self.connector.borrow().interface {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.label("WebSocket not available");
+            });
         } else if let Interface::File(_interface_file) = &self.connector.borrow().interface {
             egui::CentralPanel::default().show(ctx, |ui| {
-                ui.label("File lol");
+                ui.label("File not available");
             });
         }
         Ok(())

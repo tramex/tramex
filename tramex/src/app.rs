@@ -1,6 +1,5 @@
 use eframe::egui::{self};
 use tramex_tools::errors::TramexError;
-use tramex_tools::types::internals::Interface;
 
 use crate::frontend::FrontEnd;
 use crate::make_hyperlink;
@@ -108,6 +107,10 @@ impl ExampleApp {
                 .open(&mut error_panel_open)
                 .resizable([true, false])
                 .show(ctx, |ui| {
+                    ui.label(format!("Error code: {}", error_item.get_code()));
+                    if error_item.is_recoverable() {
+                        ui.label("Recoverable error !");
+                    }
                     ui.colored_label(egui::Color32::RED, &error_item.message);
                     if ui.button("Copy error").clicked() {
                         ui.output_mut(|o| o.copied_text = error_item.message.clone());
@@ -118,10 +121,6 @@ impl ExampleApp {
                         "https://github.com/tramex/tramex/issues/new",
                         true,
                     );
-                    ui.label(format!("Error code: {}", error_item.get_code()));
-                    if error_item.is_recoverable() {
-                        ui.label("Recoverable error !");
-                    }
                 });
             if error_item.is_recoverable() && !error_panel_open {
                 log::debug!("Closing file windows");
@@ -156,18 +155,11 @@ impl eframe::App for ExampleApp {
         egui::TopBottomPanel::top("server").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("URL:");
-                if let Some(curr_front) = &self.frontend {
+                let mut delete_frontend = false;
+                if let Some(curr_front) = &mut self.frontend {
                     ui.label(&self.url);
-                    if ui.button("Close").clicked() {
-                        // close connection
-                        if let Interface::Ws(interface_ws) =
-                            &mut curr_front.connector.borrow_mut().interface
-                        {
-                            if let Err(err) = interface_ws.ws_sender.close() {
-                                log::error!("Error closing WebSocket: {}", err);
-                            }
-                        }
-                        self.frontend = None;
+                    if curr_front.show_url(ui).is_err() {
+                        delete_frontend = true;
                     }
                 } else {
                     if (ui.text_edit_singleline(&mut self.url).lost_focus()
@@ -182,6 +174,9 @@ impl eframe::App for ExampleApp {
                         }
                         self.frontend = Some(frontend);
                     }
+                }
+                if delete_frontend {
+                    self.frontend = None;
                 }
             });
         });

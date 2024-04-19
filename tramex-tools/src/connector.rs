@@ -170,9 +170,12 @@ impl Connector {
                         }
                         WsEvent::Opened => {
                             self.available = true;
+                            log::info!("WebSocket opened");
                         }
                         WsEvent::Closed => {
                             self.available = false;
+                            log::info!("WebSocket closed");
+                            return Err(TramexError::new("WebSocket closed".to_string(), 6));
                         }
                         WsEvent::Error(str_err) => {
                             self.available = false;

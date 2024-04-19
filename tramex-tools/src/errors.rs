@@ -26,6 +26,7 @@ impl TramexError {
             3 => format!("[{}] WebScoket: Unknown message received", self.code),
             4 => format!("[{}] WebScoket: Unknown binary message received", self.code),
             5 => format!("[{}] WebSocket: Error", self.code),
+            6 => format!("[{}] WebSocket: Closed", self.code),
             _ => format!("[{}] Unknow code, please report an issue", self.code),
         }
     }
