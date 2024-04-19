@@ -16,6 +16,7 @@ pub struct ExampleApp {
     file_upload: Option<FileHandler>,
     #[serde(skip)]
     error_panel: Option<TramexError>,
+    show_about: bool,
 }
 
 impl ExampleApp {
@@ -28,8 +29,9 @@ impl ExampleApp {
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
-
-        Default::default()
+        Self {
+            ..Default::default()
+        }
     }
     fn menu_bar(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::widgets::global_dark_light_mode_switch(ui);
@@ -45,6 +47,9 @@ impl ExampleApp {
             }
             if ui.button("Organize windows").clicked() {
                 ui.ctx().memory_mut(|mem| mem.reset_areas());
+            }
+            if ui.button("About").clicked() {
+                self.show_about = !self.show_about;
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
@@ -113,7 +118,10 @@ impl ExampleApp {
                     }
                     ui.colored_label(egui::Color32::RED, &error_item.message);
                     if ui.button("Copy error").clicked() {
-                        ui.output_mut(|o| o.copied_text = error_item.message.clone());
+                        ui.output_mut(|o| {
+                            o.copied_text =
+                                format!("{}\n{}", &error_item.get_code(), &error_item.message,)
+                        });
                     };
                     make_hyperlink(
                         ui,
@@ -128,6 +136,41 @@ impl ExampleApp {
             }
         }
     }
+
+    fn ui_about_windows(&mut self, ctx: &egui::Context) {
+        egui::Window::new("About")
+            .open(&mut self.show_about)
+            .resizable([true, true])
+            .show(ctx, |ui| {
+                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                    ui.label(format!("Name: {}", env!("CARGO_PKG_NAME")));
+                    ui.label(format!("Version: {}", env!("CARGO_PKG_VERSION")));
+                    ui.label(format!("Description: {}", env!("CARGO_PKG_DESCRIPTION")));
+                    ui.label(format!("License: {}", env!("CARGO_PKG_LICENSE")));
+                    ui.separator();
+                    ui.vertical_centered(|ui| {
+                        ui.label("Repository: ");
+                        make_hyperlink(
+                            ui,
+                            env!("CARGO_PKG_REPOSITORY"),
+                            env!("CARGO_PKG_REPOSITORY"),
+                            true,
+                        );
+                    });
+                    ui.vertical_centered(|ui| {
+                        ui.label("Homepage: ");
+                        make_hyperlink(
+                            ui,
+                            env!("CARGO_PKG_HOMEPAGE"),
+                            env!("CARGO_PKG_HOMEPAGE"),
+                            true,
+                        );
+                    });
+                    ui.separator();
+                    ui.label(format!("Authors: {}", env!("CARGO_PKG_AUTHORS")));
+                });
+            });
+    }
 }
 
 impl Default for ExampleApp {
@@ -137,6 +180,7 @@ impl Default for ExampleApp {
             frontend: None,
             file_upload: None,
             error_panel: None,
+            show_about: false,
         }
     }
 }
@@ -190,5 +234,8 @@ impl eframe::App for ExampleApp {
         }
         self.ui_file_handler(ctx);
         self.ui_error_panel(ctx);
+        if self.show_about {
+            self.ui_about_windows(ctx);
+        }
     }
 }
