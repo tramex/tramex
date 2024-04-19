@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use egui::{text::LayoutJob, Color32, TextFormat, Ui};
-use tramex_tools::types::internals::Trace;
+use tramex_tools::data::Trace;
 
 pub fn make_hyperlink(ui: &mut egui::Ui, label: &str, url: &str, new_tab: bool) {
     use egui::widgets::*; // to use ui();

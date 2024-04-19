@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
+use crate::data::{Data, MessageType, Trace};
 use crate::errors::TramexError;
 use crate::file_handler::File;
-use crate::types::internals::{Data, Interface, MessageType, Trace};
+use crate::interface::Interface;
 use crate::websocket::{
     layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection,
 };
@@ -55,7 +56,10 @@ impl Connector {
             }
             Err(error) => {
                 log::error!("Failed to connect to {:?}: {}", url, error);
-                Err(TramexError::new(error.to_string(), 1))
+                Err(TramexError::new(
+                    error.to_string(),
+                    crate::errors::ErrorCode::WebScoketFailedToConnect,
+                ))
             }
         }
     }
@@ -162,19 +166,22 @@ impl Connector {
                                         Err(err) => {
                                             log::error!("Error decoding message: {:?}", err);
                                             log::error!("Message: {:?}", event_text);
-                                            return Err(TramexError::new(err.to_string(), 2));
+                                            return Err(TramexError::new(err.to_string(), crate::errors::ErrorCode::WebSocketErrorDecodingMessage));
                                         }
                                     }
                                 }
                                 WsMessage::Unknown(str_error) => {
                                     log::error!("Unknown message: {:?}", str_error);
-                                    return Err(TramexError::new(str_error, 3));
+                                    return Err(TramexError::new(
+                                        str_error,
+                                        crate::errors::ErrorCode::WebSocketUnknownMessageReceived,
+                                    ));
                                 }
                                 WsMessage::Binary(bin) => {
                                     log::error!("Unknown binary message: {:?}", bin);
                                     return Err(TramexError::new(
                                         format!("Unknown binary message: {:?}", bin),
-                                        4,
+                                        crate::errors::ErrorCode::WebSocketUnknownBinaryMessageReceived,
                                     ));
                                 }
                                 _ => {
@@ -189,12 +196,18 @@ impl Connector {
                         WsEvent::Closed => {
                             self.available = false;
                             log::debug!("WebSocket closed");
-                            return Err(TramexError::new("WebSocket closed".to_string(), 6));
+                            return Err(TramexError::new(
+                                "WebSocket closed".to_string(),
+                                crate::errors::ErrorCode::WebSocketClosed,
+                            ));
                         }
                         WsEvent::Error(str_err) => {
                             self.available = false;
                             log::error!("WebSocket error: {:?}", str_err);
-                            return Err(TramexError::new(str_err, 5));
+                            return Err(TramexError::new(
+                                str_err,
+                                crate::errors::ErrorCode::WebSocketError,
+                            ));
                         }
                     }
                 }

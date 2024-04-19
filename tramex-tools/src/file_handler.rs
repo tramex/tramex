@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
+use crate::data::MessageType;
+use crate::data::Trace;
 use crate::functions::extract_hexe;
-use crate::types::internals::MessageType;
-use crate::types::internals::Trace;
 use crate::websocket::types::Direction::{DL, UL};
 use chrono::NaiveTime;
 use chrono::Timelike;

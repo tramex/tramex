@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
-use tramex_tools::types::internals::Interface;
+use tramex_tools::interface::Interface;
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, Copy, PartialEq)]
 pub enum Choice {
@@ -163,7 +163,7 @@ impl FrontEnd {
                                                             file_handle.clear();
                                                         }
                                                         Err(err) => {
-                                                            error = Some(TramexError::new(err, 11));
+                                                            error = Some(TramexError::new(err, tramex_tools::errors::ErrorCode::FileErrorReadingFile));
                                                         }
                                                     }
                                                 }
@@ -172,7 +172,7 @@ impl FrontEnd {
                                         Err(_) => {
                                             error = Some(TramexError::new(
                                                 "Error in file upload".to_owned(),
-                                                10,
+                                                tramex_tools::errors::ErrorCode::FileNoFileSelected,
                                             ));
                                         }
                                     }
