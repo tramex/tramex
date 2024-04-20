@@ -1,4 +1,5 @@
 use eframe::egui;
+use tramex_tools::errors::TramexError;
 
 #[derive(Default)]
 pub struct AboutPanel {}
@@ -11,7 +12,7 @@ impl super::PanelController for AboutPanel {
         "About"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
@@ -20,6 +21,7 @@ impl super::PanelController for AboutPanel {
                 use super::PanelView as _;
                 self.ui(ui);
             });
+        Ok(())
     }
 }
 

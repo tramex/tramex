@@ -3,6 +3,7 @@ use eframe::egui;
 use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
+use tramex_tools::errors::TramexError;
 
 pub struct MessageBox {
     data: Rc<RefCell<Connector>>,
@@ -23,7 +24,7 @@ impl super::PanelController for MessageBox {
         "Current Message"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
@@ -32,6 +33,7 @@ impl super::PanelController for MessageBox {
                 use super::PanelView as _;
                 self.ui(ui);
             });
+        Ok(())
     }
 }
 

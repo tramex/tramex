@@ -2,6 +2,7 @@ use eframe::egui::{self, Color32, TextFormat};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
+use tramex_tools::errors::TramexError;
 
 pub struct LogicalChannels {
     data: Rc<RefCell<Connector>>,
@@ -25,7 +26,7 @@ impl super::PanelController for LogicalChannels {
         "Téléphone - Canaux logiques (couche 3)"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         {
             // in a closure to avoid borrow checker
             let borrowed = &self.data.borrow();
@@ -43,6 +44,7 @@ impl super::PanelController for LogicalChannels {
                 use super::PanelView as _;
                 self.ui(ui);
             });
+        Ok(())
     }
 }
 
@@ -127,7 +129,7 @@ impl super::PanelView for LogicalChannels {
                 print_on_grid(ui, "");
                 make_label(ui, "PMCH", num_to_bool(state & 0x0010), "orange");
                 print_on_grid(ui, "----");
-                print_on_grid(ui, "Canaux Logiques");
+                print_on_grid(ui, "Canaux Physiques");
                 print_on_grid(ui, "----");
                 make_label(ui, "PRACH", num_to_bool(state & 0x0010), "blue");
                 make_label(ui, "PUSCH", num_to_bool(state & 0x0010), "blue");

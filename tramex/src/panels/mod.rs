@@ -11,6 +11,7 @@ pub use message::MessageBox;
 pub use trame_manager::TrameManager;
 
 use eframe::egui;
+use tramex_tools::errors::TramexError;
 
 /// Something to view in the demo windows
 pub trait PanelView {
@@ -31,5 +32,5 @@ pub trait PanelController {
     fn window_title(&self) -> &'static str;
 
     /// Show windows, etc
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool);
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError>;
 }

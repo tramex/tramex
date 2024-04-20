@@ -9,8 +9,9 @@ pub struct Data {
 
 impl Default for Data {
     fn default() -> Self {
+        let default_data_size = 2048;
         Self {
-            events: Default::default(),
+            events: Vec::with_capacity(default_data_size),
             current_index: 0,
         }
     }

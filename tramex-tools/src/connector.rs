@@ -33,6 +33,11 @@ impl Connector {
         }
     }
 
+    pub fn clear_data(&mut self) {
+        self.data = Data::default();
+        self.available = false;
+    }
+
     pub fn clear_interface(&mut self) {
         self.interface = Interface::None;
         self.available = false;
@@ -104,20 +109,29 @@ impl Connector {
         }
     }
 
-    pub fn get_more_data(&mut self, layers_list: Layers) {
+    pub fn get_more_data(&mut self, layers_list: Layers) -> Result<(), TramexError> {
         log::debug!("Get more data");
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
                 let msg = LogGet::new(ws.msg_id, layers_list, self.asking_size_max);
-                if let Ok(msg_stringed) = serde_json::to_string(&msg) {
-                    log::debug!("{}", msg_stringed);
-                    ws.ws_sender.send(WsMessage::Text(msg_stringed));
-                    ws.msg_id += 1;
+                match serde_json::to_string(&msg) {
+                    Ok(msg_stringed) => {
+                        log::debug!("{}", msg_stringed);
+                        ws.ws_sender.send(WsMessage::Text(msg_stringed));
+                        ws.msg_id += 1;
+                    }
+                    Err(err) => {
+                        log::error!("Error encoding message: {:?}", err);
+                        return Err(TramexError::new(
+                            err.to_string(),
+                            crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
+                        ));
+                    }
                 }
             }
             Interface::File(ref mut curr_file) => {
                 if curr_file.readed {
-                    return;
+                    return Ok(());
                 }
                 //TODO Un buffer ou on recupere une partie du fichier ?
                 let processed = &mut curr_file.process();
@@ -128,6 +142,7 @@ impl Connector {
             }
             _ => {}
         }
+        Ok(())
     }
 
     pub fn try_recv(&mut self) -> Result<(), TramexError> {
@@ -216,7 +231,8 @@ impl Connector {
                 if file.readed {
                     return Ok(());
                 }
-                self.get_more_data(Layers::new()); //TODO change
+                let layers_list = Layers::new(); //TODO change
+                return self.get_more_data(layers_list);
             }
             _ => {}
         }

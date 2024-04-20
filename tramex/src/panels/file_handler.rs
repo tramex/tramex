@@ -1,13 +1,13 @@
 use eframe::egui;
 use poll_promise::Promise;
-use tramex_tools::file_handler::File;
+use tramex_tools::{errors::TramexError, file_handler::File};
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
 pub struct FileHandler {
     #[serde(skip)]
     pub picked_path: Option<String>,
     #[serde(skip)]
-    pub file_upload: Option<Promise<Result<File, String>>>,
+    pub file_upload: Option<Promise<Result<File, TramexError>>>,
 }
 
 impl FileHandler {
@@ -18,23 +18,31 @@ impl FileHandler {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.picked_path = None;
+        self.file_upload = None;
+    }
+
     pub fn clear(&mut self) {
         self.file_upload = None;
     }
 
-    pub fn get_result(&mut self) -> Result<File, String> {
+    pub fn get_result(&mut self) -> Result<File, TramexError> {
         return match &self.file_upload {
-            Some(result) => {
-                if let Some(ready) = result.ready() {
-                    match ready {
-                        Ok(file) => Ok(file.clone()),
-                        Err(e) => Err(e.to_owned()),
-                    }
-                } else {
-                    Err("Reading file didn't finish".to_string())
-                }
-            }
-            None => Err("No file selected".to_string()),
+            Some(result) => match &result.ready() {
+                Some(ready) => match ready {
+                    Ok(curr_file) => Ok(curr_file.clone()),
+                    Err(e) => Err(e.to_owned()),
+                },
+                None => Err(TramexError::new(
+                    "File not ready".to_string(),
+                    tramex_tools::errors::ErrorCode::FileNotReady,
+                )),
+            },
+            None => Err(TramexError::new(
+                "No file selected".to_string(),
+                tramex_tools::errors::ErrorCode::FileNoFileSelected,
+            )),
         };
     }
 
@@ -49,12 +57,19 @@ impl FileHandler {
                 let file_selected = rfd::AsyncFileDialog::new().pick_file().await;
                 if let Some(curr_file) = file_selected {
                     let buf = curr_file.read().await;
+                    log::info!("File readed from wasm");
                     return match std::str::from_utf8(&buf) {
                         Ok(v) => Ok(File::new(curr_file.file_name().into(), v.to_string())),
-                        Err(e) => Err(e.to_string()),
+                        Err(e) => Err(TramexError::new(
+                            e.to_string(),
+                            tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                        )),
                     };
                 }
-                Err("No file Selected".to_string())
+                Err(TramexError::new(
+                    "No file Selected".to_string(),
+                    tramex_tools::errors::ErrorCode::FileNoFileSelected,
+                ))
             }));
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -69,40 +84,38 @@ impl FileHandler {
                             Ok(v) => v,
                             Err(e) => {
                                 log::warn!("{:?}", e);
-                                return Err(e.to_string());
+                                return Err(TramexError::new(
+                                    e.to_string(),
+                                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                                ));
                             }
                         };
                         return match std::str::from_utf8(&buf) {
                             Ok(v) => Ok(File::new(path_buf, v.to_string())),
-                            Err(e) => Err(e.to_string()),
+                            Err(e) => Err(TramexError::new(
+                                e.to_string(),
+                                tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                            )),
                         };
                     }
                 }
-                Err("No file Selected".to_string())
+                Err(TramexError::new(
+                    "No file Selected".to_string(),
+                    tramex_tools::errors::ErrorCode::FileNoFileSelected,
+                ))
             }))
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, String> {
+    pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
         if ui.button("Open file…").clicked() {
             self.handle_dialog();
         }
-        // TODO change, this should return Result<> I think
-        if self.picked_path.is_none() {
-            if let Some(result) = &self.file_upload {
-                if let Some(ready) = result.ready() {
-                    if let Ok(file) = &ready {
-                        let path_filename = file
-                            .file_path
-                            .file_name()
-                            .and_then(|f| f.to_str())
-                            .map(|f| f.to_string())
-                            .unwrap_or_default();
-                        self.picked_path = Some(path_filename);
-                    } else if let Err(e) = ready {
-                        return Err(e.to_owned());
-                    }
-                }
+
+        match self.check_file_load() {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
             }
         }
 
@@ -116,5 +129,29 @@ impl FileHandler {
             ui.add(egui::Spinner::new());
         }
         return Ok(false);
+    }
+
+    pub fn check_file_load(&mut self) -> Result<(), TramexError> {
+        if self.picked_path.is_none() {
+            if let Some(result) = &self.file_upload {
+                if let Some(ready) = result.ready() {
+                    match &ready {
+                        Ok(file) => {
+                            let path_filename = file
+                                .file_path
+                                .file_name()
+                                .and_then(|f| f.to_str())
+                                .map(|f| f.to_string())
+                                .unwrap_or_default();
+                            self.picked_path = Some(path_filename);
+                        }
+                        Err(e) => {
+                            return Err(e.to_owned());
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }

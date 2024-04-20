@@ -102,7 +102,7 @@ impl ExampleApp {
                     );
                 });
             if error_item.is_recoverable() && !error_panel_open {
-                log::debug!("Closing file windows");
+                log::debug!("Closing error windows");
                 self.error_panel = None;
             }
         }

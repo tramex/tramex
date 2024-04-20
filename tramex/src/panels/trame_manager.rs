@@ -2,11 +2,13 @@ use eframe::egui;
 use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
+use tramex_tools::errors::TramexError;
 use tramex_tools::websocket::layer::Layers;
 
 pub struct TrameManager {
     data: Rc<RefCell<Connector>>,
     layers_list: Layers,
+    should_get_more_log: bool,
 }
 
 impl TrameManager {
@@ -14,6 +16,7 @@ impl TrameManager {
         Self {
             data: connector,
             layers_list: Layers::new(),
+            should_get_more_log: false,
         }
     }
 }
@@ -26,7 +29,7 @@ impl super::PanelController for TrameManager {
         "Trame Manager"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
@@ -35,12 +38,19 @@ impl super::PanelController for TrameManager {
                 use super::PanelView as _;
                 self.ui(ui);
             });
+        if self.should_get_more_log {
+            self.should_get_more_log = false;
+            return self
+                .data
+                .borrow_mut()
+                .get_more_data(self.layers_list.clone());
+        }
+        Ok(())
     }
 }
 
 impl super::PanelView for TrameManager {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        let mut should_get_more_log = false;
         ui.horizontal(|ui| {
             if ui.button("Previous").clicked() {
                 log::debug!("Previous");
@@ -54,12 +64,12 @@ impl super::PanelView for TrameManager {
                 {
                     self.data.borrow_mut().data.current_index += 1;
                 } else {
-                    should_get_more_log = true;
+                    self.should_get_more_log = true;
                 }
             }
             if ui.button("More").clicked() {
                 log::debug!("More");
-                should_get_more_log = true;
+                self.should_get_more_log = true;
             }
         });
         ui.collapsing("Options", |ui| {
@@ -88,11 +98,6 @@ impl super::PanelView for TrameManager {
             checkbox(ui, &mut self.layers_list.nrppa, "NRPPa");
             checkbox(ui, &mut self.layers_list.trx, "TRX");
         });
-        if should_get_more_log {
-            self.data
-                .borrow_mut()
-                .get_more_data(self.layers_list.clone());
-        }
     }
 }
 

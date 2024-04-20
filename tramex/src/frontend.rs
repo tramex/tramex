@@ -163,23 +163,26 @@ impl FrontEnd {
                                                             file_handle.clear();
                                                         }
                                                         Err(err) => {
-                                                            error = Some(TramexError::new(err, tramex_tools::errors::ErrorCode::FileErrorReadingFile));
+                                                            log::error!(
+                                                                "Error in get_result() {:?}",
+                                                                err
+                                                            );
+                                                            error = Some(err);
                                                         }
                                                     }
                                                 }
                                             }
                                         }
-                                        Err(_) => {
-                                            error = Some(TramexError::new(
-                                                "Error in file upload".to_owned(),
-                                                tramex_tools::errors::ErrorCode::FileNoFileSelected,
-                                            ));
+                                        Err(err) => {
+                                            log::error!("Error in file_handle {:?}", err);
+                                            error = Some(err);
                                         }
                                     }
                                     if file_handle.get_picket_path().is_some() {
                                         if ui.button("Close").on_hover_text("Close file").clicked()
                                         {
-                                            self.file_upload = None;
+                                            file_handle.reset();
+                                            self.connector.borrow_mut().clear_data();
                                             self.connector.borrow_mut().clear_interface();
                                         }
                                     }
@@ -197,14 +200,17 @@ impl FrontEnd {
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
+        let mut error_to_return = None;
         if let Err(err) = self.connector.borrow_mut().try_recv() {
-            egui::CentralPanel::default().show(ctx, |ui| ui.horizontal(|ui| ui.vertical(|_ui| {})));
-            return Err(err);
+            error_to_return = Some(err);
         }
         if self.connector.borrow().available {
             for one_window in self.windows.iter_mut() {
                 let mut is_open: bool = self.open_windows.contains(one_window.name());
-                one_window.show(ctx, &mut is_open);
+                if let Err(err) = one_window.show(ctx, &mut is_open) {
+                    log::error!("Error in window {}", one_window.name());
+                    error_to_return = Some(err);
+                }
                 set_open(&mut self.open_windows, one_window.name(), is_open);
             }
             egui::CentralPanel::default().show(ctx, |_ui| {});
@@ -221,6 +227,9 @@ impl FrontEnd {
                 ui.label("Not connected");
             });
         }
-        Ok(())
+        match error_to_return {
+            Some(e) => Err(e),
+            None => Ok(()),
+        }
     }
 }
