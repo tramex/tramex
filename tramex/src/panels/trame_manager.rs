@@ -1,82 +1,35 @@
 use eframe::egui;
-use std::cell::RefCell;
-use std::rc::Rc;
 use tramex_tools::connector::Connector;
-use tramex_tools::errors::TramexError;
 use tramex_tools::websocket::layer::Layers;
 
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct TrameManager {
-    data: Rc<RefCell<Connector>>,
-    layers_list: Layers,
-    should_get_more_log: bool,
+    pub layers_list: Layers,
+    pub should_get_more_log: bool,
 }
 
 impl TrameManager {
-    pub fn new(connector: Rc<RefCell<Connector>>) -> Self {
+    pub fn new() -> Self {
         Self {
-            data: connector,
             layers_list: Layers::new(),
             should_get_more_log: false,
         }
     }
 }
 
-impl super::PanelController for TrameManager {
-    fn window_title(&self) -> &'static str {
-        "Trame Manager"
-    }
-    fn name(&self) -> &'static str {
-        "Trame Manager"
-    }
-
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
-        egui::Window::new(self.window_title())
-            .default_width(320.0)
-            .default_height(480.0)
-            .open(open)
-            .show(ctx, |ui| {
-                use super::PanelView as _;
-                self.ui(ui);
-            });
-        if self.should_get_more_log {
-            self.should_get_more_log = false;
-            return self
-                .data
-                .borrow_mut()
-                .get_more_data(self.layers_list.clone());
-        }
-        Ok(())
+impl Default for TrameManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-impl super::PanelView for TrameManager {
-    fn ui(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            if ui.button("Previous").clicked() {
-                log::debug!("Previous");
-                if self.data.borrow().data.current_index > 0 {
-                    self.data.borrow_mut().data.current_index -= 1;
-                }
-            }
-            if ui.button("Next").clicked() {
-                log::debug!("Next");
-                if self.data.borrow().data.events.len() > self.data.borrow().data.current_index + 1
-                {
-                    self.data.borrow_mut().data.current_index += 1;
-                } else {
-                    self.should_get_more_log = true;
-                }
-            }
-            if ui.button("More").clicked() {
-                log::debug!("More");
-                self.should_get_more_log = true;
-            }
-        });
+impl TrameManager {
+    pub fn show_options(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
         ui.collapsing("Options", |ui| {
             ui.horizontal(|ui| {
                 ui.label("Asking size: ");
                 ui.add(
-                    egui::DragValue::new(&mut self.data.borrow_mut().asking_size_max)
+                    egui::DragValue::new(&mut data.asking_size_max)
                         .speed(2.0)
                         .clamp_range(64.0..=4096.0),
                 );
@@ -97,6 +50,29 @@ impl super::PanelView for TrameManager {
             checkbox(ui, &mut self.layers_list.lppa, "LPPa");
             checkbox(ui, &mut self.layers_list.nrppa, "NRPPa");
             checkbox(ui, &mut self.layers_list.trx, "TRX");
+        });
+    }
+
+    pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
+        ui.horizontal(|ui| {
+            if ui.button("Previous").clicked() {
+                log::debug!("Previous");
+                if data.data.current_index > 0 {
+                    data.data.current_index -= 1;
+                }
+            }
+            if ui.button("Next").clicked() {
+                log::debug!("Next");
+                if data.data.events.len() > data.data.current_index + 1 {
+                    data.data.current_index += 1;
+                } else {
+                    self.should_get_more_log = true;
+                }
+            }
+            if ui.button("More").clicked() {
+                log::debug!("More");
+                self.should_get_more_log = true;
+            }
         });
     }
 }

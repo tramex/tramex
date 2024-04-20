@@ -19,6 +19,12 @@ pub enum Layer {
     None, // is good idea ?
 }
 
+impl Default for Layer {
+    fn default() -> Self {
+        Layer::None
+    }
+}
+
 impl FromStr for Layer {
     type Err = ();
 

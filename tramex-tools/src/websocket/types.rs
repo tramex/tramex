@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::websocket::onelog::OneLog;
 
 // deserialize the message
@@ -30,6 +32,26 @@ pub enum Direction {
     DL,
     FROM,
     TO,
+}
+
+impl Default for Direction {
+    fn default() -> Self {
+        Direction::UL
+    }
+}
+
+impl FromStr for Direction {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "UL" => Ok(Direction::UL),
+            "DL" => Ok(Direction::DL),
+            "FROM" => Ok(Direction::FROM),
+            "TO" => Ok(Direction::TO),
+            _ => Err(()),
+        }
+    }
 }
 
 impl<'de> serde::Deserialize<'de> for LogLevel {

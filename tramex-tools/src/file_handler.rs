@@ -1,12 +1,12 @@
-use std::path::PathBuf;
-
 use crate::data::MessageType;
 use crate::data::Trace;
 use crate::functions::extract_hexe;
-use crate::websocket::types::Direction::{DL, UL};
+use crate::websocket::types::Direction;
 use chrono::NaiveTime;
 use chrono::Timelike;
 use regex::Regex;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::websocket::layer::Layer;
 
@@ -54,26 +54,21 @@ impl File {
         //A FAIRE Compile Regex only one time
         let rgx = Regex::new(RGX).unwrap();
         let mut vtraces: Vec<Trace> = vec![];
-        for (_, [timestamp, layer, direction, _id, canal, messagecanal, hexa]) in
+        for (_, [timestamp, layer, direction, _id, canal, message_canal, hexa]) in
             rgx.captures_iter(&hay).map(|c| c.extract())
         {
-            let dir = if direction == "DL" { DL } else { UL };
             let date =
                 chrono::NaiveTime::parse_from_str(timestamp, "%H:%M:%S%.3f").unwrap_or_default();
-            let date = time_to_milliseconds(&date) as u64;
-            use std::str::FromStr;
-            let m = MessageType {
-                timestamp: date,
-                layer: Layer::from_str(layer).unwrap_or(Layer::None),
-                direction: dir,
-                canal: canal.to_owned(),
-                canal_msg: messagecanal.to_owned(),
-            };
-            let splitted = hexa.split("\n").collect();
-            let bytes: Vec<u8> = extract_hexe(&splitted);
+
             vtraces.push(Trace {
-                trace_type: m,
-                hexa: bytes,
+                trace_type: MessageType {
+                    timestamp: time_to_milliseconds(&date) as u64,
+                    layer: Layer::from_str(layer).unwrap_or_default(),
+                    direction: Direction::from_str(direction).unwrap_or_default(),
+                    canal: canal.to_owned(),
+                    canal_msg: message_canal.to_owned(),
+                },
+                hexa: extract_hexe(&hexa.split("\n").collect()),
             });
         }
         return vtraces;

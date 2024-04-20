@@ -22,6 +22,7 @@ pub struct FrontEnd {
     pub open_menu_connector: bool,
     #[serde(skip)]
     file_upload: Option<FileHandler>,
+    trame_manager: TrameManager,
     pub radio_choice: Choice,
 }
 
@@ -34,6 +35,7 @@ impl Default for FrontEnd {
             open_menu_connector: true,
             radio_choice: Choice::WebSocket,
             file_upload: None,
+            trame_manager: TrameManager::new(),
         }
     }
 }
@@ -43,13 +45,9 @@ impl FrontEnd {
         let connector = Connector::new();
         let ref_connector = Rc::new(RefCell::new(connector));
         let mb = MessageBox::new(Rc::clone(&ref_connector));
-        let sm = TrameManager::new(Rc::clone(&ref_connector));
         let lc = LogicalChannels::new(Rc::clone(&ref_connector));
-        let wins: Vec<Box<dyn PanelController>> = vec![
-            Box::<MessageBox>::new(mb),
-            Box::<LogicalChannels>::new(lc),
-            Box::<TrameManager>::new(sm),
-        ];
+        let wins: Vec<Box<dyn PanelController>> =
+            vec![Box::<MessageBox>::new(mb), Box::<LogicalChannels>::new(lc)];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {
             open_windows.insert(one_box.name().to_owned());
@@ -70,6 +68,10 @@ impl FrontEnd {
                     ui.checkbox(&mut is_open, one_window.name());
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
+            });
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                self.trame_manager
+                    .show_controls(ui, &mut self.connector.borrow_mut());
             });
         }
     }
@@ -191,6 +193,18 @@ impl FrontEnd {
                         });
                     });
                     ui.separator();
+                    if self.connector.borrow().available {
+                        self.trame_manager
+                            .show_options(ui, &mut self.connector.borrow_mut());
+                        if self.trame_manager.should_get_more_log {
+                            self.trame_manager.should_get_more_log = false;
+                            return self
+                                .connector
+                                .borrow_mut()
+                                .get_more_data(self.trame_manager.layers_list.clone());
+                        }
+                    }
+                    Ok(())
                 });
         }
         if let Some(e) = error {
