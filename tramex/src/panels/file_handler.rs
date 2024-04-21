@@ -47,11 +47,11 @@ impl FileHandler {
                 ));
             }
         };
+        let request = ehttp::Request::get(url);
         let file_list;
         #[cfg(target_arch = "wasm32")]
         {
             file_list = Some(Promise::spawn_local(async move {
-                let request = ehttp::Request::get(url);
                 let res = ehttp::fetch_async(request).await;
                 callback(res)
             }));
@@ -59,7 +59,6 @@ impl FileHandler {
         #[cfg(not(target_arch = "wasm32"))]
         {
             file_list = Some(Promise::spawn_thread("http_get", move || {
-                let request = ehttp::Request::get(url);
                 let res = ehttp::fetch_blocking(&request);
                 callback(res)
             }));
@@ -129,10 +128,10 @@ impl FileHandler {
             }
         };
 
+        let request = ehttp::Request::get(&copied_url);
         #[cfg(target_arch = "wasm32")]
         {
             self.file_upload = Some(Promise::spawn_local(async move {
-                let request = ehttp::Request::get(copied_url.clone());
                 let res = ehttp::fetch_async(request).await;
                 call(res)
             }));
@@ -140,7 +139,6 @@ impl FileHandler {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.file_upload = Some(Promise::spawn_thread("http_get", move || {
-                let request = ehttp::Request::get(copied_url);
                 let res = ehttp::fetch_blocking(&request);
                 call(res)
             }));

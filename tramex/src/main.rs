@@ -13,11 +13,7 @@ fn main() -> eframe::Result<()> {
             .with_min_inner_size([300.0, 220.0]),
         ..Default::default()
     };
-    eframe::run_native(
-        "ewebsocket example app",
-        native_options,
-        Box::new(|_cc| Box::new(app)),
-    )
+    eframe::run_native("tramex", native_options, Box::new(|_cc| Box::new(app)))
 }
 
 // When compiling to web using trunk:
