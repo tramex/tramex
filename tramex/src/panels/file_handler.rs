@@ -22,36 +22,49 @@ pub struct FileHandler {
 
 impl FileHandler {
     pub fn new() -> Self {
-        let file_list = Some(Promise::spawn_local(async {
-            let request = ehttp::Request::get(
-                "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true",
-            );
-            let res = ehttp::fetch_async(request).await;
-            match res {
-                Ok(res) => {
-                    log::info!("File list fetched");
-                    let items: Result<Vec<Item>, serde_json::Error> =
-                        serde_json::from_slice(&res.bytes);
-                    match items {
-                        Ok(items) => Ok(items),
-                        Err(e) => {
-                            log::warn!("{:?}", e);
-                            return Err(TramexError::new(
-                                e.to_string(),
-                                tramex_tools::errors::ErrorCode::FileErrorReadingFile,
-                            ));
-                        }
+        let url = "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true";
+        let callback = move |res: Result<ehttp::Response, String>| match res {
+            Ok(res) => {
+                log::info!("File list fetched");
+                let items: Result<Vec<Item>, serde_json::Error> =
+                    serde_json::from_slice(&res.bytes);
+                match items {
+                    Ok(items) => Ok(items),
+                    Err(e) => {
+                        log::warn!("{:?}", e);
+                        return Err(TramexError::new(
+                            e.to_string(),
+                            tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                        ));
                     }
                 }
-                Err(e) => {
-                    log::warn!("{:?}", e);
-                    return Err(TramexError::new(
-                        e.to_string(),
-                        tramex_tools::errors::ErrorCode::FileErrorReadingFile,
-                    ));
-                }
             }
-        }));
+            Err(e) => {
+                log::warn!("{:?}", e);
+                return Err(TramexError::new(
+                    e.to_string(),
+                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                ));
+            }
+        };
+        let file_list;
+        #[cfg(target_arch = "wasm32")]
+        {
+            file_list = Some(Promise::spawn_local(async move {
+                let request = ehttp::Request::get(url);
+                let res = ehttp::fetch_async(request).await;
+                callback(res)
+            }));
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            file_list = Some(Promise::spawn_thread("http_get", move || {
+                let request = ehttp::Request::get(url);
+                let res = ehttp::fetch_blocking(&request);
+                callback(res)
+            }));
+        }
+
         Self {
             picked_path: None,
             file_upload: None,
@@ -85,6 +98,52 @@ impl FileHandler {
                 tramex_tools::errors::ErrorCode::FileNoFileSelected,
             )),
         };
+    }
+
+    pub fn load_from_url(&mut self, url: String) {
+        let copied_url = url.clone();
+        let call = move |res: Result<ehttp::Response, String>| match res {
+            Ok(res) => {
+                log::info!("File fetched");
+                match std::str::from_utf8(&res.bytes) {
+                    Ok(v) => {
+                        let path = match Path::new(&url).file_name() {
+                            Some(f) => f.to_str().unwrap_or(&url),
+                            None => &url,
+                        };
+                        Ok(File::new(path.into(), v.to_string()))
+                    }
+                    Err(e) => Err(TramexError::new(
+                        e.to_string(),
+                        tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                    )),
+                }
+            }
+            Err(e) => {
+                log::warn!("{:?}", e);
+                return Err(TramexError::new(
+                    e.to_string(),
+                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                ));
+            }
+        };
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.file_upload = Some(Promise::spawn_local(async move {
+                let request = ehttp::Request::get(copied_url.clone());
+                let res = ehttp::fetch_async(request).await;
+                call(res)
+            }));
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.file_upload = Some(Promise::spawn_thread("http_get", move || {
+                let request = ehttp::Request::get(copied_url);
+                let res = ehttp::fetch_blocking(&request);
+                call(res)
+            }));
+        }
     }
 
     pub fn get_picket_path(&self) -> Option<String> {
@@ -159,27 +218,29 @@ impl FileHandler {
                 return Err(e);
             }
         }
-
+        let mut file_path = None;
         if let Some(result) = &self.file_list {
             if let Some(ready) = result.ready() {
                 match &ready {
                     Ok(items) => {
                         ui.vertical(|ui| {
-                            ui.label("Files list:");
-                            ui.add_space(1.0);
-                            for item in items {
-                                ui.collapsing(&item.name, |ui| {
-                                    for sub_item in &item.list {
-                                        let path = match Path::new(sub_item).file_name() {
-                                            Some(f) => f.to_str().unwrap_or(sub_item),
-                                            None => sub_item,
-                                        };
-                                        if ui.monospace(format!("{}", path)).clicked() {
-                                            log::info!("File selected: {}", sub_item);
+                            ui.collapsing("Files list:", |ui| {
+                                ui.add_space(1.0);
+                                for item in items {
+                                    ui.collapsing(&item.name, |ui| {
+                                        for sub_item in &item.list {
+                                            let path = match Path::new(sub_item).file_name() {
+                                                Some(f) => f.to_str().unwrap_or(sub_item),
+                                                None => sub_item,
+                                            };
+                                            if ui.button(path).clicked() {
+                                                log::info!("File selected: {}", sub_item);
+                                                file_path = Some(sub_item.to_string());
+                                            }
                                         }
-                                    }
-                                });
-                            }
+                                    });
+                                }
+                            });
                         });
                     }
                     Err(e) => {
@@ -188,8 +249,10 @@ impl FileHandler {
                 }
             }
         }
+        if let Some(filepath) = &file_path {
+            self.load_from_url(filepath.to_string());
+        }
 
-        ui.add_space(12.0);
         if let Some(picked_path) = &self.picked_path {
             ui.horizontal(|ui| {
                 ui.label("Picked file:");
