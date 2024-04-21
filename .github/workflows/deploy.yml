@@ -41,11 +41,11 @@ jobs:
               uses: Swatinem/rust-cache@v2
             - name: Build
               run: cd tramex && trunk build --release --public-url ./ --dist ../dist/
-            # - uses: taiki-e/install-action@cargo-llvm-cov
-            # - name: Run coverage
-            #   run: cargo llvm-cov --html
-            #   env:
-            #       CARGO_LLVM_COV_TARGET_DIR: dist/coverage
+            - uses: taiki-e/install-action@cargo-llvm-cov
+            - name: Run coverage
+              run: |
+                  cargo llvm-cov --html --no-cfg-coverage
+                  rsync -a target/llvm-cov/html/ dist/coverage/
             - name: Setup mdBook
               uses: peaceiris/actions-mdbook@v2
             - name: build mdBook
