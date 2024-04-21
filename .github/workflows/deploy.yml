@@ -46,6 +46,7 @@ jobs:
               run: |
                   cargo llvm-cov --html --no-cfg-coverage
                   rsync -a target/llvm-cov/html/ dist/coverage/
+                  chmod -R +rx dist/coverage/
             - name: Setup mdBook
               uses: peaceiris/actions-mdbook@v2
             - name: build mdBook
