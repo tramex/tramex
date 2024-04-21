@@ -69,7 +69,7 @@ impl FrontEnd {
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
             });
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+            ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
                 self.trame_manager
                     .show_controls(ui, &mut self.connector.borrow_mut());
             });

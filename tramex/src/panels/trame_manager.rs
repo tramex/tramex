@@ -55,11 +55,9 @@ impl TrameManager {
 
     pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
         ui.horizontal(|ui| {
-            if ui.button("Previous").clicked() {
-                log::debug!("Previous");
-                if data.data.current_index > 0 {
-                    data.data.current_index -= 1;
-                }
+            if ui.button("More").clicked() {
+                log::debug!("More");
+                self.should_get_more_log = true;
             }
             if ui.button("Next").clicked() {
                 log::debug!("Next");
@@ -69,9 +67,11 @@ impl TrameManager {
                     self.should_get_more_log = true;
                 }
             }
-            if ui.button("More").clicked() {
-                log::debug!("More");
-                self.should_get_more_log = true;
+            if ui.button("Previous").clicked() {
+                log::debug!("Previous");
+                if data.data.current_index > 0 {
+                    data.data.current_index -= 1;
+                }
             }
         });
     }
