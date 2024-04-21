@@ -95,7 +95,7 @@ impl FileHandler {
             },
             None => Err(TramexError::new(
                 "No file selected".to_string(),
-                tramex_tools::errors::ErrorCode::FileNoFileSelected,
+                tramex_tools::errors::ErrorCode::FileNotSelected,
             )),
         };
     }
@@ -170,7 +170,7 @@ impl FileHandler {
                 }
                 Err(TramexError::new(
                     "No file Selected".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNoFileSelected,
+                    tramex_tools::errors::ErrorCode::FileNotSelected,
                 ))
             }));
         }
@@ -203,7 +203,7 @@ impl FileHandler {
                 }
                 Err(TramexError::new(
                     "No file Selected".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNoFileSelected,
+                    tramex_tools::errors::ErrorCode::FileNotSelected,
                 ))
             }))
         }
