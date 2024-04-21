@@ -145,7 +145,7 @@ impl FrontEnd {
                         if save != self.radio_choice && self.radio_choice == Choice::File {
                             self.file_upload = Some(FileHandler::new());
                         }
-                        ui.horizontal(|ui| match &self.radio_choice {
+                        ui.vertical(|ui| match &self.radio_choice {
                             Choice::WebSocket => {
                                 if let Err(err) = self.show_url(ui, ctx.clone()) {
                                     error = Some(err);

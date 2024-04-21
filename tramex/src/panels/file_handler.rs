@@ -1,6 +1,14 @@
+use std::path::Path;
+
 use eframe::egui;
 use poll_promise::Promise;
 use tramex_tools::{errors::TramexError, file_handler::File};
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Item {
+    name: String,
+    list: Vec<String>,
+}
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
 pub struct FileHandler {
@@ -8,13 +16,46 @@ pub struct FileHandler {
     pub picked_path: Option<String>,
     #[serde(skip)]
     pub file_upload: Option<Promise<Result<File, TramexError>>>,
+    #[serde(skip)]
+    pub file_list: Option<Promise<Result<Vec<Item>, TramexError>>>,
 }
 
 impl FileHandler {
     pub fn new() -> Self {
+        let file_list = Some(Promise::spawn_local(async {
+            let request = ehttp::Request::get(
+                "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true",
+            );
+            let res = ehttp::fetch_async(request).await;
+            match res {
+                Ok(res) => {
+                    log::info!("File list fetched");
+                    let items: Result<Vec<Item>, serde_json::Error> =
+                        serde_json::from_slice(&res.bytes);
+                    match items {
+                        Ok(items) => Ok(items),
+                        Err(e) => {
+                            log::warn!("{:?}", e);
+                            return Err(TramexError::new(
+                                e.to_string(),
+                                tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                            ));
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::warn!("{:?}", e);
+                    return Err(TramexError::new(
+                        e.to_string(),
+                        tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                    ));
+                }
+            }
+        }));
         Self {
             picked_path: None,
             file_upload: None,
+            file_list,
         }
     }
 
@@ -119,6 +160,36 @@ impl FileHandler {
             }
         }
 
+        if let Some(result) = &self.file_list {
+            if let Some(ready) = result.ready() {
+                match &ready {
+                    Ok(items) => {
+                        ui.vertical(|ui| {
+                            ui.label("Files list:");
+                            ui.add_space(1.0);
+                            for item in items {
+                                ui.collapsing(&item.name, |ui| {
+                                    for sub_item in &item.list {
+                                        let path = match Path::new(sub_item).file_name() {
+                                            Some(f) => f.to_str().unwrap_or(sub_item),
+                                            None => sub_item,
+                                        };
+                                        if ui.monospace(format!("{}", path)).clicked() {
+                                            log::info!("File selected: {}", sub_item);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        return Err(e.to_owned());
+                    }
+                }
+            }
+        }
+
+        ui.add_space(12.0);
         if let Some(picked_path) = &self.picked_path {
             ui.horizontal(|ui| {
                 ui.label("Picked file:");
@@ -128,6 +199,7 @@ impl FileHandler {
         } else if self.file_upload.is_some() {
             ui.add(egui::Spinner::new());
         }
+        ui.add_space(12.0);
         return Ok(false);
     }
 
