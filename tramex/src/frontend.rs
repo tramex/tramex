@@ -220,29 +220,25 @@ impl FrontEnd {
         if let Err(err) = self.connector.borrow_mut().try_recv() {
             error_to_return = Some(err);
         }
-        if self.connector.borrow().available {
-            for one_window in self.windows.iter_mut() {
-                let mut is_open: bool = self.open_windows.contains(one_window.name());
-                if let Err(err) = one_window.show(ctx, &mut is_open) {
-                    log::error!("Error in window {}", one_window.name());
-                    error_to_return = Some(err);
+        egui::CentralPanel::default().show(ctx, |ui| {
+            if self.connector.borrow().available {
+                for one_window in self.windows.iter_mut() {
+                    let mut is_open: bool = self.open_windows.contains(one_window.name());
+                    if let Err(err) = one_window.show(ctx, &mut is_open) {
+                        log::error!("Error in window {}", one_window.name());
+                        error_to_return = Some(err);
+                    }
+                    set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
-                set_open(&mut self.open_windows, one_window.name(), is_open);
-            }
-            egui::CentralPanel::default().show(ctx, |_ui| {});
-        } else if let Interface::Ws(_interface_ws) = &self.connector.borrow().interface {
-            egui::CentralPanel::default().show(ctx, |ui| {
+                // show nothing
+            } else if let Interface::Ws(_interface_ws) = &self.connector.borrow().interface {
                 ui.label("WebSocket not available");
-            });
-        } else if let Interface::File(_interface_file) = &self.connector.borrow().interface {
-            egui::CentralPanel::default().show(ctx, |ui| {
+            } else if let Interface::File(_interface_file) = &self.connector.borrow().interface {
                 ui.label("File not available");
-            });
-        } else {
-            egui::CentralPanel::default().show(ctx, |ui| {
+            } else {
                 ui.label("Not connected");
-            });
-        }
+            }
+        });
         match error_to_return {
             Some(e) => Err(e),
             None => Ok(()),

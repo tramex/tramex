@@ -101,6 +101,7 @@ impl FileHandler {
     }
 
     pub fn load_from_url(&mut self, url: String) {
+        self.reset();
         let copied_url = url.clone();
         let call = move |res: Result<ehttp::Response, String>| match res {
             Ok(res) => {
@@ -150,7 +151,8 @@ impl FileHandler {
         self.picked_path.clone()
     }
 
-    fn handle_dialog(&mut self) {
+    fn load_file_upload(&mut self) {
+        self.reset();
         #[cfg(target_arch = "wasm32")]
         {
             self.file_upload = Some(Promise::spawn_local(async {
@@ -208,14 +210,15 @@ impl FileHandler {
     }
 
     pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
+        let mut error_to_return = None;
         if ui.button("Open file…").clicked() {
-            self.handle_dialog();
+            self.load_file_upload();
         }
 
         match self.check_file_load() {
             Ok(_) => {}
             Err(e) => {
-                return Err(e);
+                error_to_return = Some(e);
             }
         }
         let mut file_path = None;
@@ -244,13 +247,17 @@ impl FileHandler {
                         });
                     }
                     Err(e) => {
-                        return Err(e.to_owned());
+                        error_to_return = Some(e.to_owned());
                     }
                 }
             }
         }
         if let Some(filepath) = &file_path {
             self.load_from_url(filepath.to_string());
+        }
+
+        if let Some(err) = error_to_return {
+            return Err(err);
         }
 
         if let Some(picked_path) = &self.picked_path {
