@@ -52,8 +52,8 @@ impl Connector {
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
                 self.interface = Interface::Ws(WsConnection {
-                    ws_sender: Box::new(ws_sender),
-                    ws_receiver: Box::new(ws_receiver),
+                    ws_sender: ws_sender,
+                    ws_receiver: ws_receiver,
                     msg_id: 1,
                     connecting: true,
                 });

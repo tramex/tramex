@@ -1,8 +1,8 @@
 use ewebsock::{WsReceiver, WsSender};
 
 pub struct WsConnection {
-    pub ws_sender: Box<WsSender>,
-    pub ws_receiver: Box<WsReceiver>,
+    pub ws_sender: WsSender,
+    pub ws_receiver: WsReceiver,
     pub msg_id: u64,
     pub connecting: bool,
 }

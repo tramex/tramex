@@ -62,16 +62,18 @@ impl FrontEnd {
 
     pub fn menu_bar(&mut self, ui: &mut Ui) {
         if self.connector.borrow().available {
-            ui.menu_button("Windows", |ui| {
-                for one_window in self.windows.iter_mut() {
-                    let mut is_open: bool = self.open_windows.contains(one_window.name());
-                    ui.checkbox(&mut is_open, one_window.name());
-                    set_open(&mut self.open_windows, one_window.name(), is_open);
-                }
-            });
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-                self.trame_manager
-                    .show_controls(ui, &mut self.connector.borrow_mut());
+                ui.horizontal(|ui| {
+                    self.trame_manager
+                        .show_controls(ui, &mut self.connector.borrow_mut());
+                    ui.menu_button("Windows", |ui| {
+                        for one_window in self.windows.iter_mut() {
+                            let mut is_open: bool = self.open_windows.contains(one_window.name());
+                            ui.checkbox(&mut is_open, one_window.name());
+                            set_open(&mut self.open_windows, one_window.name(), is_open);
+                        }
+                    });
+                });
             });
         }
     }

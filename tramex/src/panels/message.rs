@@ -46,9 +46,9 @@ impl super::PanelView for MessageBox {
             ui.label(format!("Received events: {}", events.len()));
         });
         let current_index = borrowed.data.current_index;
-        ui.label(format!("Current msg index: {}", current_index + 1));
 
         if let Some(one_log) = events.get(current_index) {
+            ui.label(format!("Current msg index: {}", current_index + 1));
             display_log(ui, &one_log);
         }
     }
