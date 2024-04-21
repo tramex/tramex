@@ -4,6 +4,7 @@
 - [Development](./development.md)
 - [Documentation](./documentation.md)
 - [Knowledge base](./knowledge_base.md)
+- [CI/CD](./ci_cd.md)
 
 ---
 
