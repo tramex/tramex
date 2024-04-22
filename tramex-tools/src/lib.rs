@@ -1,3 +1,7 @@
+#![deny(clippy::all, rust_2018_idioms)]
+//#![deny(missing_docs)]
+#![deny(clippy::missing_docs_in_private_items)]
+
 pub mod connector;
 pub mod data;
 pub mod errors;
