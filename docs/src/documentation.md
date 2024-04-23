@@ -1,6 +1,6 @@
 # Documentation
 
-You will also install [`mdbook`](https://rust-lang.github.io/mdBook/) with
+You will also need to install [`mdbook`](https://rust-lang.github.io/mdBook/) with
 
 ```bash
 cargo install mdbook
