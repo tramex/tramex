@@ -1,8 +1,8 @@
 # Developement
 
-To start developing on the project, first you will need to install [rustup](https://rustup.rs/).
+To start developing on the project, you will first need to install rustup. [rustup](https://rustup.rs/).
 
-Rustup is an installer for the Rust language. It is the recommended way to install Rust, as it manages both the installation and the updates of the Rust compiler and tools. It installs the rust compiler (`rustc`) and the `cargo` package manager.
+Rustup is an installer for the Rust language. It is the recommended way to install Rust, as it manages both the installation and updates of the Rust compiler and tools. It installs the Rust compiler (`rustc`) and the `Cargo` package manager.
 
 After installing `rustup`, you can install [`trunk`](https://trunkrs.dev/) with
 
@@ -20,7 +20,7 @@ git clone git@github.com:tramex/tramex.git
 
 ## Development
 
-To start the application, you can run in the repository
+To start the application, you can run the following command in the repository
 
 ```bash
 # for the web application
