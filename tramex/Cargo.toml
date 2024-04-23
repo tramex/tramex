@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Tramex is a 4G frame analyser"
 license = "MIT"
-authors = ["n4n5 <its.just.n4n5@gmail.com>"]
+authors = ["n4n5 <its.just.n4n5@gmail.com>", "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>"]
 repository = "https://github.com/tramex/tramex"
 homepage = "https://tramex.github.io/tramex"
 
