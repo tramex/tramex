@@ -9,7 +9,7 @@ Tramex is a project derived from :
 
 ## VIGIE
 
-One of the functionalities of the VIGIE software is to analyze the frames of a 2G/3G network. For more information on this, you can visit https://hal.science/hal-02141173.
+One of the functionalities of the VIGIE software is to analyze the frames of a 2G/3G network. For more information on this, you can visit <https://hal.science/hal-02141173>.
 
 Tramex can be seen as an upgrade of the VIGIE software because it allows the user to analyze the frames of a 4G network. Note that Tramex does not have all the functionalities of VIGIE.
 
