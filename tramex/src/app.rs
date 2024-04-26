@@ -138,7 +138,10 @@ impl TramexApp {
                         );
                     });
                     ui.separator();
-                    ui.label(format!("Authors: {}", env!("CARGO_PKG_AUTHORS")));
+                    ui.label("Authors:");
+                    for one_author in env!("CARGO_PKG_AUTHORS").split(":") {
+                        ui.label(format!("{}", one_author));
+                    }
                     ui.separator();
                     ui.add_space(12.0);
                     ui.label(format!(
