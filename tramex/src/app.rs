@@ -8,14 +8,14 @@ use crate::make_hyperlink;
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct ExampleApp {
+pub struct TramexApp {
     pub frontend: FrontEnd,
     #[serde(skip)]
     error_panel: Option<TramexError>,
     show_about: bool,
 }
 
-impl ExampleApp {
+impl TramexApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
@@ -154,7 +154,7 @@ impl ExampleApp {
     }
 }
 
-impl Default for ExampleApp {
+impl Default for TramexApp {
     fn default() -> Self {
         Self {
             frontend: FrontEnd::new(),
@@ -164,7 +164,7 @@ impl Default for ExampleApp {
     }
 }
 
-impl eframe::App for ExampleApp {
+impl eframe::App for TramexApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
