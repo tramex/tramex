@@ -1,6 +1,6 @@
 # Tramex project
 
-Tramex is a project for analyzing and visualizing frames in a 4G network.
+Tramex is a project that serves the goal of allowing users to analyze and visualize frames in a 4G network.
 
 Tramex is a project derived from :
 
@@ -9,9 +9,9 @@ Tramex is a project derived from :
 
 ## VIGIE
 
-One of the functionalities of the VIGIE software is to analyze the frames of a 2G/3G network. For more information on this, you can visit <https://hal.science/hal-02141173>.
+One of the functionalities of the VIGIE software is to analyze the frames of a 2G/3G network. For more information on this topic, please visit <https://hal.science/hal-02141173>.
 
-Tramex can be seen as an upgrade of the VIGIE software because it allows the user to analyze the frames of a 4G network. Note that Tramex does not have all the functionalities of VIGIE.
+Tramex can be seen as an upgrade of the VIGIE software because it allows the user to analyze the frames of a 4G network. Note that Tramex does not have all the functionalities implemented in the VIGIE software.
 
 <details>
 
@@ -38,10 +38,12 @@ Tramex can be seen as an upgrade of the VIGIE software because it allows the use
 
 ## Amarisoft web interface
 
-Amarisoft is a software company that provides a 4G LTE software suite. The web interface of Amarisoft lets the user see the frames of a 4G network. This tool uses a web socket to retreive frames of the network.
+Amarisoft is a software company that provides a 4G LTE software suite. The web interface of Amarisoft lets the user visualize the frames of a 4G network. This tool uses a Websocket to retreive the frames transmitted within the network.
 
 ## Tramex
 
 > Tramex stands for **Tram**e **Ex**ploration.
 
-Tramex uses the same WebSocket to retrieve the frames of the network, but it displays them in a more user-friendly manner, similar to **VIGIE**.
+> As it is a French project, "Trame" is the French word for "Frame" and "Exploration" can be read either in French or in English.
+
+Based on the **Amarisoft** software, Tramex uses the same WebSocket method to retrieve the frames transmitted within the network, but it displays them in a more user-friendly manner, similarly to the **VIGIE** software.

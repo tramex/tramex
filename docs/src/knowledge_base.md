@@ -2,9 +2,11 @@
 
 ## Copy pasting in the browser
 
-To enable copy-pasting in the browser, you will need to add the following : `--cfg=web_sys_unstable_apis` flag
+To enable copy-pasting in the browser, you will need to add the `--cfg=web_sys_unstable_apis` flag. For more information, please refer to the following links :
 
-- <https://github.com/emilk/egui/discussions/1321#discussioncomment-9178777>
+- <https://github.com/emilk/egui/discussions/>
+- <https://github.com/emilk/eframe_template/blob/main/.cargo/config.toml#L6>
+
 
 ## Coverage
 
