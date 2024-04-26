@@ -1,5 +1,5 @@
 var cacheName = "tramex";
-var filesToCache = ["./", "./index.html", "./eframe_template.js", "./eframe_template_bg.wasm"];
+var filesToCache = ["./", "./index.html", "./tramex.js", "./tramex_bg.wasm"];
 
 /* Start the service worker and cache all of the app's content */
 self.addEventListener("install", function (e) {
