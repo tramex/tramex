@@ -5,7 +5,8 @@ edition = "2021"
 authors = [
     "n4n5 <its.just.n4n5@gmail.com>",
     "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>",
-    "katheleligaf"
+    "katheleligaf",
+    "comeyrd <ce.eyraud@gmail.com>"
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
