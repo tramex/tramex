@@ -3,7 +3,7 @@
 #![deny(clippy::missing_docs_in_private_items)]
 
 mod app;
-pub use app::ExampleApp;
+pub use app::TramexApp;
 
 mod frontend;
 pub mod panels;
