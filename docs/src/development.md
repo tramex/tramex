@@ -2,7 +2,7 @@
 
 To start developing on the project, you will first need to install [rustup](https://rustup.rs/).
 
-Rustup is an installer for the Rust language. It is the recommended way to install Rust, as it manages both the installation and updates of the Rust compiler and tools. It installs the Rust compiler (`rustc`) and the `Cargo` package manager.
+Rustup is an installer for the Rust language. It is the recommended way to install Rust, as it manages both the installation and updates of the Rust compiler and tools. It installs the Rust compiler (`rustc`) and the `cargo` package manager.
 
 After installing `rustup`, you can install [`trunk`](https://trunkrs.dev/) with :
 
