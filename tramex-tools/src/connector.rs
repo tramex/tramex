@@ -133,7 +133,7 @@ impl Connector {
                 if curr_file.readed {
                     return Ok(());
                 }
-                match curr_file.process() {
+                match &mut curr_file.process() {
                     Ok(ok_processed) => {
                         log::debug!("Processed: {} trames", ok_processed.len());
                         self.data.events.append(ok_processed);
