@@ -1,5 +1,6 @@
 use crate::data::MessageType;
 use crate::data::Trace;
+use crate::errors::TramexError;
 use crate::functions::extract_hexe;
 use crate::websocket::types::Direction;
 use chrono::NaiveTime;
@@ -46,12 +47,10 @@ impl File {
         }
     }
 
-    pub fn process(&self) -> Vec<Trace> {
+    pub fn process(&self) -> Result<Vec<Trace>, TramexError> {
         return File::process_string(&self.file_content);
     }
-
-    pub fn process_string(hay: &String) -> Vec<Trace> {
-        //A FAIRE Compile Regex only one time
+    pub fn process_string(hay: &String) -> Result<Vec<Trace>, TramexError> {
         let rgx = Regex::new(RGX).unwrap();
         let mut vtraces: Vec<Trace> = vec![];
         for (_, [timestamp, layer, direction, _id, canal, message_canal, hexa]) in
@@ -71,6 +70,12 @@ impl File {
                 hexa: extract_hexe(&hexa.split("\n").collect()),
             });
         }
-        return vtraces;
+        if vtraces.is_empty() {
+            return Err(TramexError::new(
+                "Can't find Trace in File".to_string(),
+                crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
+            ));
+        }
+        return Ok(vtraces);
     }
 }

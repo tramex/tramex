@@ -133,12 +133,19 @@ impl Connector {
                 if curr_file.readed {
                     return Ok(());
                 }
-                //TODO Un buffer ou on recupere une partie du fichier ?
-                let processed = &mut curr_file.process();
-                log::debug!("Processed: {} trames", processed.len());
-                self.data.events.append(processed);
-                curr_file.readed = true;
-                self.available = true;
+                let processed: &mut Result<Vec<Trace>, TramexError> = &mut curr_file.process();
+                match processed {
+                    Ok(ok_processed) => {
+                        log::debug!("Processed: {} trames", ok_processed.len());
+                        self.data.events.append(ok_processed);
+                        curr_file.readed = true;
+                        self.available = true;
+                    }
+                    Err(e) => {
+                        log::debug!("Error While Reading File");
+                        return Err(e.clone());
+                    }
+                }
             }
             _ => {}
         }
