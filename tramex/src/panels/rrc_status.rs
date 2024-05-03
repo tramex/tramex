@@ -1,45 +1,45 @@
-use eframe::egui::{self};
-
-use crate::trace_app::egui::TextFormat;
-use crate::trace_app::miti_ws::MitiTrace;
-use eframe::egui::Color32;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::primitive::f32;
+use eframe::egui::{self, TextFormat};
+use eframe::egui::Color32;
+use tramex_tools::connector::Connector;
+use tramex_tools::errors::TramexError;
+use tramex_tools::websocket::types::Direction;
 
 pub struct LinkPannel {
-    mtrace: std::rc::Rc<MitiTrace>,
+    mtrace: Rc<RefCell<Connector>>,
 }
 
-impl Default for LinkPannel {
-    fn default() -> Self {
+impl LinkPannel {
+    pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self {
-            mtrace: std::rc::Rc::new(MitiTrace::default()),
+            mtrace: ref_data,
         }
     }
 }
 impl LinkPannel {
-    pub fn ui_control(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.mtrace.direction.as_str() {
-            "upload" => {
+    pub fn ui_control(&self, ui: &mut egui::Ui, direction: &Direction) {
+        ui.vertical_centered_justified(|ui| match direction {
+            Direction::UL => {
                 ui.colored_label(egui::Color32::RED, "Link Control");
             }
-
-            "download" => {
+            Direction::DL => {
                 ui.colored_label(egui::Color32::BLUE, "Link Control");
             }
-
             _ => {
                 ui.label("Link Control");
             }
         });
     }
 
-    pub fn print_on_grid(&mut self, ui: &mut egui::Ui, label: &str) {
+    pub fn print_on_grid(&self, ui: &mut egui::Ui, label: &str) {
         ui.vertical_centered(|ui| {
             ui.label(label);
         });
     }
 
-    pub fn make_label(&mut self, ui: &mut egui::Ui, label: &str, state: &str, color: &str) {
+    pub fn make_label(&self, ui: &mut egui::Ui, label: &str, state: &str, color: &str) {
         use egui::text::LayoutJob;
         let mut job = LayoutJob::default();
         let (default_color, _strong_color) = (Color32::BLACK, Color32::BLACK);
@@ -69,10 +69,10 @@ impl LinkPannel {
         });
     }
 
-    pub fn ui_con(&mut self, ui: &mut egui::Ui) {
-        let etat = match self.mtrace.direction.as_str() {
-            "upload" => "PCCH",
-            "download" => "BCCH",
+    pub fn ui_con(&self, ui: &mut egui::Ui, direction: &Direction) {
+        let etat = match direction {
+            Direction::UL => "PCCH",
+            Direction::DL => "BCCH",
             _ => "Unknown",
         };
 
@@ -102,13 +102,13 @@ impl LinkPannel {
             });
     }
 
-    pub fn ui_idle_lte(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.mtrace.direction.as_str() {
-            "upload" => {
+    pub fn ui_idle_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
+        ui.vertical_centered_justified(|ui| match direction {
+            Direction::UL => {
                 ui.colored_label(egui::Color32::RED, "IDLE");
             }
 
-            "download" => {
+            Direction::DL => {
                 ui.colored_label(egui::Color32::BLACK, "IDLE");
             }
 
@@ -118,13 +118,13 @@ impl LinkPannel {
         });
     }
 
-    pub fn ui_lte(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.mtrace.direction.as_str() {
-            "upload" => {
+    pub fn ui_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
+        ui.vertical_centered_justified(|ui| match direction {
+            Direction::UL => {
                 ui.colored_label(egui::Color32::GREEN, "LTE");
             }
 
-            "download" => {
+            Direction::DL => {
                 ui.colored_label(egui::Color32::BLACK, "LTE");
             }
 
@@ -134,13 +134,13 @@ impl LinkPannel {
         });
     }
 
-    pub fn ui_idle_umts(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.mtrace.direction.as_str() {
-            "upload" => {
+    pub fn ui_idle_umts(&self, ui: &mut egui::Ui, direction: &Direction) {
+        ui.vertical_centered_justified(|ui| match direction {
+            Direction::UL => {
                 ui.colored_label(egui::Color32::RED, "IDLE");
             }
 
-            "download" => {
+            Direction::DL => {
                 ui.colored_label(egui::Color32::BLACK, "IDLE");
             }
 
@@ -150,13 +150,13 @@ impl LinkPannel {
         });
     }
 
-    pub fn ui_umts(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.mtrace.direction.as_str() {
-            "upload" => {
+    pub fn ui_umts(&self, ui: &mut egui::Ui, direction: &Direction) {
+        ui.vertical_centered_justified(|ui| match direction {
+            Direction::UL => {
                 ui.colored_label(egui::Color32::RED, "UMTS");
             }
 
-            "download" => {
+            Direction::DL => {
                 ui.colored_label(egui::Color32::BLACK, "UMTS");
             }
 
@@ -166,37 +166,37 @@ impl LinkPannel {
         });
     }
 
-    pub fn ui_content(&mut self, ui: &mut egui::Ui) {
+    pub fn ui_content(&self, ui: &mut egui::Ui, direction: &Direction) {
         const SPACE_RIGHT: f32 = 100.0;
         const SPACE_LEFT: f32 = 8.0;
         let size = egui::Vec2::new(50.0, 45.0);
 
-        let upblack = egui::Image::new(egui::include_image!("../../../assets/up.png"))
+        let upblack = egui::Image::new(egui::include_image!("../../assets/up.png"))
             .max_size(size)
             .fit_to_fraction(size)
             .maintain_aspect_ratio(true);
-        let downblack = egui::Image::new(egui::include_image!("../../../assets/down.png"))
+        let downblack = egui::Image::new(egui::include_image!("../../assets/down.png"))
             .max_size(size)
             .fit_to_fraction(size)
             .maintain_aspect_ratio(true);
-        let downgreen = egui::Image::new(egui::include_image!("../../../assets/down-green.png"))
+        let downgreen = egui::Image::new(egui::include_image!("../../assets/down-green.png"))
             .max_size(size)
             .maintain_aspect_ratio(true);
-        let upblue = egui::Image::new(egui::include_image!("../../../assets/up-green.png"))
+        let upblue = egui::Image::new(egui::include_image!("../../assets/up-green.png"))
             .max_size(size)
             .maintain_aspect_ratio(true);
 
         //ui.vertical(|ui| match self.mtrace.direction.as_str() {
         ui.with_layout(
             egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| match self.mtrace.direction.as_str() {
-                "upload" => {
+            |ui| match direction {
+                Direction::UL => {
                     ui.add_space(SPACE_LEFT);
                     ui.add(upblue);
                     ui.add_space(SPACE_RIGHT);
                     ui.add(downblack);
                 }
-                "download" => {
+                Direction::DL => {
                     ui.add_space(SPACE_LEFT);
                     ui.add(upblack);
                     ui.add_space(SPACE_RIGHT);
@@ -212,24 +212,24 @@ impl LinkPannel {
         );
     }
 
-    pub fn ui_content_level2(&mut self, ui: &mut egui::Ui) {
+    pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
         const SPACE_RIGHT: f32 = 10.0;
         const SPACE_LEFT: f32 = 2.0;
         let size = egui::Vec2::new(50.0, 45.0);
 
-        let upblack = egui::Image::new(egui::include_image!("../../../assets/up.png"))
+        let upblack = egui::Image::new(egui::include_image!("../../assets/up.png"))
             .max_size(size)
             .fit_to_fraction(size)
             .maintain_aspect_ratio(true);
-        let downblack = egui::Image::new(egui::include_image!("../../../assets/down.png"))
+        let downblack = egui::Image::new(egui::include_image!("../../assets/down.png"))
             .max_size(size)
             .fit_to_fraction(size)
             .maintain_aspect_ratio(true);
-        let downgreen = egui::Image::new(egui::include_image!("../../../assets/down-green.png"))
+        let downgreen = egui::Image::new(egui::include_image!("../../assets/down-green.png"))
             .max_size(size)
             .fit_to_fraction(size)
             .maintain_aspect_ratio(true);
-        let upgreen = egui::Image::new(egui::include_image!("../../../assets/up-green.png"))
+        let upgreen = egui::Image::new(egui::include_image!("../../assets/up-green.png"))
             .max_size(size)
             .fit_to_fraction(size)
             .maintain_aspect_ratio(true);
@@ -237,8 +237,8 @@ impl LinkPannel {
         //ui.vertical(|ui| match self.mtrace.direction.as_str() {
         ui.with_layout(
             egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| match self.mtrace.direction.as_str() {
-                "upload" => {
+            |ui| match direction {
+                Direction::UL => {
                     ui.add_space(SPACE_LEFT);
                     ui.add(upgreen.clone());
                     ui.add(upgreen);
@@ -246,7 +246,7 @@ impl LinkPannel {
                     ui.add(downblack.clone());
                     ui.add(downblack);
                 }
-                "download" => {
+                Direction::DL => {
                     ui.add_space(SPACE_LEFT);
                     ui.add(upblack.clone());
                     ui.add(upblack);
@@ -267,40 +267,51 @@ impl LinkPannel {
     }
 }
 
-impl super::TracePannel for LinkPannel {
+impl super::PanelController for LinkPannel {
     fn name(&self) -> &'static str {
-        "Link Pannel"
+        "RRC Status"
     }
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) {
-        use super::View as _;
 
+    fn window_title(&self) -> &'static str {
+        "RRC Status"
+    }
+
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+        
         let size = egui::Vec2::new(215.0, 200.0);
         egui::Window::new(self.name())
-            .open(open)
-            .fixed_size(size)
-            .show(ctx, |ui| self.ui(ui));
+        .open(open)
+        .fixed_size(size)
+        .show(ctx, |ui| {
+                use super::PanelView as _;
+                self.ui(ui)
+        });
+        Ok(())
     }
-    fn update_trace(&mut self, miti_trace: std::rc::Rc<MitiTrace>) {
-        self.mtrace = miti_trace;
-    }
+
 }
 
-impl super::View for LinkPannel {
+impl super::PanelView for LinkPannel {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        self.ui_control(ui);
-        ui.separator();
-        self.ui_content(ui);
-        ui.separator();
-        self.ui_idle_lte(ui);
-        ui.separator();
-        self.ui_lte(ui);
-        ui.separator();
-        self.ui_con(ui);
-        ui.separator();
-        self.ui_content_level2(ui);
-        ui.separator();
-        self.ui_idle_umts(ui);
-        ui.separator();
-        self.ui_umts(ui);
+        let binding = self.mtrace.borrow();
+        let curr_trace = binding.data.get_current_trace();
+        if let Some(trace) = curr_trace {
+            let direction = &trace.trace_type.direction;
+            self.ui_control(ui, direction);
+            ui.separator();
+            self.ui_content(ui, direction);
+            ui.separator();
+            self.ui_idle_lte(ui, direction);
+            ui.separator();
+            self.ui_lte(ui, direction);
+            ui.separator();
+            self.ui_con(ui, direction);
+            ui.separator();
+            self.ui_content_level2(ui, direction);
+            ui.separator();
+            self.ui_idle_umts(ui, direction);
+            ui.separator();
+            self.ui_umts(ui, direction);
+        } 
     }
 }

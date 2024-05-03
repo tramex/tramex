@@ -24,8 +24,7 @@ impl TramexApp {
         // Note that you must enable the `persistence` feature for this to work.
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
-        Self {
+        }        Self {
             ..Default::default()
         }
     }
@@ -169,6 +168,9 @@ impl Default for TramexApp {
 
 impl eframe::App for TramexApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // load images
+        egui_extras::install_image_loaders(ctx);
+        
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
                 self.menu_bar(ctx, ui);

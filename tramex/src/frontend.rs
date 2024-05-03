@@ -1,4 +1,4 @@
-use crate::panels::{FileHandler, LogicalChannels, MessageBox, PanelController, TrameManager};
+use crate::panels::{FileHandler, LogicalChannels, LinkPannel, MessageBox, PanelController, TrameManager};
 use crate::set_open;
 use egui::Ui;
 use std::rc::Rc;
@@ -46,8 +46,12 @@ impl FrontEnd {
         let ref_connector = Rc::new(RefCell::new(connector));
         let mb = MessageBox::new(Rc::clone(&ref_connector));
         let lc = LogicalChannels::new(Rc::clone(&ref_connector));
-        let wins: Vec<Box<dyn PanelController>> =
-            vec![Box::<MessageBox>::new(mb), Box::<LogicalChannels>::new(lc)];
+        let status = LinkPannel::new(Rc::clone(&ref_connector));
+        let wins: Vec<Box<dyn PanelController>> = vec![
+            Box::<MessageBox>::new(mb),
+            Box::<LogicalChannels>::new(lc),
+            Box::<LinkPannel>::new(status),
+        ];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {
             open_windows.insert(one_box.name().to_owned());

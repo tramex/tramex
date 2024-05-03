@@ -7,6 +7,12 @@ pub struct Data {
     pub current_index: usize,
 }
 
+impl Data {
+    pub fn get_current_trace(&self) -> Option<&Trace>{
+        return self.events.get(self.current_index);
+    }
+}
+
 impl Default for Data {
     fn default() -> Self {
         let default_data_size = 2048;
