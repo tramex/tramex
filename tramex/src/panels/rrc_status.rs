@@ -212,7 +212,7 @@ impl LinkPannel {
         );
     }
 
-    pub fn ui_chibre(&mut self, ui: &mut egui::Ui) {
+    pub fn ui_content_level2(&mut self, ui: &mut egui::Ui) {
         const SPACE_RIGHT: f32 = 10.0;
         const SPACE_LEFT: f32 = 2.0;
         let size = egui::Vec2::new(50.0, 45.0);
@@ -297,7 +297,7 @@ impl super::View for LinkPannel {
         ui.separator();
         self.ui_con(ui);
         ui.separator();
-        self.ui_chibre(ui);
+        self.ui_content_level2(ui);
         ui.separator();
         self.ui_idle_umts(ui);
         ui.separator();
