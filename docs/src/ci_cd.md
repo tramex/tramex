@@ -32,6 +32,14 @@ In the Tramex application, it is possible to open documentation from the About s
 
 Finally the whole content of the `dist` directory is deployed to GitHub Pages.
 
+After the deployment, the accessible URLs are:
+
+- <https://tramex.github.io/tramex/> - browser version of the project
+- <https://tramex.github.io/tramex/docs/> - user friendly documentation
+- <https://tramex.github.io/tramex/coverage/> - coverage of the project
+- <https://tramex.github.io/tramex/crates/tramex/> - developer friendly documentation of `tramex`
+- <https://tramex.github.io/tramex/crates/tramex_tools/> - developer friendly documentation of `tramex_tools`
+
 ## Tests file
 
 This file is executed when a push command is performed or when a pull is requested on the main branch of the Git repository. It is used to test code before any new modification is accepted in order to preserve the consistency of the Tramex code through the development.
