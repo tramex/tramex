@@ -155,34 +155,37 @@ impl FrontEnd {
                             }
                             Choice::File => {
                                 if let Some(file_handle) = &mut self.file_upload {
-                                    match file_handle.ui(ui) {
-                                        Ok(bo) => {
-                                            if bo {
-                                                if self.connector.borrow().interface.is_none() {
-                                                    match file_handle.get_result() {
-                                                        Ok(curr_file) => {
-                                                            self.connector
-                                                                .borrow_mut()
-                                                                .set_file(curr_file);
-                                                            file_handle.clear();
-                                                        }
-                                                        Err(err) => {
-                                                            log::error!(
-                                                                "Error in get_result() {:?}",
-                                                                err
-                                                            );
-                                                            error = Some(err);
+                                    let is_file_path = file_handle.get_picket_path().is_some();
+                                    ui.add_enabled_ui(!is_file_path, |ui| {
+                                        match file_handle.ui(ui) {
+                                            Ok(bo) => {
+                                                if bo {
+                                                    if self.connector.borrow().interface.is_none() {
+                                                        match file_handle.get_result() {
+                                                            Ok(curr_file) => {
+                                                                self.connector
+                                                                    .borrow_mut()
+                                                                    .set_file(curr_file);
+                                                                file_handle.clear();
+                                                            }
+                                                            Err(err) => {
+                                                                log::error!(
+                                                                    "Error in get_result() {:?}",
+                                                                    err
+                                                                );
+                                                                error = Some(err);
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
+                                            Err(err) => {
+                                                log::error!("Error in file_handle {:?}", err);
+                                                error = Some(err);
+                                            }
                                         }
-                                        Err(err) => {
-                                            log::error!("Error in file_handle {:?}", err);
-                                            error = Some(err);
-                                        }
-                                    }
-                                    if file_handle.get_picket_path().is_some() {
+                                    });
+                                    if is_file_path {
                                         if ui.button("Close").on_hover_text("Close file").clicked()
                                         {
                                             file_handle.reset();
