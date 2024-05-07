@@ -182,6 +182,8 @@ impl FrontEnd {
                                             Err(err) => {
                                                 log::error!("Error in file_handle {:?}", err);
                                                 error = Some(err);
+                                                file_handle.reset();
+                                                self.connector.borrow_mut().clear_data();
                                             }
                                         }
                                     });
