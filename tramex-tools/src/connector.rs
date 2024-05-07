@@ -58,6 +58,8 @@ impl Connector {
     }
 
     /// Connect to a websocket
+    /// # Errors
+    /// Return an error if the connection failed
     pub fn connect(
         &mut self,
         url: &str,
@@ -67,8 +69,8 @@ impl Connector {
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
                 self.interface = Interface::Ws(WsConnection {
-                    ws_sender: ws_sender,
-                    ws_receiver: ws_receiver,
+                    ws_sender,
+                    ws_receiver,
                     msg_id: 1,
                     connecting: true,
                 });
@@ -108,7 +110,6 @@ impl Connector {
                 file_path,
                 file_content: String::new(),
                 readed: false,
-                ..Default::default()
             }),
             data: Data::default(),
             available: false,
@@ -131,6 +132,8 @@ impl Connector {
     }
 
     /// Get more data depending on the interface
+    /// # Errors
+    /// Return an error if the interface is not set
     pub fn get_more_data(&mut self, layers_list: Layers) -> Result<(), TramexError> {
         log::debug!("Get more data");
         match &mut self.interface {
@@ -174,6 +177,8 @@ impl Connector {
     }
 
     /// Try to receive data
+    /// # Errors
+    /// Return an error if the interface is not set
     pub fn try_recv(&mut self) -> Result<(), TramexError> {
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
@@ -189,20 +194,20 @@ impl Connector {
                                     match decoded {
                                         Ok(decoded_data) => {
                                             for one_log in decoded_data.logs {
-                                                let canal_msg = one_log
+                                                let canal_msg_extracted = one_log
                                                     .extract_canal_msg()
                                                     .unwrap_or("".to_owned());
-                                                let hexa = one_log.extract_hexe();
+                                                let hexa_extracted = one_log.extract_hexe();
                                                 let msg_type = MessageType {
                                                     timestamp: one_log.timestamp.to_owned(),
                                                     layer: one_log.layer,
-                                                    direction: one_log.dir.unwrap(),
+                                                    direction: one_log.dir.unwrap_or_default(),
                                                     canal: one_log.channel.unwrap_or_default(),
-                                                    canal_msg: canal_msg,
+                                                    canal_msg: canal_msg_extracted,
                                                 };
                                                 let trace = Trace {
                                                     trace_type: msg_type,
-                                                    hexa: hexa,
+                                                    hexa: hexa_extracted,
                                                 };
                                                 self.data.events.push(trace);
                                             }

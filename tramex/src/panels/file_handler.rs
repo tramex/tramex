@@ -8,7 +8,10 @@ use tramex_tools::{errors::TramexError, file_handler::File};
 #[derive(Debug, serde::Deserialize)]
 /// Item to show in the file list
 struct Item {
+    /// Name of the item
     name: String,
+
+    /// List of files
     list: Vec<String>,
 }
 
@@ -39,19 +42,19 @@ impl FileHandler {
                     Ok(items) => Ok(items),
                     Err(e) => {
                         log::warn!("{:?}", e);
-                        return Err(TramexError::new(
+                        Err(TramexError::new(
                             e.to_string(),
                             tramex_tools::errors::ErrorCode::FileErrorReadingFile,
-                        ));
+                        ))
                     }
                 }
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                return Err(TramexError::new(
+                Err(TramexError::new(
                     e.to_string(),
                     tramex_tools::errors::ErrorCode::FileErrorReadingFile,
-                ));
+                ))
             }
         };
         let request = ehttp::Request::get(url);
@@ -90,8 +93,10 @@ impl FileHandler {
     }
 
     /// Get the result
+    /// # Errors
+    /// Return an error if the file contains errors
     pub fn get_result(&mut self) -> Result<File, TramexError> {
-        return match &self.file_upload {
+        match &self.file_upload {
             Some(result) => match &result.ready() {
                 Some(ready) => match ready {
                     Ok(curr_file) => Ok(curr_file.clone()),
@@ -106,7 +111,7 @@ impl FileHandler {
                 "No file selected".to_string(),
                 tramex_tools::errors::ErrorCode::FileNotSelected,
             )),
-        };
+        }
     }
 
     /// Load file from URL
@@ -132,14 +137,14 @@ impl FileHandler {
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                return Err(TramexError::new(
+                Err(TramexError::new(
                     e.to_string(),
                     tramex_tools::errors::ErrorCode::FileErrorReadingFile,
-                ));
+                ))
             }
         };
 
-        let request = ehttp::Request::get(&copied_url);
+        let request = ehttp::Request::get(copied_url);
         #[cfg(target_arch = "wasm32")]
         {
             self.file_upload = Some(Promise::spawn_local(async move {
@@ -161,6 +166,7 @@ impl FileHandler {
         self.picked_path.clone()
     }
 
+    /// Load file upload
     fn load_file_upload(&mut self) {
         self.reset();
         #[cfg(target_arch = "wasm32")]
@@ -220,6 +226,8 @@ impl FileHandler {
     }
 
     /// Render the file upload
+    /// # Errors
+    /// Return an error if the file contains errors
     pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
         let mut error_to_return = None;
         if ui.button("Open file…").clicked() {
@@ -281,10 +289,12 @@ impl FileHandler {
             ui.add(egui::Spinner::new());
         }
         ui.add_space(12.0);
-        return Ok(false);
+        Ok(false)
     }
 
     /// Check file load
+    /// # Errors
+    /// Return an error if the file contains errors
     pub fn check_file_load(&mut self) -> Result<(), TramexError> {
         if self.picked_path.is_none() {
             if let Some(result) = &self.file_upload {

@@ -18,18 +18,17 @@ pub enum Interface {
 
 impl Interface {
     /// close the interface
+    /// # Errors
+    /// Return an error if the interface is not closed correctly
     pub fn close(&mut self) -> Result<(), TramexError> {
-        match self {
-            Interface::Ws(interface_ws) => {
-                if let Err(err) = interface_ws.ws_sender.close() {
-                    log::error!("Error closing WebSocket: {}", err);
-                    return Err(TramexError::new(
-                        err.to_string(),
-                        crate::errors::ErrorCode::WebSocketErrorClosing,
-                    ));
-                }
+        if let Interface::Ws(interface_ws) = self {
+            if let Err(err) = interface_ws.ws_sender.close() {
+                log::error!("Error closing WebSocket: {}", err);
+                return Err(TramexError::new(
+                    err.to_string(),
+                    crate::errors::ErrorCode::WebSocketErrorClosing,
+                ));
             }
-            _ => {}
         }
         Ok(())
     }
@@ -45,10 +44,7 @@ impl Interface {
 
     /// Check if the interface is None
     pub const fn is_none(&self) -> bool {
-        match self {
-            Interface::None => true,
-            _ => false,
-        }
+        matches!(self, Interface::None)
     }
 }
 

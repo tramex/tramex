@@ -1,7 +1,7 @@
 //! Layer enum and Layers struct
 use std::str::FromStr;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Default)]
 /// Layer enum
 pub enum Layer {
     /// Physical layer
@@ -46,14 +46,9 @@ pub enum Layer {
     /// GTPU layer
     GTPU,
 
+    #[default]
     /// None layer - is good idea ?
     None,
-}
-
-impl Default for Layer {
-    fn default() -> Self {
-        Layer::None
-    }
 }
 
 impl FromStr for Layer {

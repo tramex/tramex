@@ -1,6 +1,6 @@
 //! WsConnection struct
+use core::fmt::{Debug, Formatter, Result};
 use ewebsock::{WsReceiver, WsSender};
-
 /// WsConnection struct
 pub struct WsConnection {
     /// WebSocket sender
@@ -16,13 +16,14 @@ pub struct WsConnection {
     pub connecting: bool,
 }
 
-impl core::fmt::Debug for WsConnection {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Interface")
+impl Debug for WsConnection {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> Result {
+        return formatter
+            .debug_struct("Interface")
             .field("ws_sender", &"Box<WsSender>")
             .field("ws_receiver", &"Box<WsReceiver>")
             .field("connecting", &self.connecting)
-            .finish()
+            .finish();
     }
 }
 

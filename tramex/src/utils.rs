@@ -29,7 +29,7 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
     } else {
         Color32::DARK_GRAY
     };
-    let background = if need_color {
+    let background_color = if need_color {
         Color32::DARK_BLUE
     } else {
         Color32::DARK_RED
@@ -39,7 +39,7 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
         0.0,
         TextFormat {
             color: default_color,
-            background: background,
+            background: background_color,
             ..Default::default()
         },
     );

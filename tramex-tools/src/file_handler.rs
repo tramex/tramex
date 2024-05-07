@@ -13,6 +13,7 @@ use std::str::FromStr;
 
 use crate::websocket::layer::Layer;
 
+/// Regular expression to extract the data from the file.
 const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
 
 #[derive(Debug, Clone)]
@@ -37,8 +38,10 @@ impl Default for File {
         }
     }
 }
+
+/// Convert a time to milliseconds.
 fn time_to_milliseconds(time: &NaiveTime) -> i64 {
-    let hours_in_ms = time.hour() as i64 * 3600_000;
+    let hours_in_ms = time.hour() as i64 * 3_600_000;
     let minutes_in_ms = time.minute() as i64 * 60_000;
     let seconds_in_ms = time.second() as i64 * 1000;
     let milliseconds = time.nanosecond() as i64 / 1_000_000; // convert nanoseconds to milliseconds
@@ -57,16 +60,27 @@ impl File {
     }
 
     /// Read the file.
+    /// # Errors
+    /// Return an error if the file contains errors
     pub fn process(&self) -> Result<Vec<Trace>, TramexError> {
-        return File::process_string(&self.file_content);
+        File::process_string(&self.file_content)
     }
 
     /// Process the string of the file.
-    pub fn process_string(hay: &String) -> Result<Vec<Trace>, TramexError> {
-        let rgx = Regex::new(RGX).unwrap();
+    /// # Errors
+    /// Return an error if the file contains errors
+    pub fn process_string(hay: &str) -> Result<Vec<Trace>, TramexError> {
+        let rgx = if let Ok(re) = Regex::new(RGX) {
+            re
+        } else {
+            return Err(TramexError::new(
+                "Can't create Regex".to_string(),
+                crate::errors::ErrorCode::default(),
+            ));
+        };
         let mut vtraces: Vec<Trace> = vec![];
         for (_, [timestamp, layer, direction, _id, canal, message_canal, hexa]) in
-            rgx.captures_iter(&hay).map(|c| c.extract())
+            rgx.captures_iter(hay).map(|c| c.extract())
         {
             let date =
                 chrono::NaiveTime::parse_from_str(timestamp, "%H:%M:%S%.3f").unwrap_or_default();
@@ -79,7 +93,7 @@ impl File {
                     canal: canal.to_owned(),
                     canal_msg: message_canal.to_owned(),
                 },
-                hexa: extract_hexe(&hexa.split("\n").collect()),
+                hexa: extract_hexe(&hexa.split('\n').collect::<Vec<&str>>()),
             });
         }
         if vtraces.is_empty() {
@@ -88,6 +102,6 @@ impl File {
                 crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
             ));
         }
-        return Ok(vtraces);
+        Ok(vtraces)
     }
 }

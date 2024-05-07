@@ -2,12 +2,19 @@
 name = "tramex-tools"
 version = "0.1.0"
 edition = "2021"
+description = "Tramex utilities"
+license = "MIT"
 authors = [
     "n4n5 <its.just.n4n5@gmail.com>",
     "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>",
     "katheleligaf",
-    "comeyrd <ce.eyraud@gmail.com>"
+    "comeyrd <ce.eyraud@gmail.com>",
 ]
+repository = "https://github.com/tramex/tramex"
+homepage = "https://tramex.github.io/tramex"
+readme = "README.md"
+keywords = ["frame", "4G", "LTE"]
+categories = ["visualization", "network-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -41,7 +41,7 @@ pub struct OneLog {
 impl OneLog {
     /// Extract the hexadecimal representation of the log.
     pub fn extract_hexe(&self) -> Vec<u8> {
-        return extract_hexe(&self.data);
+        extract_hexe(&self.data)
     }
 
     /// Extract the canal message of the log.

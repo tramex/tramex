@@ -7,7 +7,10 @@ use tramex_tools::errors::TramexError;
 
 /// Logical Channels data
 pub struct LogicalChannels {
+    /// Reference to the data
     data: Rc<RefCell<Connector>>,
+
+    /// Current channel
     channel: String,
 }
 
@@ -82,6 +85,7 @@ pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
     });
 }
 
+/// Convert a number to a boolean
 fn num_to_bool(num: u32) -> bool {
     num == 1
 }

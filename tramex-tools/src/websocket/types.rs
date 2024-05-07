@@ -50,9 +50,10 @@ pub enum SourceLog {
     MME,
 }
 
-#[derive(serde::Deserialize, Debug, PartialEq)]
+#[derive(serde::Deserialize, Debug, PartialEq, Default)]
 /// Direction enum
 pub enum Direction {
+    #[default]
     /// Uplink direction
     UL,
 
@@ -66,17 +67,11 @@ pub enum Direction {
     TO,
 }
 
-impl Default for Direction {
-    fn default() -> Self {
-        Direction::UL
-    }
-}
-
 impl FromStr for Direction {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+    fn from_str(input_string: &str) -> Result<Self, Self::Err> {
+        match input_string {
             "UL" => Ok(Direction::UL),
             "DL" => Ok(Direction::DL),
             "FROM" => Ok(Direction::FROM),
@@ -91,8 +86,8 @@ impl<'de> serde::Deserialize<'de> for LogLevel {
     where
         D: serde::Deserializer<'de>,
     {
-        let a = u8::deserialize(deserializer)?;
-        match a {
+        let deserialized_int = u8::deserialize(deserializer)?;
+        match deserialized_int {
             1 => Ok(LogLevel::ERROR),
             2 => Ok(LogLevel::WARN),
             3 => Ok(LogLevel::INFO),

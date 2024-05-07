@@ -35,5 +35,7 @@ pub trait PanelController {
     fn window_title(&self) -> &'static str;
 
     /// Show windows, etc
+    /// # Errors
+    /// Return an error if the panel can't be shown
     fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError>;
 }

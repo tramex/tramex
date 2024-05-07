@@ -51,14 +51,8 @@ impl Default for ErrorCode {
 
 impl std::fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self as &dyn std::fmt::Debug)
-    }
-}
-
-impl ErrorCode {
-    /// Convert the error code to a string
-    pub fn to_string(&self) -> String {
-        match self {
+        // use to_string() to get the string representation of the error code
+        let str = match self {
             Self::WebScoketFailedToConnect => "WebSocket: Failed to connect".to_owned(),
             Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message".to_owned(),
             Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message".to_owned(),
@@ -76,14 +70,18 @@ impl ErrorCode {
             Self::FileNotReady => "File: Not ready".to_owned(),
             Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)".to_owned(),
             Self::NotSet => "Error code not set, please create an issue".to_owned(),
-        }
+        };
+        write!(f, "{}", str)
     }
+}
 
+impl ErrorCode {
     /// Check if the error is recoverable
     pub fn is_recoverable(&self) -> bool {
-        match self {
-            _ => true,
-        }
+        // match self {
+        //     _ => true,
+        // }
+        true
     }
 }
 
@@ -100,11 +98,7 @@ pub struct TramexError {
 impl TramexError {
     /// Create a new error
     pub fn new(message: String, code: ErrorCode) -> Self {
-        Self {
-            message,
-            code,
-            ..Default::default()
-        }
+        Self { message, code }
     }
 
     /// Check if the error is recoverable
@@ -114,6 +108,6 @@ impl TramexError {
 
     /// Get the error message
     pub fn get_code(&self) -> String {
-        format!("[{}] {}", self.code, self.code.to_string())
+        format!("[{}] {}", self.code, self.code)
     }
 }

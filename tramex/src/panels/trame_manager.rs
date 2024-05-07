@@ -82,6 +82,7 @@ impl TrameManager {
     }
 }
 
+/// Create a checkbox
 fn checkbox(ui: &mut egui::Ui, string: &mut String, text: &str) {
     let mut checked = string == "debug";
     if ui.checkbox(&mut checked, text).changed() {

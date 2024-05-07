@@ -4,12 +4,25 @@ use crate::websocket::layer::Layers;
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// LogGet struct
 pub struct LogGet {
+    /// Timeout
     timeout: u64,
+
+    /// Minimum size of the log
     min: u64,
+
+    /// Maximum size of the log
     max: u64,
+
+    /// Layers
     layers: Layers,
+
+    /// Message
     message: String,
+
+    /// Headers
     headers: bool,
+
+    /// Message ID
     message_id: u64,
 }
 

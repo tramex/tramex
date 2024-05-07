@@ -1,21 +1,21 @@
 //! useful functions
 
 /// Extract hexadecimal data from a vector of strings.
-pub fn extract_hexe<T: AsRef<str>>(data: &Vec<T>) -> Vec<u8> {
+pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Vec<u8> {
     let data: Vec<String> = data
         .iter()
         .filter(|one_string| {
             if let Some(first_char) = one_string.as_ref().trim().chars().next() {
                 return first_char.is_numeric();
             }
-            return false;
+            false
         })
         .map(|one_string| {
             if one_string.as_ref().len() > 57 {
                 let str_piece = &one_string.as_ref().trim()[7..56];
                 return str_piece.chars().filter(|c| !c.is_whitespace()).collect();
             }
-            return "".into();
+            "".into()
         })
         .collect();
     let mut hexe: Vec<u8> = Vec::new();
@@ -29,5 +29,5 @@ pub fn extract_hexe<T: AsRef<str>>(data: &Vec<T>) -> Vec<u8> {
             i += 2;
         }
     }
-    return hexe;
+    hexe
 }

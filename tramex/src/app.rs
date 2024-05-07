@@ -1,3 +1,5 @@
+//! The main application state and logic.
+
 use eframe::egui::{self};
 use egui::special_emojis::{OS_APPLE, OS_LINUX, OS_WINDOWS};
 use tramex_tools::errors::TramexError;
@@ -8,11 +10,16 @@ use crate::make_hyperlink;
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
+/// The main application state
 pub struct TramexApp {
     /// Frontend
     pub frontend: FrontEnd,
+
     #[serde(skip)]
+    /// Error panel
     error_panel: Option<TramexError>,
+
+    /// Show about
     show_about: bool,
 }
 
@@ -31,6 +38,8 @@ impl TramexApp {
             ..Default::default()
         }
     }
+
+    /// Save the app state to the given storage.
     fn menu_bar(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::widgets::global_dark_light_mode_switch(ui);
         ui.separator();
@@ -76,6 +85,7 @@ impl TramexApp {
         });
     }
 
+    /// Display the error panel
     fn ui_error_panel(&mut self, ctx: &egui::Context) {
         if let Some(error_item) = &self.error_panel {
             let mut error_panel_open = true;
@@ -110,6 +120,7 @@ impl TramexApp {
         }
     }
 
+    /// Display the about windows
     fn ui_about_windows(&mut self, ctx: &egui::Context) {
         egui::Window::new("About")
             .open(&mut self.show_about)
@@ -141,8 +152,8 @@ impl TramexApp {
                     });
                     ui.separator();
                     ui.label("Authors:");
-                    for one_author in env!("CARGO_PKG_AUTHORS").split(":") {
-                        ui.label(format!("{}", one_author));
+                    for one_author in env!("CARGO_PKG_AUTHORS").split(':') {
+                        ui.label(one_author.to_string());
                     }
                     ui.separator();
                     ui.add_space(12.0);

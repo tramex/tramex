@@ -8,6 +8,7 @@ use tramex_tools::errors::TramexError;
 
 /// Message box
 pub struct MessageBox {
+    /// Reference to the data
     data: Rc<RefCell<Connector>>,
 }
 
@@ -52,7 +53,7 @@ impl super::PanelView for MessageBox {
 
         if let Some(one_log) = events.get(current_index) {
             ui.label(format!("Current msg index: {}", current_index + 1));
-            display_log(ui, &one_log);
+            display_log(ui, one_log);
         }
     }
 }
