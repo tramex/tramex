@@ -1,3 +1,5 @@
+//! Module: panels
+
 pub mod about;
 pub mod file_handler;
 pub mod logical_channels;
@@ -15,6 +17,7 @@ use tramex_tools::errors::TramexError;
 
 /// Something to view in the demo windows
 pub trait PanelView {
+    /// Show the UI of the panel
     fn ui(&mut self, ui: &mut egui::Ui);
 }
 

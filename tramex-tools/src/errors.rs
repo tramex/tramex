@@ -1,17 +1,45 @@
+//! Error handling for Tramex Tools
+
 #[derive(serde::Deserialize, Debug, Clone)]
+/// Error codes for Tramex Tools
 pub enum ErrorCode {
+    /// Not set
     NotSet = 0,
+
+    /// WebSocket: Failed to connect
     WebScoketFailedToConnect,
+
+    /// WebSocket: Error encoding message
     WebSocketErrorEncodingMessage,
+
+    /// WebSocket: Error decoding message
     WebSocketErrorDecodingMessage,
+
+    /// WebSocket: Unknown message received
     WebSocketUnknownMessageReceived,
+
+    /// WebSocket: Unknown binary message received
     WebSocketUnknownBinaryMessageReceived,
+
+    /// WebSocket: Error
     WebSocketError,
+
+    /// WebSocket: Closed
     WebSocketClosed,
+
+    /// WebSocket: Error closing
     WebSocketErrorClosing,
+
+    /// File: No file selected
     FileNotSelected,
+
+    /// File: Error reading file
     FileErrorReadingFile,
+
+    /// File: Not ready
     FileNotReady,
+
+    /// File: Invalid encoding (wrong UTF-8)
     FileInvalidEncoding,
 }
 
@@ -28,6 +56,7 @@ impl std::fmt::Display for ErrorCode {
 }
 
 impl ErrorCode {
+    /// Convert the error code to a string
     pub fn to_string(&self) -> String {
         match self {
             Self::WebScoketFailedToConnect => "WebSocket: Failed to connect".to_owned(),
@@ -49,6 +78,8 @@ impl ErrorCode {
             Self::NotSet => "Error code not set, please create an issue".to_owned(),
         }
     }
+
+    /// Check if the error is recoverable
     pub fn is_recoverable(&self) -> bool {
         match self {
             _ => true,
@@ -57,12 +88,17 @@ impl ErrorCode {
 }
 
 #[derive(serde::Deserialize, Debug, Default, Clone)]
+/// Error structure for Tramex Tools
 pub struct TramexError {
+    /// Error message (human readable)
     pub message: String,
+
+    /// Error code
     pub code: ErrorCode,
 }
 
 impl TramexError {
+    /// Create a new error
     pub fn new(message: String, code: ErrorCode) -> Self {
         Self {
             message,
@@ -71,10 +107,12 @@ impl TramexError {
         }
     }
 
+    /// Check if the error is recoverable
     pub fn is_recoverable(&self) -> bool {
         self.code.is_recoverable()
     }
 
+    /// Get the error message
     pub fn get_code(&self) -> String {
         format!("[{}] {}", self.code, self.code.to_string())
     }

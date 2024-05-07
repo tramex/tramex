@@ -1,6 +1,8 @@
+//! LogGet struct for sending log_get message to the server
 use crate::websocket::layer::Layers;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// LogGet struct
 pub struct LogGet {
     timeout: u64,
     min: u64,
@@ -12,6 +14,7 @@ pub struct LogGet {
 }
 
 impl LogGet {
+    /// Create a new LogGet struct
     pub fn new(id: u64, layers_list: Layers, max_size: u64) -> Self {
         let max_size = if max_size < 64 {
             64

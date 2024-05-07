@@ -1,9 +1,18 @@
+//! WsConnection struct
 use ewebsock::{WsReceiver, WsSender};
 
+/// WsConnection struct
 pub struct WsConnection {
+    /// WebSocket sender
     pub ws_sender: WsSender,
+
+    /// WebSocket receiver
     pub ws_receiver: WsReceiver,
+
+    /// Message ID
     pub msg_id: u64,
+
+    /// Connecting flag
     pub connecting: bool,
 }
 

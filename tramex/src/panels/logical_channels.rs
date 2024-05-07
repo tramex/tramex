@@ -1,15 +1,18 @@
+//! Logical Channels panel
 use eframe::egui::{self, Color32, TextFormat};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 
+/// Logical Channels data
 pub struct LogicalChannels {
     data: Rc<RefCell<Connector>>,
     channel: String,
 }
 
 impl LogicalChannels {
+    /// Create a new LogicalChannels
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self {
             data: ref_data,
@@ -48,6 +51,7 @@ impl super::PanelController for LogicalChannels {
     }
 }
 
+/// Create a label with a background color
 pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: &str) {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
@@ -71,6 +75,7 @@ pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: &str) {
     });
 }
 
+/// Print a label on the grid
 pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
     ui.vertical_centered(|ui| {
         ui.label(label);

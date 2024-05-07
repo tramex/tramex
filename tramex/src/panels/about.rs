@@ -1,7 +1,9 @@
+//! About panel
 use eframe::egui;
 use tramex_tools::errors::TramexError;
 
 #[derive(Default)]
+/// About panel
 pub struct AboutPanel {}
 
 impl super::PanelController for AboutPanel {
