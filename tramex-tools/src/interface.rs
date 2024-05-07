@@ -1,14 +1,23 @@
+//! Interface module
+
 use crate::errors::TramexError;
 use crate::file_handler::File;
 use crate::websocket::ws_connection::WsConnection;
 
+/// Interface enum
 pub enum Interface {
+    /// WebSocket connection
     Ws(WsConnection),
+
+    /// File
     File(File),
+
+    /// None
     None,
 }
 
 impl Interface {
+    /// close the interface
     pub fn close(&mut self) -> Result<(), TramexError> {
         match self {
             Interface::Ws(interface_ws) => {
@@ -24,6 +33,8 @@ impl Interface {
         }
         Ok(())
     }
+
+    /// Check if the interface is present
     pub const fn is_some(&self) -> bool {
         match self {
             Interface::Ws(_) => true,
@@ -31,6 +42,8 @@ impl Interface {
             Interface::None => false,
         }
     }
+
+    /// Check if the interface is None
     pub const fn is_none(&self) -> bool {
         match self {
             Interface::None => true,

@@ -1,3 +1,4 @@
+//! Connector module
 use std::path::PathBuf;
 
 use crate::data::{Data, MessageType, Trace};
@@ -11,18 +12,29 @@ use ewebsock::{WsEvent, WsMessage};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
 #[serde(default)]
+/// Connector
 pub struct Connector {
     #[serde(skip)]
+    /// Interface
     pub interface: Interface,
+
     #[serde(skip)]
+    /// Data
     pub data: Data,
+
     #[serde(skip)]
+    /// Available
     pub available: bool,
+
+    /// Asking size max
     pub asking_size_max: u64,
+
+    /// Url
     pub url: String,
 }
 
 impl Connector {
+    /// Create a new Connector
     pub fn new() -> Self {
         Self {
             interface: Interface::None,
@@ -33,16 +45,19 @@ impl Connector {
         }
     }
 
+    /// Clear data of connector
     pub fn clear_data(&mut self) {
         self.data = Data::default();
         self.available = false;
     }
 
+    /// Clear connector interface
     pub fn clear_interface(&mut self) {
         self.interface = Interface::None;
         self.available = false;
     }
 
+    /// Connect to a websocket
     pub fn connect(
         &mut self,
         url: &str,
@@ -69,12 +84,14 @@ impl Connector {
         }
     }
 
+    /// Set file mode using a File
     pub fn set_file(&mut self, file: File) {
         log::debug!("Set file available");
         self.interface = Interface::File(file);
         self.available = true;
     }
 
+    /// Set ws mode
     pub fn new_ws(ws: WsConnection) -> Self {
         Self {
             interface: Interface::Ws(ws),
@@ -83,6 +100,8 @@ impl Connector {
             ..Default::default()
         }
     }
+
+    /// set file mode using a path
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
             interface: Interface::File(File {
@@ -96,6 +115,8 @@ impl Connector {
             ..Default::default()
         }
     }
+
+    /// set file mode using a path and content
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
             interface: Interface::File(File {
@@ -109,6 +130,7 @@ impl Connector {
         }
     }
 
+    /// Get more data depending on the interface
     pub fn get_more_data(&mut self, layers_list: Layers) -> Result<(), TramexError> {
         log::debug!("Get more data");
         match &mut self.interface {
@@ -151,6 +173,7 @@ impl Connector {
         Ok(())
     }
 
+    /// Try to receive data
     pub fn try_recv(&mut self) -> Result<(), TramexError> {
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {

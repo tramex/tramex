@@ -1,3 +1,5 @@
+//! File Handler
+
 use crate::data::MessageType;
 use crate::data::Trace;
 use crate::errors::TramexError;
@@ -14,9 +16,15 @@ use crate::websocket::layer::Layer;
 const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
 
 #[derive(Debug, Clone)]
+/// Data structure to store the file.
 pub struct File {
+    /// Path of the file.
     pub file_path: PathBuf,
+
+    /// Content of the file.
     pub file_content: String,
+
+    /// Readed status of the file.
     pub readed: bool,
 }
 
@@ -39,6 +47,7 @@ fn time_to_milliseconds(time: &NaiveTime) -> i64 {
 }
 
 impl File {
+    /// Create a new file.
     pub fn new(file_path: PathBuf, file_content: String) -> Self {
         Self {
             file_path,
@@ -47,9 +56,12 @@ impl File {
         }
     }
 
+    /// Read the file.
     pub fn process(&self) -> Result<Vec<Trace>, TramexError> {
         return File::process_string(&self.file_content);
     }
+
+    /// Process the string of the file.
     pub fn process_string(hay: &String) -> Result<Vec<Trace>, TramexError> {
         let rgx = Regex::new(RGX).unwrap();
         let mut vtraces: Vec<Trace> = vec![];

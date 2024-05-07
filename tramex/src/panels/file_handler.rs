@@ -1,3 +1,4 @@
+//! File handler panel
 use std::path::Path;
 
 use eframe::egui;
@@ -5,22 +6,28 @@ use poll_promise::Promise;
 use tramex_tools::{errors::TramexError, file_handler::File};
 
 #[derive(Debug, serde::Deserialize)]
-pub struct Item {
+/// Item to show in the file list
+struct Item {
     name: String,
     list: Vec<String>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
+/// File handler
 pub struct FileHandler {
     #[serde(skip)]
+    /// Picked path
     pub picked_path: Option<String>,
     #[serde(skip)]
+    /// File upload
     pub file_upload: Option<Promise<Result<File, TramexError>>>,
     #[serde(skip)]
-    pub file_list: Option<Promise<Result<Vec<Item>, TramexError>>>,
+    /// File list
+    file_list: Option<Promise<Result<Vec<Item>, TramexError>>>,
 }
 
 impl FileHandler {
+    /// Create a new file handler
     pub fn new() -> Self {
         let url = "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true";
         let callback = move |res: Result<ehttp::Response, String>| match res {
@@ -71,15 +78,18 @@ impl FileHandler {
         }
     }
 
+    /// Reset the file handler
     pub fn reset(&mut self) {
         self.picked_path = None;
         self.file_upload = None;
     }
 
+    /// Clear the file handler
     pub fn clear(&mut self) {
         self.file_upload = None;
     }
 
+    /// Get the result
     pub fn get_result(&mut self) -> Result<File, TramexError> {
         return match &self.file_upload {
             Some(result) => match &result.ready() {
@@ -99,6 +109,7 @@ impl FileHandler {
         };
     }
 
+    /// Load file from URL
     pub fn load_from_url(&mut self, url: String) {
         self.reset();
         let copied_url = url.clone();
@@ -145,6 +156,7 @@ impl FileHandler {
         }
     }
 
+    /// Get the picked path
     pub fn get_picket_path(&self) -> Option<String> {
         self.picked_path.clone()
     }
@@ -207,6 +219,7 @@ impl FileHandler {
         }
     }
 
+    /// Render the file upload
     pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
         let mut error_to_return = None;
         if ui.button("Open file…").clicked() {
@@ -271,6 +284,7 @@ impl FileHandler {
         return Ok(false);
     }
 
+    /// Check file load
     pub fn check_file_load(&mut self) -> Result<(), TramexError> {
         if self.picked_path.is_none() {
             if let Some(result) = &self.file_upload {

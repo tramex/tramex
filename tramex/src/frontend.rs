@@ -1,3 +1,4 @@
+//! Frontend module
 use crate::panels::{FileHandler, LogicalChannels, MessageBox, PanelController, TrameManager};
 use crate::set_open;
 use egui::Ui;

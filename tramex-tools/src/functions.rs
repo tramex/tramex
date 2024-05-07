@@ -1,3 +1,6 @@
+//! useful functions
+
+/// Extract hexadecimal data from a vector of strings.
 pub fn extract_hexe<T: AsRef<str>>(data: &Vec<T>) -> Vec<u8> {
     let data: Vec<String> = data
         .iter()

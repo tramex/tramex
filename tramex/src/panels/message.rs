@@ -1,3 +1,4 @@
+//! Message panel
 use crate::display_log;
 use eframe::egui;
 use std::cell::RefCell;
@@ -5,11 +6,13 @@ use std::rc::Rc;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 
+/// Message box
 pub struct MessageBox {
     data: Rc<RefCell<Connector>>,
 }
 
 impl MessageBox {
+    /// Create a new MessageBox
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self { data: ref_data }
     }

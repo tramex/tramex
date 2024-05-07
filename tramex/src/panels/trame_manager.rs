@@ -1,14 +1,19 @@
+//! TrameManager
 use eframe::egui;
 use tramex_tools::connector::Connector;
 use tramex_tools::websocket::layer::Layers;
 
 #[derive(serde::Deserialize, serde::Serialize)]
+/// TrameManager
 pub struct TrameManager {
+    /// Layers
     pub layers_list: Layers,
+    /// boolean to get more log
     pub should_get_more_log: bool,
 }
 
 impl TrameManager {
+    /// Create a new TrameManager
     pub fn new() -> Self {
         Self {
             layers_list: Layers::new(),
@@ -24,6 +29,7 @@ impl Default for TrameManager {
 }
 
 impl TrameManager {
+    /// Show the options
     pub fn show_options(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
         ui.collapsing("Options", |ui| {
             ui.horizontal(|ui| {
@@ -53,6 +59,7 @@ impl TrameManager {
         });
     }
 
+    /// Show the controls
     pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
         if ui.button("More").clicked() {
             log::debug!("More");
