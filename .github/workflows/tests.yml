@@ -22,7 +22,7 @@ jobs:
             - name: Set up cargo cache
               uses: Swatinem/rust-cache@v2
             - name: Run clippy
-              run: cargo clippy
+              run: cargo clippy -- -Wwarnings
             - name: Run fmt
               run: cargo fmt --all --check
             - name: Build
