@@ -15,18 +15,17 @@ env:
     RUSTFLAGS: --cfg=web_sys_unstable_apis -D warnings
 
 jobs:
-    build:
+    build_and_test:
         runs-on: ubuntu-latest
-
         steps:
             - uses: actions/checkout@v3
             - name: Set up cargo cache
               uses: Swatinem/rust-cache@v2
-            - name: Build
-              run: cargo build --verbose
             - name: Run clippy
               run: cargo clippy
             - name: Run fmt
               run: cargo fmt --all --check
+            - name: Build
+              run: cargo build --verbose
             - name: Run tests all
               run: cargo test --verbose
