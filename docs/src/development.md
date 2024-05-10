@@ -29,3 +29,11 @@ trunk serve
 # for the desktop application
 cargo run
 ```
+
+## Tips
+
+To check the code style, you can run the following command :
+
+```bash
+cargo clippy
+```
