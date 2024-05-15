@@ -3,7 +3,7 @@ name = "tramex"
 version = "0.1.0"
 edition = "2021"
 description = "Tramex is a 4G frame analyser"
-license = "MIT"
+license = "GPL-3.0"
 authors = [
     "n4n5 <its.just.n4n5@gmail.com>",
     "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>",
