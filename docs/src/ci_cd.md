@@ -16,7 +16,7 @@ The file gives precisions on the running context and the steps to follow. Each s
 
 ## Deployment file
 
-This file is executed when a push command is performed on the main branch of the GIT repository. It can be ran automatically when trying to push or manually from the Action tab. 
+This file is executed when a push command is performed on the main branch of the GIT repository. It can be ran automatically when trying to push or manually from the Action tab.
 
 The targets of the deployment file are the GitHub Pages. GitHub Pages is a static site hosting service that publishes a website using either HTML, CSS or JavaScript files stored on a GitHub repository. For more information on this topic, please refer to : <https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages>
 

@@ -1,11 +1,15 @@
 # Tramex project
 
+<img src="images/logo_telecom_ipparis.png" alt="logo_telecom_ipparis.png" width="200px" style="float:right" />
+
+Tramex is a university project conducted in Télécom Paris supervised by Philippe Martins
+
 Tramex is a project that serves the goal of allowing users to analyze and visualize frames in a 4G network.
 
 Tramex is a project derived from :
 
 - VIGIE
-- Amarisoft web interface.
+- Amarisoft web interface
 
 ## VIGIE
 
