@@ -13,7 +13,7 @@ Code coverage made by [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov
 
 ## CORS Errors
 
-If the website is running on HTTPS, connections to insecure endpoints (like `ws` instead of `wss`) are forbidden. You have three options to solve this issue:
+If the website is running on HTTPS, connections to insecure endpoints (like `ws` instead of `wss`) are forbidden because of [CORS](https://developer.mozilla.org/fr/docs/Web/HTTP/CORS). There are four options to solve this issue:
 
 - disable CORS in your browser
 - add an SSL certificate to your ws server
@@ -21,7 +21,7 @@ If the website is running on HTTPS, connections to insecure endpoints (like `ws`
 - use a local WS proxy to remove CORS issue
 
 ```bash
-# example of a WS proxy (and with a orign header)
+# example of a local WS proxy (and with a orign header) using npx
 npx @n4n5/proxy-ws -t ws://10.0.0.1:9001 -h '{"origin":"toto"}'
 # will redirect ws://127.0.0.1:9001 -> ws://10.0.0.1:9001
 # cors will not be an issue anymore with the local address 127.0.0.1
