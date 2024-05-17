@@ -120,6 +120,11 @@
         <!-- the id is hardcoded in main.rs . so, make sure both match. -->
         <canvas id="the_canvas_id"></canvas>
 
+        <div class="centered" id="loading_text">
+            <p style="font-size: 16px">Loading…</p>
+            <div class="lds-dual-ring"></div>
+        </div>
+
         <!--Register Service Worker. this will cache the wasm / js scripts for offline use (for PWA functionality). -->
         <!-- Force refresh (Ctrl + F5) to load the latest files instead of cached files  -->
         <script>
