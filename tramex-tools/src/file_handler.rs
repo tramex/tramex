@@ -12,12 +12,14 @@ use std::str::FromStr;
 use crate::websocket::layer::Layer;
 
 const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
-
+const DEFAULT_NB: usize = 5;
 #[derive(Debug, Clone)]
 pub struct File {
     pub file_path: PathBuf,
     pub file_content: String,
     pub readed: bool,
+    nb_read: usize,
+    ix: usize,
 }
 
 impl Default for File {
@@ -26,6 +28,8 @@ impl Default for File {
             file_path: PathBuf::from(""),
             file_content: "".to_string(),
             readed: false,
+            nb_read: DEFAULT_NB,
+            ix: 0,
         }
     }
 }
@@ -44,38 +48,94 @@ impl File {
             file_path,
             file_content,
             readed: false,
+            nb_read: DEFAULT_NB,
+            ix: 0,
         }
     }
-
-    pub fn process(&self) -> Result<Vec<Trace>, TramexError> {
-        return File::process_string(&self.file_content);
+    pub fn change_nb_read(&mut self, toread: usize) {
+        self.nb_read = toread;
     }
-    pub fn process_string(hay: &String) -> Result<Vec<Trace>, TramexError> {
-        let rgx = Regex::new(RGX).unwrap();
+    pub fn process(&mut self) -> Result<Vec<Trace>, TramexError> {
+        let a = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
+        eprintln!("Ix {:}",self.ix);
+        return a;
+    }
+    pub fn process_string(
+        hay: &String,
+        nb_to_read: usize,
+        ix: &mut usize,
+    ) -> Result<Vec<Trace>, TramexError> {
         let mut vtraces: Vec<Trace> = vec![];
-        for (_, [timestamp, layer, direction, _id, canal, message_canal, hexa]) in
-            rgx.captures_iter(&hay).map(|c| c.extract())
-        {
-            let date =
-                chrono::NaiveTime::parse_from_str(timestamp, "%H:%M:%S%.3f").unwrap_or_default();
-
+        let lines: Vec<&str> = hay.lines().collect();
+        for _ in 0..nb_to_read {
+            let mtype: MessageType = Self::parse_line(lines[*ix]).unwrap();
+            *ix += 1;
+            let mut hex_str: Vec<&str> = vec![];
+            while lines[*ix].trim_start().chars().next().unwrap() != '{' {
+                hex_str.push(lines[*ix]);
+                *ix += 1;
+            }
+            let hex = extract_hexe(&hex_str);
             vtraces.push(Trace {
-                trace_type: MessageType {
-                    timestamp: time_to_milliseconds(&date) as u64,
-                    layer: Layer::from_str(layer).unwrap_or_default(),
-                    direction: Direction::from_str(direction).unwrap_or_default(),
-                    canal: canal.to_owned(),
-                    canal_msg: message_canal.to_owned(),
-                },
-                hexa: extract_hexe(&hexa.split("\n").collect()),
+                trace_type: mtype,
+                hexa: hex,
             });
-        }
-        if vtraces.is_empty() {
-            return Err(TramexError::new(
-                "Can't find Trace in File".to_string(),
-                crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
-            ));
+            let mut end = false;
+            let mut brackets: i16 = 0;
+            while !end {
+                brackets = brackets + Self::count_brackets(lines[*ix]);
+                *ix += 1;
+                if brackets == 0 {
+                    end = true;
+                }
+            }
+            *ix += 1;
         }
         return Ok(vtraces);
     }
+    pub fn count_brackets(hay: &str) -> i16 {
+        let mut count: i16 = 0;
+        for ch in hay.chars() {
+            match ch {
+                '{' => count += 1,
+                '}' => count -= 1,
+                _ => (),
+            }
+        }
+        return count;
+    }
+    pub fn parse_line(line: &str) -> Result<MessageType, TramexError> {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 5 {
+            return Err(TramexError::new(
+                "Error".to_string(),
+                crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
+            ));
+        }
+        let date = match chrono::NaiveTime::parse_from_str(parts[0], "%H:%M:%S%.3f") {
+            Ok(rdate) => rdate,
+            Err(_) => {
+                return Err(TramexError::new(
+                    "Error while parsing date".to_string(),
+                    crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
+                ));
+            }
+        };
+        let layer = parts[1].trim_start_matches('[').trim_end_matches(']');
+        let direction = parts[2];
+        let binding = parts[5..].join(" ");
+        let concatenated: Vec<&str> = binding.split(":").collect();
+        return Ok(MessageType {
+            timestamp: time_to_milliseconds(&date) as u64,
+            layer: Layer::from_str(layer).unwrap_or_default(),
+            direction: Direction::from_str(direction).unwrap_or_default(),
+            canal: concatenated[0].to_owned(),
+            canal_msg: concatenated[1].trim_start().to_owned(),
+        });
+    }
+}
+#[derive(Debug, Clone)]
+pub struct Pos {
+    pub start: usize,
+    pub end: usize,
 }

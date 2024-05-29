@@ -85,12 +85,7 @@ impl Connector {
     }
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
-            interface: Interface::File(File {
-                file_path,
-                file_content: String::new(),
-                readed: false,
-                ..Default::default()
-            }),
+            interface: Interface::File(File::new(file_path, String::new())),
             data: Data::default(),
             available: false,
             ..Default::default()
@@ -98,11 +93,7 @@ impl Connector {
     }
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
-            interface: Interface::File(File {
-                file_path,
-                file_content,
-                readed: false,
-            }),
+            interface: Interface::File(File::new(file_path, file_content)),
             data: Data::default(),
             available: true,
             ..Default::default()
@@ -137,7 +128,6 @@ impl Connector {
                     Ok(ok_processed) => {
                         log::debug!("Processed: {} trames", ok_processed.len());
                         self.data.events.append(ok_processed);
-                        curr_file.readed = true;
                         self.available = true;
                     }
                     Err(e) => {

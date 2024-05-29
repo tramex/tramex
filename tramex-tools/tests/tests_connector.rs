@@ -16,18 +16,24 @@ mod tests {
             eprint!("{:?}", err);
             assert!(false);
         }
-        //eprint!("{:?}", f.data.events)
+        if let Err(err) = f.try_recv() {
+            eprint!("{:?}", err);
+            assert!(false);
+        }
+        if let Err(err) = f.try_recv() {
+            eprint!("{:?}", err);
+            assert!(false);
+        }
+        eprintln!("{:?}", f.data.events.len());
         assert!(f.data.events.len() == 15);
         let event = f.data.events.pop().unwrap();
         assert!(event.trace_type.direction == websocket::types::Direction::DL);
         assert!(event.trace_type.canal == "BCCH");
         assert!(event.trace_type.canal_msg == "SIB");
         assert!(event.trace_type.layer == Layer::RRC);
-        println!("{:?}", event.trace_type.timestamp);
         assert!(event.trace_type.timestamp == 39668668);
         assert!(f.data.events.len() == 14);
         let f_event = &f.data.events[0];
-        println!("{:?}", f_event.trace_type.timestamp);
         assert!(f_event.trace_type.timestamp == 39668348);
         assert!(f_event.trace_type.layer == Layer::RRC);
         assert!(f_event.trace_type.canal == "BCCH");
