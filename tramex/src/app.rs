@@ -17,7 +17,7 @@ pub struct TramexApp {
 
     #[serde(skip)]
     /// Error panel
-    error_panel: Option<TramexError>,
+    error_panel: Vec<TramexError>,
 
     /// Show about
     show_about: bool,
@@ -87,35 +87,41 @@ impl TramexApp {
 
     /// Display the error panel
     fn ui_error_panel(&mut self, ctx: &egui::Context) {
-        if let Some(error_item) = &self.error_panel {
-            let mut error_panel_open = true;
+        if !self.error_panel.is_empty() {
+            let mut error_panel_open: bool = true;
             egui::Window::new("Errors")
                 .default_width(320.0)
                 .default_height(480.0)
                 .open(&mut error_panel_open)
                 .resizable([true, false])
                 .show(ctx, |ui| {
-                    ui.label(format!("Error code: {}", error_item.get_msg()));
-                    if error_item.is_recoverable() {
-                        ui.label("Recoverable error !");
-                    }
-                    ui.colored_label(egui::Color32::RED, &error_item.message);
-                    if ui.button("Copy error").clicked() {
-                        ui.output_mut(|o| {
-                            o.copied_text =
-                                format!("{}\n{}", &error_item.get_msg(), &error_item.message,)
+                    let mut to_clean = vec![];
+                    egui::Grid::new("error_ui")
+                        .min_col_width(60.0)
+                        .show(ui, |ui| {
+                            for (idx, one_error) in self.error_panel.iter().enumerate() {
+                                if show_error(ui, one_error) {
+                                    to_clean.push(idx);
+                                }
+                                ui.end_row();
+                            }
                         });
-                    };
-                    make_hyperlink(
-                        ui,
-                        "Report the issue",
-                        "https://github.com/tramex/tramex/issues/new",
-                        true,
-                    );
+                    for idx in to_clean.iter().rev() {
+                        self.error_panel.remove(*idx);
+                    }
+                    ui.separator();
+                    ui.vertical_centered(|ui| {
+                        make_hyperlink(
+                            ui,
+                            "Report an issue",
+                            "https://github.com/tramex/tramex/issues/new",
+                            true,
+                        );
+                    });
                 });
-            if error_item.is_recoverable() && !error_panel_open {
+            if !error_panel_open {
                 log::debug!("Closing error windows");
-                self.error_panel = None;
+                self.error_panel.clear();
             }
         }
     }
@@ -174,7 +180,7 @@ impl Default for TramexApp {
     fn default() -> Self {
         Self {
             frontend: FrontEnd::new(),
-            error_panel: None,
+            error_panel: vec![],
             show_about: false,
         }
     }
@@ -190,11 +196,11 @@ impl eframe::App for TramexApp {
         });
 
         if let Err(err) = self.frontend.ui_connector(ctx) {
-            self.error_panel = Some(err);
+            self.error_panel.push(err);
         }
 
         if let Err(err) = self.frontend.ui(ctx) {
-            self.error_panel = Some(err);
+            self.error_panel.push(err);
         }
 
         self.ui_error_panel(ctx);
@@ -202,4 +208,22 @@ impl eframe::App for TramexApp {
             self.ui_about_windows(ctx);
         }
     }
+}
+
+/// Display an error
+fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
+    ui.label(format!("Error code: {}", error_item.get_msg()));
+    if error_item.is_recoverable() {
+        ui.label("Recoverable error !");
+    }
+    ui.colored_label(egui::Color32::RED, &error_item.message);
+    if ui.button("Copy error").clicked() {
+        ui.output_mut(|o| {
+            o.copied_text = format!("{}\n{}", &error_item.get_msg(), &error_item.message,)
+        });
+    };
+    if ui.button("Close this error").clicked() {
+        return true;
+    }
+    false
 }

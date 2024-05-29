@@ -17,7 +17,6 @@ pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Result<Vec<u8>, TramexError> {
         let trimed = one_string.as_ref().trim();
         if trimed.len() > 57 {
             let str_piece = &trimed[7..56];
-            println!("{}", str_piece);
             let chars_only: String = str_piece.chars().filter(|c| !c.is_whitespace()).collect();
             data.push(chars_only);
         } else {
