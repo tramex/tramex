@@ -50,7 +50,7 @@ When done with the file, it is possible to close it by clicking on the `Close` b
 
 When using the websocket mode, the user is asked to provide the IP address as well as the port number of the distant server. The information must be provided in the format `ws://127.0.0.1:9001` where `127.0.0.1` is the example IP address and `9001` is the example port number in the typebar below the processing mode choosing buttons. Then click on the `Connect` button.
 
-The connection might take a few moments and if Tramex cannot connect to the server using the websocket, an error message should appear in the `Errors` panel. From this window, it is possible to read the description of the error, copy it and [report it at the Tramex repository](https://github.com/tramex/tramex/issues) if necessary.
+The connection might take a few moments and if Tramex cannot connect to the server using the websocket, an error message should appear in the `Errors` panel. From this window, it is possible to read the description of the error, copy it and [report it to the tramex repository](https://github.com/tramex/tramex/issues) if necessary.
 
 ## Analyze frames with Tramex
 
