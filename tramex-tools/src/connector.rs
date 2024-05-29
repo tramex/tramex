@@ -4,9 +4,7 @@ use crate::data::{Data, MessageType, Trace};
 use crate::errors::TramexError;
 use crate::file_handler::File;
 use crate::interface::Interface;
-use crate::websocket::{
-    layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection,
-};
+use crate::websocket::{layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection};
 use ewebsock::{WsEvent, WsMessage};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
@@ -43,11 +41,7 @@ impl Connector {
         self.available = false;
     }
 
-    pub fn connect(
-        &mut self,
-        url: &str,
-        wakeup: impl Fn() + Send + Sync + 'static,
-    ) -> Result<(), TramexError> {
+    pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
         let options = ewebsock::Options::default();
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
@@ -151,14 +145,11 @@ impl Connector {
                             self.available = true;
                             match msg {
                                 WsMessage::Text(event_text) => {
-                                    let decoded: Result<WebSocketLog, serde_json::Error> =
-                                        serde_json::from_str(&event_text);
+                                    let decoded: Result<WebSocketLog, serde_json::Error> = serde_json::from_str(&event_text);
                                     match decoded {
                                         Ok(decoded_data) => {
                                             for one_log in decoded_data.logs {
-                                                let canal_msg = one_log
-                                                    .extract_canal_msg()
-                                                    .unwrap_or("".to_owned());
+                                                let canal_msg = one_log.extract_canal_msg().unwrap_or("".to_owned());
                                                 let hexa = one_log.extract_hexe();
                                                 let msg_type = MessageType {
                                                     timestamp: one_log.timestamp.to_owned(),
@@ -177,7 +168,10 @@ impl Connector {
                                         Err(err) => {
                                             log::error!("Error decoding message: {:?}", err);
                                             log::error!("Message: {:?}", event_text);
-                                            return Err(TramexError::new(err.to_string(), crate::errors::ErrorCode::WebSocketErrorDecodingMessage));
+                                            return Err(TramexError::new(
+                                                err.to_string(),
+                                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                                            ));
                                         }
                                     }
                                 }
@@ -215,10 +209,7 @@ impl Connector {
                         WsEvent::Error(str_err) => {
                             self.available = false;
                             log::error!("WebSocket error: {:?}", str_err);
-                            return Err(TramexError::new(
-                                str_err,
-                                crate::errors::ErrorCode::WebSocketError,
-                            ));
+                            return Err(TramexError::new(str_err, crate::errors::ErrorCode::WebSocketError));
                         }
                     }
                 }

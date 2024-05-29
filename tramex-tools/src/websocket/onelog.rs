@@ -7,12 +7,12 @@ use crate::websocket::{
 
 #[derive(serde::Deserialize, Debug)]
 pub struct OneLog {
-    pub data: Vec<String>,      // Each item is a string representing a line of log.
-    pub timestamp: u64,         // Milliseconds since January 1st 1970.
-    pub layer: Layer,           // log layer
-    pub level: LogLevel,        // Log level: error, warn, info or debug.
-    pub dir: Option<Direction>, //  Log direction: UL, DL, FROM or TO.
-    pub cell: Option<u64>,      // cell id
+    pub data: Vec<String>,       // Each item is a string representing a line of log.
+    pub timestamp: u64,          // Milliseconds since January 1st 1970.
+    pub layer: Layer,            // log layer
+    pub level: LogLevel,         // Log level: error, warn, info or debug.
+    pub dir: Option<Direction>,  //  Log direction: UL, DL, FROM or TO.
+    pub cell: Option<u64>,       // cell id
     pub channel: Option<String>, // channel
     pub src: SourceLog,
     pub idx: u64,

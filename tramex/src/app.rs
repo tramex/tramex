@@ -25,9 +25,7 @@ impl TramexApp {
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
-        Self {
-            ..Default::default()
-        }
+        Self { ..Default::default() }
     }
     fn menu_bar(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::widgets::global_dark_light_mode_switch(ui);
@@ -47,30 +45,15 @@ impl TramexApp {
             }
         });
         ui.menu_button("About", |ui| {
-            make_hyperlink(
-                ui,
-                "User documentation",
-                "https://tramex.github.io/tramex/docs/",
-                true,
-            );
-            make_hyperlink(
-                ui,
-                "tramex types",
-                "https://tramex.github.io/tramex/crates/tramex/",
-                true,
-            );
+            make_hyperlink(ui, "User documentation", "https://tramex.github.io/tramex/docs/", true);
+            make_hyperlink(ui, "tramex types", "https://tramex.github.io/tramex/crates/tramex/", true);
             make_hyperlink(
                 ui,
                 "tramex-tools types",
                 "https://tramex.github.io/tramex/crates/tramex_tools/",
                 true,
             );
-            make_hyperlink(
-                ui,
-                "tramex repository",
-                "https://github.com/tramex/tramex",
-                true,
-            );
+            make_hyperlink(ui, "tramex repository", "https://github.com/tramex/tramex", true);
         });
     }
 
@@ -89,17 +72,9 @@ impl TramexApp {
                     }
                     ui.colored_label(egui::Color32::RED, &error_item.message);
                     if ui.button("Copy error").clicked() {
-                        ui.output_mut(|o| {
-                            o.copied_text =
-                                format!("{}\n{}", &error_item.get_code(), &error_item.message,)
-                        });
+                        ui.output_mut(|o| o.copied_text = format!("{}\n{}", &error_item.get_code(), &error_item.message,));
                     };
-                    make_hyperlink(
-                        ui,
-                        "Report the issue",
-                        "https://github.com/tramex/tramex/issues/new",
-                        true,
-                    );
+                    make_hyperlink(ui, "Report the issue", "https://github.com/tramex/tramex/issues/new", true);
                 });
             if error_item.is_recoverable() && !error_panel_open {
                 log::debug!("Closing error windows");
@@ -121,21 +96,11 @@ impl TramexApp {
                     ui.separator();
                     ui.vertical_centered(|ui| {
                         ui.label("Repository: ");
-                        make_hyperlink(
-                            ui,
-                            env!("CARGO_PKG_REPOSITORY"),
-                            env!("CARGO_PKG_REPOSITORY"),
-                            true,
-                        );
+                        make_hyperlink(ui, env!("CARGO_PKG_REPOSITORY"), env!("CARGO_PKG_REPOSITORY"), true);
                     });
                     ui.vertical_centered(|ui| {
                         ui.label("Homepage: ");
-                        make_hyperlink(
-                            ui,
-                            env!("CARGO_PKG_HOMEPAGE"),
-                            env!("CARGO_PKG_HOMEPAGE"),
-                            true,
-                        );
+                        make_hyperlink(ui, env!("CARGO_PKG_HOMEPAGE"), env!("CARGO_PKG_HOMEPAGE"), true);
                     });
                     ui.separator();
                     ui.label(format!("Authors: {}", env!("CARGO_PKG_AUTHORS")));
@@ -144,10 +109,14 @@ impl TramexApp {
                     ui.label(format!(
                         "egui is an immediate mode GUI library written in Rust. egui runs both on the web and natively on {}{}{}. \
                         On the web it is compiled to WebAssembly and rendered with WebGL.{}",
-                        OS_APPLE, OS_LINUX, OS_WINDOWS,
+                        OS_APPLE,
+                        OS_LINUX,
+                        OS_WINDOWS,
                         if cfg!(target_arch = "wasm32") {
                             " Everything you see is rendered as textured triangles. There is no DOM, HTML, JS or CSS. Just Rust."
-                        } else {""}
+                        } else {
+                            ""
+                        }
                     ));
                 });
             });

@@ -57,14 +57,10 @@ impl File {
     }
     pub fn process(&mut self) -> Result<Vec<Trace>, TramexError> {
         let a = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
-        eprintln!("Ix {:}",self.ix);
+        eprintln!("Ix {:}", self.ix);
         return a;
     }
-    pub fn process_string(
-        hay: &String,
-        nb_to_read: usize,
-        ix: &mut usize,
-    ) -> Result<Vec<Trace>, TramexError> {
+    pub fn process_string(hay: &String, nb_to_read: usize, ix: &mut usize) -> Result<Vec<Trace>, TramexError> {
         let mut vtraces: Vec<Trace> = vec![];
         let lines: Vec<&str> = hay.lines().collect();
         for _ in 0..nb_to_read {

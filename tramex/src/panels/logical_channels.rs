@@ -51,9 +51,7 @@ impl super::PanelController for LogicalChannels {
 pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: &str) {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
-    let mut format = TextFormat {
-        ..Default::default()
-    };
+    let mut format = TextFormat { ..Default::default() };
     if show {
         format.color = Color32::BLACK;
         format.background = match color {
@@ -89,67 +87,65 @@ impl super::PanelView for LogicalChannels {
             _ => 0x00000000,
         };
 
-        egui::Grid::new("some_unique_id")
-            .min_col_width(60.0)
-            .show(ui, |ui| {
-                make_label(ui, "PCCH", num_to_bool(state & 0x0001), "red");
-                make_label(ui, "BCCH", num_to_bool(state & 0x0002), "red");
-                make_label(ui, "CCCH", num_to_bool(state & 0x0002), "green");
-                make_label(ui, "DCCH", num_to_bool(state & 0x0002), "red");
-                make_label(ui, "DTCH", num_to_bool(state & 0x0002), "red");
-                make_label(ui, "MCCH", num_to_bool(state & 0x0002), "red");
-                make_label(ui, "MTCH", num_to_bool(state & 0x0002), "red");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "Canaux Logiques");
-                print_on_grid(ui, "----");
-                make_label(ui, "CCCH", num_to_bool(state & 0x0010), "red");
-                make_label(ui, "DCCH", num_to_bool(state & 0x0010), "red");
-                make_label(ui, "DTCH", num_to_bool(state & 0x0010), "red");
-                ui.end_row();
+        egui::Grid::new("some_unique_id").min_col_width(60.0).show(ui, |ui| {
+            make_label(ui, "PCCH", num_to_bool(state & 0x0001), "red");
+            make_label(ui, "BCCH", num_to_bool(state & 0x0002), "red");
+            make_label(ui, "CCCH", num_to_bool(state & 0x0002), "green");
+            make_label(ui, "DCCH", num_to_bool(state & 0x0002), "red");
+            make_label(ui, "DTCH", num_to_bool(state & 0x0002), "red");
+            make_label(ui, "MCCH", num_to_bool(state & 0x0002), "red");
+            make_label(ui, "MTCH", num_to_bool(state & 0x0002), "red");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Canaux Logiques");
+            print_on_grid(ui, "----");
+            make_label(ui, "CCCH", num_to_bool(state & 0x0010), "red");
+            make_label(ui, "DCCH", num_to_bool(state & 0x0010), "red");
+            make_label(ui, "DTCH", num_to_bool(state & 0x0010), "red");
+            ui.end_row();
 
-                make_label(ui, "PCH", num_to_bool(state & 0x0010), "red");
-                make_label(ui, "BCH", num_to_bool(state & 0x0010), "red");
-                print_on_grid(ui, "");
-                print_on_grid(ui, "");
-                make_label(ui, "DL-SCH", num_to_bool(state & 0x0010), "red");
-                print_on_grid(ui, "");
-                make_label(ui, "MCH", num_to_bool(state & 0x0010), "red");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "Canaux de Transport");
-                print_on_grid(ui, "----");
-                make_label(ui, "RACH", num_to_bool(state & 0x0010), "blue");
-                make_label(ui, "UL-SCH", num_to_bool(state & 0x0010), "blue");
-                ui.end_row();
+            make_label(ui, "PCH", num_to_bool(state & 0x0010), "red");
+            make_label(ui, "BCH", num_to_bool(state & 0x0010), "red");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "");
+            make_label(ui, "DL-SCH", num_to_bool(state & 0x0010), "red");
+            print_on_grid(ui, "");
+            make_label(ui, "MCH", num_to_bool(state & 0x0010), "red");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Canaux de Transport");
+            print_on_grid(ui, "----");
+            make_label(ui, "RACH", num_to_bool(state & 0x0010), "blue");
+            make_label(ui, "UL-SCH", num_to_bool(state & 0x0010), "blue");
+            ui.end_row();
 
-                make_label(ui, "PDSCH", num_to_bool(state & 0x0010), "blue");
-                make_label(ui, "PBCH", num_to_bool(state & 0x0010), "orange");
-                print_on_grid(ui, "");
-                print_on_grid(ui, "");
-                make_label(ui, "PDCCH", num_to_bool(state & 0x0010), "orange");
-                print_on_grid(ui, "");
-                make_label(ui, "PMCH", num_to_bool(state & 0x0010), "orange");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "Canaux Physiques");
-                print_on_grid(ui, "----");
-                make_label(ui, "PRACH", num_to_bool(state & 0x0010), "blue");
-                make_label(ui, "PUSCH", num_to_bool(state & 0x0010), "blue");
-                make_label(ui, "PUCCH", num_to_bool(state & 0x0010), "orange");
-                ui.end_row();
+            make_label(ui, "PDSCH", num_to_bool(state & 0x0010), "blue");
+            make_label(ui, "PBCH", num_to_bool(state & 0x0010), "orange");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "");
+            make_label(ui, "PDCCH", num_to_bool(state & 0x0010), "orange");
+            print_on_grid(ui, "");
+            make_label(ui, "PMCH", num_to_bool(state & 0x0010), "orange");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Canaux Physiques");
+            print_on_grid(ui, "----");
+            make_label(ui, "PRACH", num_to_bool(state & 0x0010), "blue");
+            make_label(ui, "PUSCH", num_to_bool(state & 0x0010), "blue");
+            make_label(ui, "PUCCH", num_to_bool(state & 0x0010), "orange");
+            ui.end_row();
 
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "Downlink");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "");
-                print_on_grid(ui, "Technologie : LTE");
-                print_on_grid(ui, "");
-                print_on_grid(ui, "----");
-                print_on_grid(ui, "Uplink");
-                print_on_grid(ui, "----");
-                ui.end_row();
-            });
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Downlink");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "Technologie : LTE");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Uplink");
+            print_on_grid(ui, "----");
+            ui.end_row();
+        });
     }
 }

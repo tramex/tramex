@@ -35,10 +35,7 @@ impl super::PanelView for AboutPanel {
         ui.add_space(12.0);
 
         ui.horizontal_wrapped(|ui| {
-            ui.hyperlink_to(
-                "notes.rezel.net",
-                "https://notes.rezel.net/22PBCZhXTvGsG5ipptTvwQ",
-            );
+            ui.hyperlink_to("notes.rezel.net", "https://notes.rezel.net/22PBCZhXTvGsG5ipptTvwQ");
         });
 
         ui.add_space(12.0);

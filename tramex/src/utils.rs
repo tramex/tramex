@@ -26,11 +26,7 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
     } else {
         Color32::DARK_GRAY
     };
-    let background = if need_color {
-        Color32::DARK_BLUE
-    } else {
-        Color32::DARK_RED
-    };
+    let background = if need_color { Color32::DARK_BLUE } else { Color32::DARK_RED };
     job.append(
         label,
         0.0,

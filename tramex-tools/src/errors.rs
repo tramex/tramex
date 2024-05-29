@@ -33,12 +33,8 @@ impl ErrorCode {
             Self::WebScoketFailedToConnect => "WebSocket: Failed to connect".to_owned(),
             Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message".to_owned(),
             Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message".to_owned(),
-            Self::WebSocketUnknownMessageReceived => {
-                "WebSocket: Unknown message received".to_owned()
-            }
-            Self::WebSocketUnknownBinaryMessageReceived => {
-                "WebSocket: Unknown binary message received".to_owned()
-            }
+            Self::WebSocketUnknownMessageReceived => "WebSocket: Unknown message received".to_owned(),
+            Self::WebSocketUnknownBinaryMessageReceived => "WebSocket: Unknown binary message received".to_owned(),
             Self::WebSocketError => "WebSocket: Error".to_owned(),
             Self::WebSocketClosed => "WebSocket: Closed".to_owned(),
             Self::WebSocketErrorClosing => "WebSocket: Error closing".to_owned(),
