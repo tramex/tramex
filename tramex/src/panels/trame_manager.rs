@@ -60,25 +60,27 @@ impl TrameManager {
     }
 
     /// Show the controls
-    pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
+    pub fn show_controls(&mut self, ui: &mut egui::Ui, connector: &mut Connector) {
         if ui.button("More").clicked() {
             log::debug!("More");
             self.should_get_more_log = true;
         }
         if ui.button("Next").clicked() {
             log::debug!("Next");
-            if data.data.events.len() > data.data.current_index + 1 {
-                data.data.current_index += 1;
+            if connector.data.events.len() > connector.data.current_index + 1 {
+                connector.data.current_index += 1;
             } else {
                 self.should_get_more_log = true;
             }
         }
-        if ui.button("Previous").clicked() {
-            log::debug!("Previous");
-            if data.data.current_index > 0 {
-                data.data.current_index -= 1;
+        ui.add_enabled_ui(connector.data.current_index > 0, |ui| {
+            if ui.button("Previous").clicked() {
+                log::debug!("Previous");
+                if connector.data.current_index > 0 {
+                    connector.data.current_index -= 1;
+                }
             }
-        }
+        });
     }
 }
 

@@ -2,4 +2,3 @@
 resolver = "2"
 members = ["tramex", "tramex-tools"]
 default-members = ["tramex"]
-default-run = "tramex"
