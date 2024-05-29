@@ -95,7 +95,7 @@ impl TramexApp {
                 .open(&mut error_panel_open)
                 .resizable([true, false])
                 .show(ctx, |ui| {
-                    ui.label(format!("Error code: {}", error_item.get_code()));
+                    ui.label(format!("Error code: {}", error_item.get_msg()));
                     if error_item.is_recoverable() {
                         ui.label("Recoverable error !");
                     }
@@ -103,7 +103,7 @@ impl TramexApp {
                     if ui.button("Copy error").clicked() {
                         ui.output_mut(|o| {
                             o.copied_text =
-                                format!("{}\n{}", &error_item.get_code(), &error_item.message,)
+                                format!("{}\n{}", &error_item.get_msg(), &error_item.message,)
                         });
                     };
                     make_hyperlink(

@@ -1,6 +1,6 @@
 //! Error handling for Tramex Tools
 
-#[derive(serde::Deserialize, Debug, Clone)]
+#[derive(serde::Deserialize, Debug, Clone, PartialEq)]
 /// Error codes for Tramex Tools
 pub enum ErrorCode {
     /// Not set
@@ -41,6 +41,9 @@ pub enum ErrorCode {
 
     /// File: Invalid encoding (wrong UTF-8)
     FileInvalidEncoding,
+
+    /// Hexe decoding failed
+    HexeDecodingError,
 }
 
 impl Default for ErrorCode {
@@ -53,23 +56,22 @@ impl std::fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // use to_string() to get the string representation of the error code
         let str = match self {
-            Self::WebScoketFailedToConnect => "WebSocket: Failed to connect".to_owned(),
-            Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message".to_owned(),
-            Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message".to_owned(),
-            Self::WebSocketUnknownMessageReceived => {
-                "WebSocket: Unknown message received".to_owned()
-            }
+            Self::WebScoketFailedToConnect => "WebSocket: Failed to connect",
+            Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message",
+            Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message",
+            Self::WebSocketUnknownMessageReceived => "WebSocket: Unknown message received",
             Self::WebSocketUnknownBinaryMessageReceived => {
-                "WebSocket: Unknown binary message received".to_owned()
+                "WebSocket: Unknown binary message received"
             }
-            Self::WebSocketError => "WebSocket: Error".to_owned(),
-            Self::WebSocketClosed => "WebSocket: Closed".to_owned(),
-            Self::WebSocketErrorClosing => "WebSocket: Error closing".to_owned(),
-            Self::FileNotSelected => "File: No file selected".to_owned(),
-            Self::FileErrorReadingFile => "File: Error reading file".to_owned(),
-            Self::FileNotReady => "File: Not ready".to_owned(),
-            Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)".to_owned(),
-            Self::NotSet => "Error code not set, please create an issue".to_owned(),
+            Self::WebSocketError => "WebSocket: Error",
+            Self::WebSocketClosed => "WebSocket: Closed",
+            Self::WebSocketErrorClosing => "WebSocket: Error closing",
+            Self::FileNotSelected => "File: No file selected",
+            Self::FileErrorReadingFile => "File: Error reading file",
+            Self::FileNotReady => "File: Not ready",
+            Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)",
+            Self::NotSet => "Error code not set, please create an issue",
+            Self::HexeDecodingError => "Hexe decoding error",
         };
         write!(f, "{}", str)
     }
@@ -107,7 +109,12 @@ impl TramexError {
     }
 
     /// Get the error message
-    pub fn get_code(&self) -> String {
+    pub fn get_msg(&self) -> String {
         format!("[{}] {}", self.code, self.code)
+    }
+
+    /// Get the error code
+    pub fn get_code(&self) -> ErrorCode {
+        return self.code.clone();
     }
 }

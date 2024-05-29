@@ -3,5 +3,5 @@
 ## Tests
 
 ```sh
-cargo test
+cargo test --all
 ```

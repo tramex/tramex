@@ -1,23 +1,30 @@
 //! useful functions
 
+use crate::errors::{ErrorCode, TramexError};
+
 /// Extract hexadecimal data from a vector of strings.
-pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Vec<u8> {
-    let data: Vec<String> = data
-        .iter()
-        .filter(|one_string| {
-            if let Some(first_char) = one_string.as_ref().trim().chars().next() {
-                return first_char.is_numeric();
-            }
-            false
-        })
-        .map(|one_string| {
-            if one_string.as_ref().len() > 57 {
-                let str_piece = &one_string.as_ref().trim()[7..56];
-                return str_piece.chars().filter(|c| !c.is_whitespace()).collect();
-            }
-            "".into()
-        })
-        .collect();
+pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Result<Vec<u8>, TramexError> {
+    let iter = data.iter().filter(|one_string| {
+        if let Some(first_char) = one_string.as_ref().trim().chars().next() {
+            return first_char.is_numeric();
+        }
+        false
+    });
+    let mut data: Vec<String> = Vec::new();
+    for one_string in iter {
+        let trimed = one_string.as_ref().trim();
+        if trimed.len() > 57 {
+            let str_piece = &trimed[7..56];
+            println!("{}", str_piece);
+            let chars_only: String = str_piece.chars().filter(|c| !c.is_whitespace()).collect();
+            data.push(chars_only);
+        } else {
+            return Err(TramexError::new(
+                format!("Error decoding hexe {:?} ({})", trimed, trimed.len()),
+                ErrorCode::HexeDecodingError,
+            ));
+        }
+    }
     let mut hexe: Vec<u8> = Vec::new();
     for one_string in data {
         let mut i = 0;
@@ -29,5 +36,5 @@ pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Vec<u8> {
             i += 2;
         }
     }
-    hexe
+    Ok(hexe)
 }

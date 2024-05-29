@@ -29,4 +29,4 @@ jobs:
             - name: Build
               run: cargo build --verbose
             - name: Run tests all
-              run: cargo test --verbose
+              run: cargo test --all --verbose

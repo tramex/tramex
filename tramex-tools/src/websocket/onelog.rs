@@ -1,5 +1,6 @@
 //! This module contains the definition of the OneLog struct.
 
+use crate::errors::TramexError;
 use crate::functions::extract_hexe;
 
 use crate::websocket::{
@@ -40,7 +41,7 @@ pub struct OneLog {
 
 impl OneLog {
     /// Extract the hexadecimal representation of the log.
-    pub fn extract_hexe(&self) -> Vec<u8> {
+    pub fn extract_hexe(&self) -> Result<Vec<u8>, TramexError> {
         extract_hexe(&self.data)
     }
 

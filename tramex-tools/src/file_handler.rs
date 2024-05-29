@@ -93,7 +93,7 @@ impl File {
                     canal: canal.to_owned(),
                     canal_msg: message_canal.to_owned(),
                 },
-                hexa: extract_hexe(&hexa.split('\n').collect::<Vec<&str>>()),
+                hexa: extract_hexe(&hexa.split('\n').collect::<Vec<&str>>()).unwrap(), // TODO handle
             });
         }
         if vtraces.is_empty() {
