@@ -13,6 +13,8 @@ pub enum ErrorCode {
     FileErrorReadingFile,
     FileNotReady,
     FileInvalidEncoding,
+    EndOfFile,
+    FileParsing,
 }
 
 impl Default for ErrorCode {
@@ -43,6 +45,8 @@ impl ErrorCode {
             Self::FileNotReady => "File: Not ready".to_owned(),
             Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)".to_owned(),
             Self::NotSet => "Error code not set, please create an issue".to_owned(),
+            Self::EndOfFile => "There is nothing left to read in the file".to_owned(),
+            Self::FileParsing => "File : Error while parsing".to_owned(),
         }
     }
     pub fn is_recoverable(&self) -> bool {

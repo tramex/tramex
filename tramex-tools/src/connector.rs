@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::data::{Data, MessageType, Trace};
-use crate::errors::TramexError;
+use crate::errors::{ErrorCode, TramexError};
 use crate::file_handler::File;
 use crate::interface::Interface;
 use crate::websocket::{layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection};
@@ -87,7 +87,7 @@ impl Connector {
     }
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
-            interface: Interface::File(File::new(file_path, file_content)),
+            interface: Interface::File(File::new_toread(file_path, file_content, 50)),
             data: Data::default(),
             available: true,
             ..Default::default()
@@ -118,16 +118,16 @@ impl Connector {
                 if curr_file.readed {
                     return Ok(());
                 }
-                match &mut curr_file.process() {
-                    Ok(ok_processed) => {
-                        log::debug!("Processed: {} trames", ok_processed.len());
-                        self.data.events.append(ok_processed);
-                        self.available = true;
+                let (m_vec, opt_err) = &mut curr_file.process();
+                self.data.events.append(m_vec);
+                self.available = true;
+                match opt_err {
+                    Some(err) => {
+                        if !(matches!(err.code, ErrorCode::EndOfFile)) {
+                            return Err(err.clone());
+                        }
                     }
-                    Err(e) => {
-                        log::debug!("Error While Reading File");
-                        return Err(e.clone());
-                    }
+                    None => {}
                 }
             }
             _ => {}
