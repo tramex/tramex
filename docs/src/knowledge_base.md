@@ -26,3 +26,21 @@ npx @n4n5/proxy-ws -t ws://10.0.0.1:9001 -h '{"origin":"toto"}'
 # will redirect ws://127.0.0.1:9001 -> ws://10.0.0.1:9001
 # cors will not be an issue anymore with the local address 127.0.0.1
 ```
+
+## Compilation crash
+
+In certain cases, the compilation may heavily use the CPU and slow down the computer. This is due to the `cargo` process that is using all the available CPU. To solve this issue, you can use the `--jobs` flag to limit the number of jobs that `cargo` can run in parallel. Note that on linux, you can use the `nproc` command to get the number of available CPUs.
+
+```bash
+cargo build --jobs 10
+
+# or
+cargo build -j 10
+```
+
+Another simple solution is to create a `~/.cargo/config.toml` file and add the following content:
+
+```toml
+[build]
+jobs = 10
+```
