@@ -3,6 +3,8 @@
 use crate::errors::{ErrorCode, TramexError};
 
 /// Extract hexadecimal data from a vector of strings.
+/// # Errors
+/// Returns a TramexError if the hexe representation could not be extracted.
 pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Result<Vec<u8>, TramexError> {
     let iter = data.iter().filter(|one_string| {
         if let Some(first_char) = one_string.as_ref().trim().chars().next() {

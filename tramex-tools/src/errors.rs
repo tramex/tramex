@@ -115,6 +115,6 @@ impl TramexError {
 
     /// Get the error code
     pub fn get_code(&self) -> ErrorCode {
-        return self.code.clone();
+        self.code.clone()
     }
 }

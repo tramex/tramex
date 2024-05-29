@@ -41,6 +41,8 @@ pub struct OneLog {
 
 impl OneLog {
     /// Extract the hexadecimal representation of the log.
+    /// # Errors
+    /// Returns a TramexError if the hexe representation could not be extracted.
     pub fn extract_hexe(&self) -> Result<Vec<u8>, TramexError> {
         extract_hexe(&self.data)
     }

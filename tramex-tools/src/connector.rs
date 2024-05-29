@@ -207,7 +207,7 @@ impl Connector {
                                                 };
                                                 let trace = Trace {
                                                     trace_type: msg_type,
-                                                    hexa: hexa_extracted.unwrap(), // TODO handle
+                                                    hexa: hexa_extracted.unwrap_or_default(), // TODO handle
                                                 };
                                                 self.data.events.push(trace);
                                             }
