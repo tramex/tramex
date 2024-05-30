@@ -3,7 +3,6 @@
 use crate::data::MessageType;
 use crate::data::Trace;
 use crate::errors::TramexError;
-use crate::errors::TramexError;
 use crate::functions::extract_hexe;
 use crate::websocket::types::Direction;
 use chrono::NaiveTime;
@@ -62,6 +61,7 @@ impl File {
             ix: 0,
         }
     }
+    /// Creating a new File defining the number of log to read per batch
     pub fn new_toread(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
         Self {
             file_path,
@@ -71,9 +71,11 @@ impl File {
             ix: 0,
         }
     }
+    /// To update the number of log to read per batch
     pub fn change_nb_read(&mut self, toread: usize) {
         self.nb_read = toread;
     }
+    /// To process the file and parse a batch of log
     pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
         let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
         if opt_err.is_some() {
@@ -81,6 +83,7 @@ impl File {
         }
         return (vec_trace, opt_err);
     }
+    /// To process a string passed in argument, with index and batch to read
     pub fn process_string(hay: &String, nb_to_read: usize, mut ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
         let mut vtraces: Vec<Trace> = vec![];
         let lines: Vec<&str> = hay.lines().collect();
@@ -102,6 +105,7 @@ impl File {
         }
         return (vtraces, None);
     }
+    /// Counting Brackets
     pub fn count_brackets(hay: &str) -> i16 {
         let mut count: i16 = 0;
         for ch in hay.chars() {
@@ -146,7 +150,11 @@ impl File {
                 "Could not find the end of the hexadecimal".to_string(),
             )));
         }
-        let hex = extract_hexe(&hex_str); //TODO do real error returning
+        let hex = match extract_hexe(&hex_str) {
+            Ok(h) => h,
+            Err(e) => return Err(Some(e)),
+        };
+
         let trace = Trace {
             trace_type: mtype,
             hexa: hex,
@@ -217,9 +225,4 @@ impl File {
     fn eof_error() -> TramexError {
         TramexError::new("End of file".to_string(), crate::errors::ErrorCode::EndOfFile)
     }
-}
-#[derive(Debug, Clone)]
-pub struct Pos {
-    pub start: usize,
-    pub end: usize,
 }

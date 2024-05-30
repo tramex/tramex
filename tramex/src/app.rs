@@ -79,27 +79,20 @@ impl TramexApp {
                 .resizable([true, false])
                 .show(ctx, |ui| {
                     let mut to_clean = vec![];
-                    egui::Grid::new("error_ui")
-                        .min_col_width(60.0)
-                        .show(ui, |ui| {
-                            for (idx, one_error) in self.error_panel.iter().enumerate() {
-                                if show_error(ui, one_error) {
-                                    to_clean.push(idx);
-                                }
-                                ui.end_row();
+                    egui::Grid::new("error_ui").min_col_width(60.0).show(ui, |ui| {
+                        for (idx, one_error) in self.error_panel.iter().enumerate() {
+                            if show_error(ui, one_error) {
+                                to_clean.push(idx);
                             }
-                        });
+                            ui.end_row();
+                        }
+                    });
                     for idx in to_clean.iter().rev() {
                         self.error_panel.remove(*idx);
                     }
                     ui.separator();
                     ui.vertical_centered(|ui| {
-                        make_hyperlink(
-                            ui,
-                            "Report an issue",
-                            "https://github.com/tramex/tramex/issues/new",
-                            true,
-                        );
+                        make_hyperlink(ui, "Report an issue", "https://github.com/tramex/tramex/issues/new", true);
                     });
                 });
             if !error_panel_open {
@@ -195,9 +188,7 @@ fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
     }
     ui.colored_label(egui::Color32::RED, &error_item.message);
     if ui.button("Copy error").clicked() {
-        ui.output_mut(|o| {
-            o.copied_text = format!("{}\n{}", &error_item.get_msg(), &error_item.message,)
-        });
+        ui.output_mut(|o| o.copied_text = format!("{}\n{}", &error_item.get_msg(), &error_item.message,));
     };
     if ui.button("Close this error").clicked() {
         return true;

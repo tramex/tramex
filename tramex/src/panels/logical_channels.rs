@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
-use types_lte_3gpp::spec_rrc;
+use types_lte_3gpp::uper::spec_rrc;
 
 /// Logical Channels data
 pub struct LogicalChannels {

@@ -58,11 +58,7 @@ impl Connector {
     /// Connect to a websocket
     /// # Errors
     /// Return an error if the connection failed
-    pub fn connect(
-        &mut self,
-        url: &str,
-        wakeup: impl Fn() + Send + Sync + 'static,
-    ) -> Result<(), TramexError> {
+    pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
         let options = ewebsock::Options::default();
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
@@ -104,11 +100,7 @@ impl Connector {
     /// set file mode using a path
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
-            interface: Interface::File(File {
-                file_path,
-                file_content: String::new(),
-                readed: false,
-            }),
+            interface: Interface::File(File::new_toread(file_path, String::new(), 50)),
             data: Data::default(),
             available: false,
             ..Default::default()
@@ -193,11 +185,11 @@ impl Connector {
                                                     layer: one_log.layer,
                                                     direction: one_log.dir.unwrap_or_default(),
                                                     canal: one_log.channel.unwrap_or_default(),
-                                                    canal_msg: canal_msg_extracted,
+                                                    canal_msg: canal_msg,
                                                 };
                                                 let trace = Trace {
                                                     trace_type: msg_type,
-                                                    hexa: hexa_extracted.unwrap_or_default(), // TODO handle
+                                                    hexa: hexa.unwrap_or_default(), // TODO handle
                                                 };
                                                 self.data.events.push(trace);
                                             }
