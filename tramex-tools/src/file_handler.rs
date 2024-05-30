@@ -64,7 +64,7 @@ impl File {
         }
     }
     /// Creating a new File defining the number of log to read per batch
-    pub fn new_toread(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
+    pub fn new_with_to_read(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
         Self {
             file_path,
             file_content,
@@ -94,10 +94,10 @@ impl File {
                 Ok(trace) => {
                     vtraces.push(trace);
                 }
-                Err(err) => match &err {
+                Err(err) => match err {
                     Some(e) => {
                         log::error!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
-                        return (vtraces, Some(e.clone()));
+                        return (vtraces, Some(e));
                     }
                     None => {
                         return (vtraces, Some(Self::eof_error()));
