@@ -1,13 +1,13 @@
 //! Module: panels
 
 pub mod about;
-pub mod file_handler;
+pub mod file_upload;
 pub mod logical_channels;
 pub mod message;
 pub mod trame_manager;
 
 pub use about::AboutPanel;
-pub use file_handler::FileHandler;
+pub use file_upload::FileHandler;
 pub use logical_channels::LogicalChannels;
 pub use message::MessageBox;
 pub use trame_manager::TrameManager;

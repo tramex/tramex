@@ -66,8 +66,7 @@ impl FrontEnd {
         let ref_connector = Rc::new(RefCell::new(connector));
         let mb = MessageBox::new(Rc::clone(&ref_connector));
         let lc = LogicalChannels::new(Rc::clone(&ref_connector));
-        let wins: Vec<Box<dyn PanelController>> =
-            vec![Box::<MessageBox>::new(mb), Box::<LogicalChannels>::new(lc)];
+        let wins: Vec<Box<dyn PanelController>> = vec![Box::<MessageBox>::new(mb), Box::<LogicalChannels>::new(lc)];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {
             open_windows.insert(one_box.name().to_owned());
@@ -85,8 +84,7 @@ impl FrontEnd {
         if self.connector.borrow().available {
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
                 ui.horizontal(|ui| {
-                    self.trame_manager
-                        .show_controls(ui, &mut self.connector.borrow_mut());
+                    self.trame_manager.show_controls(ui, &mut self.connector.borrow_mut());
                     ui.menu_button("Windows", |ui| {
                         for one_window in self.windows.iter_mut() {
                             let mut is_open: bool = self.open_windows.contains(one_window.name());
@@ -155,11 +153,7 @@ impl FrontEnd {
                             ui.add_enabled_ui(self.connector.borrow().interface.is_none(), |ui| {
                                 ui.label("Choose ws or file");
                                 ui.radio_value(&mut self.radio_choice, Choice::File, "File");
-                                ui.radio_value(
-                                    &mut self.radio_choice,
-                                    Choice::WebSocket,
-                                    "WebSocket",
-                                );
+                                ui.radio_value(&mut self.radio_choice, Choice::WebSocket, "WebSocket");
                             });
                         });
                         if save != self.radio_choice && self.radio_choice == Choice::File {
@@ -174,39 +168,29 @@ impl FrontEnd {
                             Choice::File => {
                                 if let Some(file_handle) = &mut self.file_upload {
                                     let is_file_path = file_handle.get_picket_path().is_some();
-                                    ui.add_enabled_ui(!is_file_path, |ui| {
-                                        match file_handle.ui(ui) {
-                                            Ok(bo) => {
-                                                if bo && self.connector.borrow().interface.is_none()
-                                                {
-                                                    match file_handle.get_result() {
-                                                        Ok(curr_file) => {
-                                                            self.connector
-                                                                .borrow_mut()
-                                                                .set_file(curr_file);
-                                                            file_handle.clear();
-                                                        }
-                                                        Err(err) => {
-                                                            log::error!(
-                                                                "Error in get_result() {:?}",
-                                                                err
-                                                            );
-                                                            error = Some(err);
-                                                        }
+                                    ui.add_enabled_ui(!is_file_path, |ui| match file_handle.ui(ui) {
+                                        Ok(bo) => {
+                                            if bo && self.connector.borrow().interface.is_none() {
+                                                match file_handle.get_result() {
+                                                    Ok(curr_file) => {
+                                                        self.connector.borrow_mut().set_file(curr_file);
+                                                        file_handle.clear();
+                                                    }
+                                                    Err(err) => {
+                                                        log::error!("Error in get_result() {:?}", err);
+                                                        error = Some(err);
                                                     }
                                                 }
                                             }
-                                            Err(err) => {
-                                                log::error!("Error in file_handle {:?}", err);
-                                                error = Some(err);
-                                                file_handle.reset();
-                                                self.connector.borrow_mut().clear_data();
-                                            }
+                                        }
+                                        Err(err) => {
+                                            log::error!("Error in file_handle {:?}", err);
+                                            error = Some(err);
+                                            file_handle.reset();
+                                            self.connector.borrow_mut().clear_data();
                                         }
                                     });
-                                    if is_file_path
-                                        && ui.button("Close").on_hover_text("Close file").clicked()
-                                    {
+                                    if is_file_path && ui.button("Close").on_hover_text("Close file").clicked() {
                                         file_handle.reset();
                                         self.connector.borrow_mut().clear_data();
                                         self.connector.borrow_mut().clear_interface();
@@ -217,8 +201,7 @@ impl FrontEnd {
                     });
                     ui.separator();
                     if self.connector.borrow().available {
-                        self.trame_manager
-                            .show_options(ui, &mut self.connector.borrow_mut());
+                        self.trame_manager.show_options(ui, &mut self.connector.borrow_mut());
                         if self.trame_manager.should_get_more_log {
                             self.trame_manager.should_get_more_log = false;
                             return self

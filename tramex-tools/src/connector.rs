@@ -2,12 +2,10 @@
 use std::path::PathBuf;
 
 use crate::data::{Data, MessageType, Trace};
-use crate::errors::TramexError;
+use crate::errors::{ErrorCode, TramexError};
 use crate::file_handler::File;
 use crate::interface::Interface;
-use crate::websocket::{
-    layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection,
-};
+use crate::websocket::{layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection};
 use ewebsock::{WsEvent, WsMessage};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
@@ -60,11 +58,7 @@ impl Connector {
     /// Connect to a websocket
     /// # Errors
     /// Return an error if the connection failed
-    pub fn connect(
-        &mut self,
-        url: &str,
-        wakeup: impl Fn() + Send + Sync + 'static,
-    ) -> Result<(), TramexError> {
+    pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
         let options = ewebsock::Options::default();
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
@@ -106,11 +100,7 @@ impl Connector {
     /// set file mode using a path
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
-            interface: Interface::File(File {
-                file_path,
-                file_content: String::new(),
-                readed: false,
-            }),
+            interface: Interface::File(File::new_with_to_read(file_path, String::new(), 50)),
             data: Data::default(),
             available: false,
             ..Default::default()
@@ -120,11 +110,7 @@ impl Connector {
     /// set file mode using a path and content
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
-            interface: Interface::File(File {
-                file_path,
-                file_content,
-                readed: false,
-            }),
+            interface: Interface::File(File::new_with_to_read(file_path, file_content, 50)),
             data: Data::default(),
             available: true,
             ..Default::default()
@@ -158,17 +144,16 @@ impl Connector {
                 if curr_file.readed {
                     return Ok(());
                 }
-                match &mut curr_file.process() {
-                    Ok(ok_processed) => {
-                        log::debug!("Processed: {} trames", ok_processed.len());
-                        self.data.events.append(ok_processed);
-                        curr_file.readed = true;
-                        self.available = true;
+                let (m_vec, opt_err) = &mut curr_file.process();
+                self.data.events.append(m_vec);
+                self.available = true;
+                match opt_err {
+                    Some(err) => {
+                        if !(matches!(err.code, ErrorCode::EndOfFile)) {
+                            return Err(err.clone());
+                        }
                     }
-                    Err(e) => {
-                        log::debug!("Error While Reading File");
-                        return Err(e.clone());
-                    }
+                    None => {}
                 }
             }
             _ => {}
@@ -189,25 +174,22 @@ impl Connector {
                             self.available = true;
                             match msg {
                                 WsMessage::Text(event_text) => {
-                                    let decoded: Result<WebSocketLog, serde_json::Error> =
-                                        serde_json::from_str(&event_text);
+                                    let decoded: Result<WebSocketLog, serde_json::Error> = serde_json::from_str(&event_text);
                                     match decoded {
                                         Ok(decoded_data) => {
                                             for one_log in decoded_data.logs {
-                                                let canal_msg_extracted = one_log
-                                                    .extract_canal_msg()
-                                                    .unwrap_or("".to_owned());
-                                                let hexa_extracted = one_log.extract_hexe();
+                                                let canal_msg = one_log.extract_canal_msg().unwrap_or("".to_owned());
+                                                let hexa = one_log.extract_hexe();
                                                 let msg_type = MessageType {
                                                     timestamp: one_log.timestamp.to_owned(),
                                                     layer: one_log.layer,
                                                     direction: one_log.dir.unwrap_or_default(),
                                                     canal: one_log.channel.unwrap_or_default(),
-                                                    canal_msg: canal_msg_extracted,
+                                                    canal_msg,
                                                 };
                                                 let trace = Trace {
                                                     trace_type: msg_type,
-                                                    hexa: hexa_extracted.unwrap_or_default(), // TODO handle
+                                                    hexa: hexa.unwrap_or_default(), // TODO handle
                                                 };
                                                 self.data.events.push(trace);
                                             }
@@ -215,7 +197,10 @@ impl Connector {
                                         Err(err) => {
                                             log::error!("Error decoding message: {:?}", err);
                                             log::error!("Message: {:?}", event_text);
-                                            return Err(TramexError::new(err.to_string(), crate::errors::ErrorCode::WebSocketErrorDecodingMessage));
+                                            return Err(TramexError::new(
+                                                err.to_string(),
+                                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                                            ));
                                         }
                                     }
                                 }
@@ -253,10 +238,7 @@ impl Connector {
                         WsEvent::Error(str_err) => {
                             self.available = false;
                             log::error!("WebSocket error: {:?}", str_err);
-                            return Err(TramexError::new(
-                                str_err,
-                                crate::errors::ErrorCode::WebSocketError,
-                            ));
+                            return Err(TramexError::new(str_err, crate::errors::ErrorCode::WebSocketError));
                         }
                     }
                 }

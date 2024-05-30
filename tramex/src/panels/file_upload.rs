@@ -36,8 +36,7 @@ impl FileHandler {
         let callback = move |res: Result<ehttp::Response, String>| match res {
             Ok(res) => {
                 log::info!("File list fetched");
-                let items: Result<Vec<Item>, serde_json::Error> =
-                    serde_json::from_slice(&res.bytes);
+                let items: Result<Vec<Item>, serde_json::Error> = serde_json::from_slice(&res.bytes);
                 match items {
                     Ok(items) => Ok(items),
                     Err(e) => {

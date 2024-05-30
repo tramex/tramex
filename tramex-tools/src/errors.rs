@@ -44,6 +44,12 @@ pub enum ErrorCode {
 
     /// Hexe decoding failed
     HexeDecodingError,
+
+    /// File : End of the file
+    EndOfFile,
+
+    /// File: Error while parsing the file
+    FileParsing,
 }
 
 impl Default for ErrorCode {
@@ -60,9 +66,7 @@ impl std::fmt::Display for ErrorCode {
             Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message",
             Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message",
             Self::WebSocketUnknownMessageReceived => "WebSocket: Unknown message received",
-            Self::WebSocketUnknownBinaryMessageReceived => {
-                "WebSocket: Unknown binary message received"
-            }
+            Self::WebSocketUnknownBinaryMessageReceived => "WebSocket: Unknown binary message received",
             Self::WebSocketError => "WebSocket: Error",
             Self::WebSocketClosed => "WebSocket: Closed",
             Self::WebSocketErrorClosing => "WebSocket: Error closing",
@@ -72,6 +76,8 @@ impl std::fmt::Display for ErrorCode {
             Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)",
             Self::NotSet => "Error code not set, please create an issue",
             Self::HexeDecodingError => "Hexe decoding error",
+            Self::EndOfFile => "End of File",
+            Self::FileParsing => "File: Parsing error",
         };
         write!(f, "{}", str)
     }

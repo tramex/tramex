@@ -7,15 +7,12 @@ use crate::functions::extract_hexe;
 use crate::websocket::types::Direction;
 use chrono::NaiveTime;
 use chrono::Timelike;
-use regex::Regex;
 use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::websocket::layer::Layer;
-
-/// Regular expression to extract the data from the file.
-const RGX: &str = r"(?mi)(?<timestamp>\d{2}:\d{2}:\d{2}\.\d{3})\s+\[(?<layer>.*?)\]\s(?<direction>\w+)\s*-\s*(?<id>\d{2})\s*(?<canal>(?:\w+)-?(?:\w*)):\s(?<messagecanal>(?:\w|\s)+)$(?<hexa>(?:\s+(?:\d\d\d\d):\s+(?:(?:(?:(?:[0-9a-f]+)\s{1,2}))*).*$)*)";
-
+/// The default number of log processed by batch
+const DEFAULT_NB: usize = 6;
 #[derive(Debug, Clone)]
 /// Data structure to store the file.
 pub struct File {
@@ -27,6 +24,10 @@ pub struct File {
 
     /// Readed status of the file.
     pub readed: bool,
+    /// the number of log to read each batch
+    nb_read: usize,
+    /// The previous line number
+    ix: usize,
 }
 
 impl Default for File {
@@ -35,6 +36,8 @@ impl Default for File {
             file_path: PathBuf::from(""),
             file_content: "".to_string(),
             readed: false,
+            nb_read: DEFAULT_NB,
+            ix: 0,
         }
     }
 }
@@ -56,52 +59,176 @@ impl File {
             file_path,
             file_content,
             readed: false,
+            nb_read: DEFAULT_NB,
+            ix: 0,
         }
     }
-
-    /// Read the file.
-    /// # Errors
-    /// Return an error if the file contains errors
-    pub fn process(&self) -> Result<Vec<Trace>, TramexError> {
-        File::process_string(&self.file_content)
+    /// Creating a new File defining the number of log to read per batch
+    pub fn new_with_to_read(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
+        Self {
+            file_path,
+            file_content,
+            readed: false,
+            nb_read: nb_to_read,
+            ix: 0,
+        }
     }
-
-    /// Process the string of the file.
-    /// # Errors
-    /// Return an error if the file contains errors
-    pub fn process_string(hay: &str) -> Result<Vec<Trace>, TramexError> {
-        let rgx = if let Ok(re) = Regex::new(RGX) {
-            re
-        } else {
-            return Err(TramexError::new(
-                "Can't create Regex".to_string(),
-                crate::errors::ErrorCode::default(),
-            ));
-        };
+    /// To update the number of log to read per batch
+    pub fn change_nb_read(&mut self, toread: usize) {
+        self.nb_read = toread;
+    }
+    /// To process the file and parse a batch of log
+    pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
+        let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
+        if opt_err.is_some() {
+            self.readed = true;
+        }
+        (vec_trace, opt_err)
+    }
+    /// To process a string passed in argument, with index and batch to read
+    pub fn process_string(hay: &str, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
         let mut vtraces: Vec<Trace> = vec![];
-        for (_, [timestamp, layer, direction, _id, canal, message_canal, hexa]) in
-            rgx.captures_iter(hay).map(|c| c.extract())
-        {
-            let date =
-                chrono::NaiveTime::parse_from_str(timestamp, "%H:%M:%S%.3f").unwrap_or_default();
-
-            vtraces.push(Trace {
-                trace_type: MessageType {
-                    timestamp: time_to_milliseconds(&date) as u64,
-                    layer: Layer::from_str(layer).unwrap_or_default(),
-                    direction: Direction::from_str(direction).unwrap_or_default(),
-                    canal: canal.to_owned(),
-                    canal_msg: message_canal.to_owned(),
+        let lines: Vec<&str> = hay.lines().collect();
+        for _ in 0..nb_to_read {
+            match Self::parse_bloc(&lines, ix) {
+                Ok(trace) => {
+                    vtraces.push(trace);
+                }
+                Err(err) => match err {
+                    Some(e) => {
+                        log::error!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
+                        return (vtraces, Some(e));
+                    }
+                    None => {
+                        return (vtraces, Some(Self::eof_error()));
+                    }
                 },
-                hexa: extract_hexe(&hexa.split('\n').collect::<Vec<&str>>()).unwrap_or_default(), // TODO handle
-            });
+            };
         }
-        if vtraces.is_empty() {
-            return Err(TramexError::new(
-                "Can't find Trace in File".to_string(),
-                crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
+        (vtraces, None)
+    }
+    /// Counting Brackets
+    pub fn count_brackets(hay: &str) -> i16 {
+        let mut count: i16 = 0;
+        for ch in hay.chars() {
+            match ch {
+                '{' => count += 1,
+                '}' => count -= 1,
+                _ => (),
+            }
+        }
+        count
+    }
+    /// Function that parses the JSON style bloc in each log
+    fn parse_bloc(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Option<TramexError>> {
+        let lines_len = lines.len();
+        if (lines_len as i32 - *ix as i32) < 3 {
+            return Err(None);
+        }
+        let mtype = match Self::parse_line(lines[*ix]) {
+            Ok(m) => m,
+            Err(e) => {
+                return Err(Some(e));
+            }
+        };
+        *ix += 1;
+        let mut hex_str: Vec<&str> = vec![];
+        while *ix < lines_len {
+            match lines[*ix].trim_start().chars().next() {
+                Some(c) => {
+                    if c == '{' {
+                        break;
+                    }
+                }
+                None => {
+                    break;
+                }
+            }
+            hex_str.push(lines[*ix]);
+            *ix += 1;
+        }
+        if *ix >= lines_len {
+            *ix -= 1;
+            return Err(Some(Self::parsing_error(
+                "Could not find the end of the hexadecimal".to_string(),
+            )));
+        }
+        let hex = match extract_hexe(&hex_str) {
+            Ok(h) => h,
+            Err(e) => return Err(Some(e)),
+        };
+
+        let trace = Trace {
+            trace_type: mtype,
+            hexa: hex,
+        };
+        let mut end = false;
+        let mut brackets: i16 = 0;
+        while (*ix < lines_len) && !end {
+            brackets += Self::count_brackets(lines[*ix]);
+            *ix += 1;
+            if brackets == 0 {
+                end = true;
+            }
+        }
+        if *ix >= lines_len && !end {
+            *ix -= 1;
+            return Err(Some(Self::parsing_error(
+                "Could not parse the JSON like part, missing closing }".to_string(),
+            )));
+        }
+        *ix += 1;
+        Ok(trace)
+    }
+    /// Function that parses the first line of a log
+    fn parse_line(line: &str) -> Result<MessageType, TramexError> {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 5 {
+            return Err(Self::parsing_error("Could not find enough (5) parameters".to_string()));
+        }
+        let date = match chrono::NaiveTime::parse_from_str(parts[0], "%H:%M:%S%.3f") {
+            Ok(rdate) => rdate,
+            Err(_) => {
+                return Err(Self::parsing_error("Error while parsing date".to_string()));
+            }
+        };
+        let layer_result: Result<Layer, ()> = Layer::from_str(parts[1].trim_start_matches('[').trim_end_matches(']'));
+        let direction_result = Direction::from_str(parts[2]);
+        let binding: String = parts[5..].join(" ");
+        let concatenated: Vec<&str> = binding.split(':').collect();
+        let layer: Layer = match layer_result {
+            Ok(l) => l,
+            Err(_) => {
+                return Err(Self::parsing_error("The layer could not be parsed".to_string()));
+            }
+        };
+        log::debug!("{:?}", layer);
+        if layer == Layer::None {
+            return Err(Self::parsing_error("The layer could not be parsed".to_string()));
+        }
+        let direction = match direction_result {
+            Ok(d) => d,
+            Err(_) => return Err(Self::parsing_error("The direction could not be parsed".to_string())),
+        };
+        if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {
+            return Err(Self::parsing_error(
+                "The canal and/or canal message could not be parsed".to_string(),
             ));
         }
-        Ok(vtraces)
+        return Ok(MessageType {
+            timestamp: time_to_milliseconds(&date) as u64,
+            layer,
+            direction,
+            canal: concatenated[0].to_owned(),
+            canal_msg: concatenated[1].trim_start().to_owned(),
+        });
+    }
+    /// Build a parsing error
+    fn parsing_error(message: String) -> TramexError {
+        TramexError::new(message, crate::errors::ErrorCode::FileParsing)
+    }
+    /// Build a eof_error
+    fn eof_error() -> TramexError {
+        TramexError::new("End of file".to_string(), crate::errors::ErrorCode::EndOfFile)
     }
 }
