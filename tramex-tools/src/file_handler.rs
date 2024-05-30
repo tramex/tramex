@@ -1,5 +1,8 @@
+//! File Handler
+
 use crate::data::MessageType;
 use crate::data::Trace;
+use crate::errors::TramexError;
 use crate::errors::TramexError;
 use crate::functions::extract_hexe;
 use crate::websocket::types::Direction;
@@ -12,9 +15,15 @@ use crate::websocket::layer::Layer;
 
 const DEFAULT_NB: usize = 6;
 #[derive(Debug, Clone)]
+/// Data structure to store the file.
 pub struct File {
+    /// Path of the file.
     pub file_path: PathBuf,
+
+    /// Content of the file.
     pub file_content: String,
+
+    /// Readed status of the file.
     pub readed: bool,
     nb_read: usize,
     ix: usize,
@@ -31,8 +40,10 @@ impl Default for File {
         }
     }
 }
+
+/// Convert a time to milliseconds.
 fn time_to_milliseconds(time: &NaiveTime) -> i64 {
-    let hours_in_ms = time.hour() as i64 * 3600_000;
+    let hours_in_ms = time.hour() as i64 * 3_600_000;
     let minutes_in_ms = time.minute() as i64 * 60_000;
     let seconds_in_ms = time.second() as i64 * 1000;
     let milliseconds = time.nanosecond() as i64 / 1_000_000; // convert nanoseconds to milliseconds
@@ -41,6 +52,7 @@ fn time_to_milliseconds(time: &NaiveTime) -> i64 {
 }
 
 impl File {
+    /// Create a new file.
     pub fn new(file_path: PathBuf, file_content: String) -> Self {
         Self {
             file_path,

@@ -1,19 +1,66 @@
+//! Logical Channels panel
+use asn1_codecs::{uper::UperCodec, PerCodecData};
 use eframe::egui::{self, Color32, TextFormat};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
+use types_lte_3gpp::spec_rrc;
 
+/// Logical Channels data
 pub struct LogicalChannels {
+    /// Reference to the data
     data: Rc<RefCell<Connector>>,
+
+    /// Current channel
     channel: String,
+
+    /// Current canal
+    canal: String,
+
+    /// Current canal message
+    canal_msg: String,
+
+    /// Current index
+    current_index: usize,
+
+    /// Current hexa
+    hex: Vec<u8>,
 }
 
 impl LogicalChannels {
+    /// Create a new LogicalChannels
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self {
             data: ref_data,
             channel: "".to_string(),
+            canal: "".to_string(),
+            canal_msg: "".to_string(),
+            current_index: 0,
+            hex: Vec::new(),
+        }
+    }
+
+    /// Handle the logic of the panel
+    pub fn handle_logic(&mut self) {
+        match (self.canal.as_str(), self.canal_msg.as_str()) {
+            ("BCCH-BCH", "Master Information Block") => {
+                let mut codec_data = PerCodecData::from_slice_uper(&self.hex);
+                let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
+                if let Ok(res) = sib1 {
+                    log::info!("{:?}", res);
+                }
+            }
+            ("BCCH", "SIB1") => {
+                let mut codec_data = PerCodecData::from_slice_uper(&self.hex);
+                let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
+                if let Ok(res) = sib1 {
+                    log::info!("{:?}", res);
+                }
+            }
+            _ => {
+                log::info!("Unknown message");
+            }
         }
     }
 }
@@ -27,13 +74,24 @@ impl super::PanelController for LogicalChannels {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+        let mut new_index = None;
         {
             // in a closure to avoid borrow checker
             let borrowed = &self.data.borrow();
             let events = &borrowed.data.events;
-            if let Some(one_log) = events.get(borrowed.data.current_index) {
-                self.channel = one_log.trace_type.canal.to_owned();
+            if self.current_index != borrowed.data.current_index {
+                if let Some(one_log) = events.get(borrowed.data.current_index) {
+                    self.channel = one_log.trace_type.canal.to_owned();
+                    self.canal = one_log.trace_type.canal.to_owned();
+                    self.canal_msg = one_log.trace_type.canal_msg.to_owned();
+                    self.hex = one_log.hexa.to_owned();
+                }
+                new_index = Some(borrowed.data.current_index);
             }
+        }
+        if let Some(idx) = new_index {
+            self.handle_logic();
+            self.current_index = idx;
         }
         egui::Window::new(self.window_title())
             .default_width(320.0)
@@ -48,6 +106,7 @@ impl super::PanelController for LogicalChannels {
     }
 }
 
+/// Create a label with a background color
 pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: &str) {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
@@ -69,12 +128,14 @@ pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: &str) {
     });
 }
 
+/// Print a label on the grid
 pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
     ui.vertical_centered(|ui| {
         ui.label(label);
     });
 }
 
+/// Convert a number to a boolean
 fn num_to_bool(num: u32) -> bool {
     num == 1
 }

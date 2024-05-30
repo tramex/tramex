@@ -1,3 +1,4 @@
+//! Connector module
 use std::path::PathBuf;
 
 use crate::data::{Data, MessageType, Trace};
@@ -9,18 +10,29 @@ use ewebsock::{WsEvent, WsMessage};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
 #[serde(default)]
+/// Connector
 pub struct Connector {
     #[serde(skip)]
+    /// Interface
     pub interface: Interface,
+
     #[serde(skip)]
+    /// Data
     pub data: Data,
+
     #[serde(skip)]
+    /// Available
     pub available: bool,
+
+    /// Asking size max
     pub asking_size_max: u64,
+
+    /// Url
     pub url: String,
 }
 
 impl Connector {
+    /// Create a new Connector
     pub fn new() -> Self {
         Self {
             interface: Interface::None,
@@ -31,23 +43,32 @@ impl Connector {
         }
     }
 
+    /// Clear data of connector
     pub fn clear_data(&mut self) {
         self.data = Data::default();
         self.available = false;
     }
 
+    /// Clear connector interface
     pub fn clear_interface(&mut self) {
         self.interface = Interface::None;
         self.available = false;
     }
 
-    pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
+    /// Connect to a websocket
+    /// # Errors
+    /// Return an error if the connection failed
+    pub fn connect(
+        &mut self,
+        url: &str,
+        wakeup: impl Fn() + Send + Sync + 'static,
+    ) -> Result<(), TramexError> {
         let options = ewebsock::Options::default();
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
                 self.interface = Interface::Ws(WsConnection {
-                    ws_sender: ws_sender,
-                    ws_receiver: ws_receiver,
+                    ws_sender,
+                    ws_receiver,
                     msg_id: 1,
                     connecting: true,
                 });
@@ -63,12 +84,14 @@ impl Connector {
         }
     }
 
+    /// Set file mode using a File
     pub fn set_file(&mut self, file: File) {
         log::debug!("Set file available");
         self.interface = Interface::File(file);
         self.available = true;
     }
 
+    /// Set ws mode
     pub fn new_ws(ws: WsConnection) -> Self {
         Self {
             interface: Interface::Ws(ws),
@@ -77,14 +100,22 @@ impl Connector {
             ..Default::default()
         }
     }
+
+    /// set file mode using a path
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
-            interface: Interface::File(File::new(file_path, String::new())),
+            interface: Interface::File(File {
+                file_path,
+                file_content: String::new(),
+                readed: false,
+            }),
             data: Data::default(),
             available: false,
             ..Default::default()
         }
     }
+
+    /// set file mode using a path and content
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
             interface: Interface::File(File::new_toread(file_path, file_content, 50)),
@@ -94,6 +125,9 @@ impl Connector {
         }
     }
 
+    /// Get more data depending on the interface
+    /// # Errors
+    /// Return an error if the interface is not set
     pub fn get_more_data(&mut self, layers_list: Layers) -> Result<(), TramexError> {
         log::debug!("Get more data");
         match &mut self.interface {
@@ -135,6 +169,9 @@ impl Connector {
         Ok(())
     }
 
+    /// Try to receive data
+    /// # Errors
+    /// Return an error if the interface is not set
     pub fn try_recv(&mut self) -> Result<(), TramexError> {
         match &mut self.interface {
             Interface::Ws(ref mut ws) => {
@@ -154,13 +191,13 @@ impl Connector {
                                                 let msg_type = MessageType {
                                                     timestamp: one_log.timestamp.to_owned(),
                                                     layer: one_log.layer,
-                                                    direction: one_log.dir.unwrap(),
+                                                    direction: one_log.dir.unwrap_or_default(),
                                                     canal: one_log.channel.unwrap_or_default(),
-                                                    canal_msg: canal_msg,
+                                                    canal_msg: canal_msg_extracted,
                                                 };
                                                 let trace = Trace {
                                                     trace_type: msg_type,
-                                                    hexa: hexa,
+                                                    hexa: hexa_extracted.unwrap_or_default(), // TODO handle
                                                 };
                                                 self.data.events.push(trace);
                                             }

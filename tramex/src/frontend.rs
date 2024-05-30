@@ -1,3 +1,4 @@
+//! Frontend module
 use crate::panels::{FileHandler, LogicalChannels, MessageBox, PanelController, TrameManager};
 use crate::set_open;
 use egui::Ui;
@@ -7,22 +8,40 @@ use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::Interface;
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq)]
+/// Choice enum
 pub enum Choice {
+    /// File choice
     File,
+
+    /// WebSocket choice
     WebSocket,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
+/// FrontEnd struct
 pub struct FrontEnd {
+    /// Connector
     pub connector: Rc<RefCell<Connector>>,
+
+    /// Open windows
     pub open_windows: BTreeSet<String>,
+
     #[serde(skip)]
+    /// Windows
     pub windows: Vec<Box<dyn PanelController>>,
+
+    /// Open menu connector
     pub open_menu_connector: bool,
+
     #[serde(skip)]
+    /// File upload
     file_upload: Option<FileHandler>,
+
+    /// Trame manager
     trame_manager: TrameManager,
+
+    /// Radio choice
     pub radio_choice: Choice,
 }
 
@@ -41,6 +60,7 @@ impl Default for FrontEnd {
 }
 
 impl FrontEnd {
+    /// Create a new frontend
     pub fn new() -> Self {
         let connector = Connector::new();
         let ref_connector = Rc::new(RefCell::new(connector));
@@ -59,6 +79,7 @@ impl FrontEnd {
         }
     }
 
+    /// Menu bar
     pub fn menu_bar(&mut self, ui: &mut Ui) {
         if self.connector.borrow().available {
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
@@ -76,26 +97,24 @@ impl FrontEnd {
         }
     }
 
+    /// Show the URL
     pub fn show_url(&mut self, ui: &mut Ui, new_ctx: egui::Context) -> Result<(), TramexError> {
         let connector = &mut self.connector.borrow_mut();
 
-        match &connector.interface {
-            Interface::Ws(_interface_ws) => {
-                ui.label("URL:");
-                ui.label(&connector.url);
-                if ui.button("Close").clicked() {
-                    // close connection
-                    match connector.interface.close() {
-                        Ok(_) => {
-                            connector.clear_interface();
-                        }
-                        Err(err) => {
-                            return Err(err);
-                        }
+        if let Interface::Ws(_interface_ws) = &connector.interface {
+            ui.label("URL:");
+            ui.label(&connector.url);
+            if ui.button("Close").clicked() {
+                // close connection
+                match connector.interface.close() {
+                    Ok(_) => {
+                        connector.clear_interface();
+                    }
+                    Err(err) => {
+                        return Err(err);
                     }
                 }
             }
-            _ => {}
         }
 
         match &connector.interface {
@@ -112,15 +131,14 @@ impl FrontEnd {
                 {
                     let wakup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
                     let local_url = connector.url.clone();
-                    if let Err(err) = connector.connect(&local_url, wakup_fn) {
-                        return Err(err);
-                    }
+                    connector.connect(&local_url, wakup_fn)?
                 }
             }
         }
         Ok(())
     }
 
+    /// Show the UI connector
     pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
         let mut error = None;
         if self.open_menu_connector {
@@ -149,10 +167,12 @@ impl FrontEnd {
                             }
                             Choice::File => {
                                 if let Some(file_handle) = &mut self.file_upload {
-                                    match file_handle.ui(ui) {
-                                        Ok(bo) => {
-                                            if bo {
-                                                if self.connector.borrow().interface.is_none() {
+                                    let is_file_path = file_handle.get_picket_path().is_some();
+                                    ui.add_enabled_ui(!is_file_path, |ui| {
+                                        match file_handle.ui(ui) {
+                                            Ok(bo) => {
+                                                if bo && self.connector.borrow().interface.is_none()
+                                                {
                                                     match file_handle.get_result() {
                                                         Ok(curr_file) => {
                                                             self.connector.borrow_mut().set_file(curr_file);
@@ -165,18 +185,20 @@ impl FrontEnd {
                                                     }
                                                 }
                                             }
+                                            Err(err) => {
+                                                log::error!("Error in file_handle {:?}", err);
+                                                error = Some(err);
+                                                file_handle.reset();
+                                                self.connector.borrow_mut().clear_data();
+                                            }
                                         }
-                                        Err(err) => {
-                                            log::error!("Error in file_handle {:?}", err);
-                                            error = Some(err);
-                                        }
-                                    }
-                                    if file_handle.get_picket_path().is_some() {
-                                        if ui.button("Close").on_hover_text("Close file").clicked() {
-                                            file_handle.reset();
-                                            self.connector.borrow_mut().clear_data();
-                                            self.connector.borrow_mut().clear_interface();
-                                        }
+                                    });
+                                    if is_file_path
+                                        && ui.button("Close").on_hover_text("Close file").clicked()
+                                    {
+                                        file_handle.reset();
+                                        self.connector.borrow_mut().clear_data();
+                                        self.connector.borrow_mut().clear_interface();
                                     }
                                 }
                             }
@@ -202,6 +224,7 @@ impl FrontEnd {
         Ok(())
     }
 
+    /// Show the UI
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
         let mut error_to_return = None;
         if let Err(err) = self.connector.borrow_mut().try_recv() {

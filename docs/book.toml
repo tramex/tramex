@@ -1,5 +1,10 @@
 [book]
-authors = ["n4n5"]
+authors = [
+    "n4n5 <its.just.n4n5@gmail.com>",
+    "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>",
+    "katheleligaf",
+    "comeyrd <ce.eyraud@gmail.com>"
+]
 language = "en"
 multilingual = false
 src = "src"
