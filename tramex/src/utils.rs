@@ -42,9 +42,12 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
 }
 
 /// Display a Trace type
-pub fn display_log(ui: &mut Ui, log: &Trace) {
-    let job = LayoutJob::default();
-    ui.label(format!("{:?}", &log.trace_type));
-    ui.label(format!("{:?}", &log.hexa));
-    ui.label(job);
+pub fn display_log(ui: &mut Ui, curr_trace: &Trace) {
+    ui.label(format!("{:?}", &curr_trace.trace_type));
+    ui.label(format!("{:?}", &curr_trace.hexa));
+    #[cfg(feature = "debug")]
+    {
+        ui.separator();
+        ui.label(format!("{:?}", &curr_trace.text));
+    }
 }

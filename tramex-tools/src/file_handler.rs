@@ -161,6 +161,8 @@ impl File {
         let trace = Trace {
             trace_type: mtype,
             hexa: hex,
+            #[cfg(feature = "debug-trame")]
+            text: vec![], // TODO: implement the text extraction
         };
         let mut end = false;
         let mut brackets: i16 = 0;

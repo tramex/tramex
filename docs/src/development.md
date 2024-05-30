@@ -37,3 +37,12 @@ To check the code style, you can run the following command :
 ```bash
 cargo clippy
 ```
+
+## Debug mode
+
+To run the application in debug mode, you can run the following command :
+
+```bash
+cargo run --features debug
+# this will activate the debug features in tramex and tramex-tools
+```

@@ -21,6 +21,7 @@ categories = ["visualization", "network-programming"]
 
 [features]
 default = []
+debug = ["tramex-tools/debug"]
 
 ## Test the tokio backend:
 tokio = ["ewebsock/tokio", "dep:tokio"]
