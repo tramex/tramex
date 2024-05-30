@@ -36,7 +36,7 @@ mod tests {
         let mut f = Connector::new_file_content(filename.into(), content);
         match f.try_recv() {
             Ok(_) => {
-                assert!(false);
+                unreachable!();
             }
             Err(e) => {
                 assert!(e.message == "Could not parse the JSON like part, missing closing }");
@@ -50,7 +50,7 @@ mod tests {
         let mut f = Connector::new_file_content(filename.into(), content);
         match f.try_recv() {
             Ok(_) => {
-                assert!(false);
+                unreachable!();
             }
             Err(e) => {
                 assert!(e.message == "The canal and/or canal message could not be parsed");
@@ -64,7 +64,7 @@ mod tests {
         let mut f = Connector::new_file_content(filename.into(), content);
         match f.try_recv() {
             Ok(_) => {
-                assert!(false);
+                unreachable!();
             }
             Err(e) => {
                 assert!(e.message == "Error while parsing date");

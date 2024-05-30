@@ -185,7 +185,7 @@ impl Connector {
                                                     layer: one_log.layer,
                                                     direction: one_log.dir.unwrap_or_default(),
                                                     canal: one_log.channel.unwrap_or_default(),
-                                                    canal_msg: canal_msg,
+                                                    canal_msg,
                                                 };
                                                 let trace = Trace {
                                                     trace_type: msg_type,

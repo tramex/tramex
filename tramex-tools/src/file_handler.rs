@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::websocket::layer::Layer;
-
+/// The default number of log processed by batch
 const DEFAULT_NB: usize = 6;
 #[derive(Debug, Clone)]
 /// Data structure to store the file.
@@ -24,7 +24,9 @@ pub struct File {
 
     /// Readed status of the file.
     pub readed: bool,
+    /// the number of log to read each batch
     nb_read: usize,
+    /// The previous line number
     ix: usize,
 }
 
@@ -81,14 +83,14 @@ impl File {
         if opt_err.is_some() {
             self.readed = true;
         }
-        return (vec_trace, opt_err);
+        (vec_trace, opt_err)
     }
     /// To process a string passed in argument, with index and batch to read
-    pub fn process_string(hay: &String, nb_to_read: usize, mut ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
+    pub fn process_string(hay: &str, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
         let mut vtraces: Vec<Trace> = vec![];
         let lines: Vec<&str> = hay.lines().collect();
         for _ in 0..nb_to_read {
-            match Self::parse_bloc(&lines, &mut ix) {
+            match Self::parse_bloc(&lines, ix) {
                 Ok(trace) => {
                     vtraces.push(trace);
                 }
@@ -103,7 +105,7 @@ impl File {
                 },
             };
         }
-        return (vtraces, None);
+        (vtraces, None)
     }
     /// Counting Brackets
     pub fn count_brackets(hay: &str) -> i16 {
@@ -115,8 +117,9 @@ impl File {
                 _ => (),
             }
         }
-        return count;
+        count
     }
+    /// Function that parses the JSON style bloc in each log
     fn parse_bloc(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Option<TramexError>> {
         let lines_len = lines.len();
         if (lines_len as i32 - *ix as i32) < 3 {
@@ -145,7 +148,7 @@ impl File {
             *ix += 1;
         }
         if *ix >= lines_len {
-            *ix = *ix - 1;
+            *ix -= 1;
             return Err(Some(Self::parsing_error(
                 "Could not find the end of the hexadecimal".to_string(),
             )));
@@ -162,21 +165,22 @@ impl File {
         let mut end = false;
         let mut brackets: i16 = 0;
         while (*ix < lines_len) && !end {
-            brackets = brackets + Self::count_brackets(lines[*ix]);
+            brackets += Self::count_brackets(lines[*ix]);
             *ix += 1;
             if brackets == 0 {
                 end = true;
             }
         }
         if *ix >= lines_len && !end {
-            *ix = *ix - 1;
+            *ix -= 1;
             return Err(Some(Self::parsing_error(
                 "Could not parse the JSON like part, missing closing }".to_string(),
             )));
         }
         *ix += 1;
-        return Ok(trace);
+        Ok(trace)
     }
+    /// Function that parses the first line of a log
     fn parse_line(line: &str) -> Result<MessageType, TramexError> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 5 {
@@ -191,7 +195,7 @@ impl File {
         let layer_result: Result<Layer, ()> = Layer::from_str(parts[1].trim_start_matches('[').trim_end_matches(']'));
         let direction_result = Direction::from_str(parts[2]);
         let binding: String = parts[5..].join(" ");
-        let concatenated: Vec<&str> = binding.split(":").collect();
+        let concatenated: Vec<&str> = binding.split(':').collect();
         let layer: Layer = match layer_result {
             Ok(l) => l,
             Err(_) => {
@@ -213,8 +217,8 @@ impl File {
         }
         return Ok(MessageType {
             timestamp: time_to_milliseconds(&date) as u64,
-            layer: layer,
-            direction: direction,
+            layer,
+            direction,
             canal: concatenated[0].to_owned(),
             canal_msg: concatenated[1].trim_start().to_owned(),
         });
