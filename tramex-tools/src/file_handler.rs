@@ -96,7 +96,7 @@ impl File {
                 }
                 Err(err) => match &err {
                     Some(e) => {
-                        eprintln!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
+                        log::error!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
                         return (vtraces, Some(e.clone()));
                     }
                     None => {
@@ -202,7 +202,7 @@ impl File {
                 return Err(Self::parsing_error("The layer could not be parsed".to_string()));
             }
         };
-        eprintln!("{:?}", layer);
+        log::debug!("{:?}", layer);
         if layer == Layer::None {
             return Err(Self::parsing_error("The layer could not be parsed".to_string()));
         }
