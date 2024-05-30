@@ -219,9 +219,11 @@ impl File {
             canal_msg: concatenated[1].trim_start().to_owned(),
         });
     }
+    /// Build a parsing error
     fn parsing_error(message: String) -> TramexError {
         TramexError::new(message, crate::errors::ErrorCode::FileParsing)
     }
+    /// Build a eof_error
     fn eof_error() -> TramexError {
         TramexError::new("End of file".to_string(), crate::errors::ErrorCode::EndOfFile)
     }
