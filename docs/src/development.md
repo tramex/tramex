@@ -47,5 +47,5 @@ To run the application in debug mode, you can run the following command :
 cargo run --features debug
 
 # more logs
-RUST_LOG=debug cargo run --features debug
+RUST_BACKTRACE=1 RUST_LOG=debug cargo run --features debug
 ```

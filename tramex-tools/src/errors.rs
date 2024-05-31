@@ -50,6 +50,9 @@ pub enum ErrorCode {
 
     /// File: Error while parsing the file
     FileParsing,
+
+    /// Request error
+    RequestError,
 }
 
 impl Default for ErrorCode {
@@ -78,6 +81,7 @@ impl std::fmt::Display for ErrorCode {
             Self::HexeDecodingError => "Hexe decoding error",
             Self::EndOfFile => "End of File",
             Self::FileParsing => "File: Parsing error",
+            Self::RequestError => "Request error",
         };
         write!(f, "{}", str)
     }
@@ -106,6 +110,7 @@ pub struct TramexError {
 impl TramexError {
     /// Create a new error
     pub fn new(message: String, code: ErrorCode) -> Self {
+        log::debug!("Error: {} - {}\n{}", code, message, std::backtrace::Backtrace::capture());
         Self { message, code }
     }
 

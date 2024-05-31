@@ -4,13 +4,12 @@ use crate::data::MessageType;
 use crate::data::Trace;
 use crate::errors::TramexError;
 use crate::functions::extract_hexe;
+use crate::websocket::layer::Layer;
 use crate::websocket::types::Direction;
 use chrono::NaiveTime;
 use chrono::Timelike;
 use std::path::PathBuf;
 use std::str::FromStr;
-
-use crate::websocket::layer::Layer;
 /// The default number of log processed by batch
 const DEFAULT_NB: usize = 6;
 #[derive(Debug, Clone)]

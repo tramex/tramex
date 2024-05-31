@@ -141,6 +141,8 @@ impl TramexApp {
                             ""
                         }
                     ));
+                    ui.separator();
+                    self.frontend.ui_about(ui);
                 });
             });
     }
