@@ -93,15 +93,15 @@ impl LinkPannel {
 
         egui::Grid::new("some_unique_id").max_col_width(50.0).show(ui, |ui| {
             ui.add_space(20.0);
-            self.make_label(ui, "PCCH", &etat, "red");
+            self.make_label(ui, "PCCH", etat, "red");
             self.print_on_grid(ui, "|");
-            self.make_label(ui, "BCCH", &etat, "red");
+            self.make_label(ui, "BCCH", etat, "red");
             ui.end_row();
 
             ui.add_space(20.0);
-            self.make_label(ui, "PCH", &etat, "red");
+            self.make_label(ui, "PCH", etat, "red");
             self.print_on_grid(ui, "|");
-            self.make_label(ui, "BCH", &etat, "red");
+            self.make_label(ui, "BCH", etat, "red");
             ui.end_row();
         });
     }
@@ -176,7 +176,9 @@ impl LinkPannel {
 
     /// Display the content of the link
     pub fn ui_content(&self, ui: &mut egui::Ui, direction: &Direction) {
+        /// Spacing
         const SPACE_RIGHT: f32 = 100.0;
+        /// Spacing left
         const SPACE_LEFT: f32 = 8.0;
         let size = egui::Vec2::new(50.0, 45.0);
 
@@ -220,7 +222,9 @@ impl LinkPannel {
 
     /// Display the content of the link
     pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
+        /// Spacing
         const SPACE_RIGHT: f32 = 10.0;
+        /// Spacing left
         const SPACE_LEFT: f32 = 2.0;
         let size = egui::Vec2::new(50.0, 45.0);
 
