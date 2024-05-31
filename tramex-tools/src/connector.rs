@@ -245,7 +245,7 @@ impl Connector {
                     }
                 }
             }
-            Interface::File(_)=>{}
+            Interface::File(_) => {}
             //Do nothing if its a File & None
             _ => {}
         }
