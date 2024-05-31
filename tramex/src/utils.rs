@@ -48,6 +48,10 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace) {
     #[cfg(feature = "debug")]
     {
         ui.separator();
-        ui.label(format!("{:?}", &curr_trace.text));
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for elem in &curr_trace.text {
+                ui.label(elem);
+            }
+        });
     }
 }
