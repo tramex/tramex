@@ -43,6 +43,9 @@ cargo clippy
 To run the application in debug mode, you can run the following command :
 
 ```bash
-cargo run --features debug
 # this will activate the debug features in tramex and tramex-tools
+cargo run --features debug
+
+# more logs
+RUST_LOG=debug cargo run --features debug
 ```

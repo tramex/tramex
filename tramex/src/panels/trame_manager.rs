@@ -65,12 +65,20 @@ impl TrameManager {
             log::debug!("More");
             self.should_get_more_log = true;
         }
-        if ui.button("Next").clicked() {
-            log::debug!("Next");
+        let text = if connector.data.events.is_empty() { "Start" } else { "Next" };
+        if ui.button(text).clicked() {
+            log::debug!("Next {}", text);
             if connector.data.events.len() > connector.data.current_index + 1 {
                 connector.data.current_index += 1;
             } else {
                 self.should_get_more_log = true;
+            }
+            // preloading
+            if connector.data.events.len() > 0 {
+                if connector.data.current_index == (connector.data.events.len() - 1) {
+                    log::debug!("Preloading");
+                    self.should_get_more_log = true;
+                }
             }
         }
         ui.add_enabled_ui(connector.data.current_index > 0, |ui| {
