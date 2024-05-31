@@ -74,7 +74,7 @@ impl TrameManager {
                 self.should_get_more_log = true;
             }
             // preloading
-            if connector.data.events.len() > 0 {
+            if connector.data.events.is_empty() {
                 if connector.data.current_index == (connector.data.events.len() - 1) {
                     log::debug!("Preloading");
                     self.should_get_more_log = true;
