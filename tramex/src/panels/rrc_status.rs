@@ -1,8 +1,8 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::primitive::f32;
-use eframe::egui::{self, TextFormat};
 use eframe::egui::Color32;
+use eframe::egui::{self, TextFormat};
+use std::cell::RefCell;
+use std::primitive::f32;
+use std::rc::Rc;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 use tramex_tools::websocket::types::Direction;
@@ -13,9 +13,7 @@ pub struct LinkPannel {
 
 impl LinkPannel {
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
-        Self {
-            mtrace: ref_data,
-        }
+        Self { mtrace: ref_data }
     }
 }
 impl LinkPannel {
@@ -85,21 +83,19 @@ impl LinkPannel {
         };
         //let etat = "PCCH";
 
-        egui::Grid::new("some_unique_id")
-            .max_col_width(50.0)
-            .show(ui, |ui| {
-                ui.add_space(20.0);
-                self.make_label(ui, "PCCH", &etat, "red");
-                self.print_on_grid(ui, "|");
-                self.make_label(ui, "BCCH", &etat, "red");
-                ui.end_row();
+        egui::Grid::new("some_unique_id").max_col_width(50.0).show(ui, |ui| {
+            ui.add_space(20.0);
+            self.make_label(ui, "PCCH", &etat, "red");
+            self.print_on_grid(ui, "|");
+            self.make_label(ui, "BCCH", &etat, "red");
+            ui.end_row();
 
-                ui.add_space(20.0);
-                self.make_label(ui, "PCH", &etat, "red");
-                self.print_on_grid(ui, "|");
-                self.make_label(ui, "BCH", &etat, "red");
-                ui.end_row();
-            });
+            ui.add_space(20.0);
+            self.make_label(ui, "PCH", &etat, "red");
+            self.print_on_grid(ui, "|");
+            self.make_label(ui, "BCH", &etat, "red");
+            ui.end_row();
+        });
     }
 
     pub fn ui_idle_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
@@ -187,29 +183,26 @@ impl LinkPannel {
             .maintain_aspect_ratio(true);
 
         //ui.vertical(|ui| match self.mtrace.direction.as_str() {
-        ui.with_layout(
-            egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| match direction {
-                Direction::UL => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblue);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack);
-                }
-                Direction::DL => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblack);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downgreen);
-                }
-                _ => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblack);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack);
-                }
-            },
-        );
+        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| match direction {
+            Direction::UL => {
+                ui.add_space(SPACE_LEFT);
+                ui.add(upblue);
+                ui.add_space(SPACE_RIGHT);
+                ui.add(downblack);
+            }
+            Direction::DL => {
+                ui.add_space(SPACE_LEFT);
+                ui.add(upblack);
+                ui.add_space(SPACE_RIGHT);
+                ui.add(downgreen);
+            }
+            _ => {
+                ui.add_space(SPACE_LEFT);
+                ui.add(upblack);
+                ui.add_space(SPACE_RIGHT);
+                ui.add(downblack);
+            }
+        });
     }
 
     pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
@@ -235,35 +228,32 @@ impl LinkPannel {
             .maintain_aspect_ratio(true);
 
         //ui.vertical(|ui| match self.mtrace.direction.as_str() {
-        ui.with_layout(
-            egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| match direction {
-                Direction::UL => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upgreen.clone());
-                    ui.add(upgreen);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack.clone());
-                    ui.add(downblack);
-                }
-                Direction::DL => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblack.clone());
-                    ui.add(upblack);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downgreen.clone());
-                    ui.add(downgreen);
-                }
-                _ => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblack.clone());
-                    ui.add(upblack);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack.clone());
-                    ui.add(downblack);
-                }
-            },
-        );
+        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| match direction {
+            Direction::UL => {
+                ui.add_space(SPACE_LEFT);
+                ui.add(upgreen.clone());
+                ui.add(upgreen);
+                ui.add_space(SPACE_RIGHT);
+                ui.add(downblack.clone());
+                ui.add(downblack);
+            }
+            Direction::DL => {
+                ui.add_space(SPACE_LEFT);
+                ui.add(upblack.clone());
+                ui.add(upblack);
+                ui.add_space(SPACE_RIGHT);
+                ui.add(downgreen.clone());
+                ui.add(downgreen);
+            }
+            _ => {
+                ui.add_space(SPACE_LEFT);
+                ui.add(upblack.clone());
+                ui.add(upblack);
+                ui.add_space(SPACE_RIGHT);
+                ui.add(downblack.clone());
+                ui.add(downblack);
+            }
+        });
     }
 }
 
@@ -277,18 +267,13 @@ impl super::PanelController for LinkPannel {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
-        
         let size = egui::Vec2::new(215.0, 200.0);
-        egui::Window::new(self.name())
-        .open(open)
-        .fixed_size(size)
-        .show(ctx, |ui| {
-                use super::PanelView as _;
-                self.ui(ui)
+        egui::Window::new(self.name()).open(open).fixed_size(size).show(ctx, |ui| {
+            use super::PanelView as _;
+            self.ui(ui)
         });
         Ok(())
     }
-
 }
 
 impl super::PanelView for LinkPannel {
@@ -312,6 +297,6 @@ impl super::PanelView for LinkPannel {
             self.ui_idle_umts(ui, direction);
             ui.separator();
             self.ui_umts(ui, direction);
-        } 
+        }
     }
 }

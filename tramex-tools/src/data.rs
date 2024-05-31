@@ -12,7 +12,8 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn get_current_trace(&self) -> Option<&Trace>{
+    /// return the current trace
+    pub fn get_current_trace(&self) -> Option<&Trace> {
         return self.events.get(self.current_index);
     }
 }
