@@ -1,12 +1,14 @@
+//! Module: panels
+
 pub mod about;
-pub mod file_handler;
+pub mod file_upload;
 pub mod logical_channels;
 pub mod message;
 pub mod trame_manager;
 pub mod rrc_status;
 
 pub use about::AboutPanel;
-pub use file_handler::FileHandler;
+pub use file_upload::FileHandler;
 pub use logical_channels::LogicalChannels;
 pub use rrc_status::LinkPannel;
 pub use message::MessageBox;
@@ -17,6 +19,7 @@ use tramex_tools::errors::TramexError;
 
 /// Something to view in the demo windows
 pub trait PanelView {
+    /// Show the UI of the panel
     fn ui(&mut self, ui: &mut egui::Ui);
 }
 
@@ -34,5 +37,7 @@ pub trait PanelController {
     fn window_title(&self) -> &'static str;
 
     /// Show windows, etc
+    /// # Errors
+    /// Return an error if the panel can't be shown
     fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError>;
 }

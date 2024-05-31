@@ -1,7 +1,9 @@
+//! About panel
 use eframe::egui;
 use tramex_tools::errors::TramexError;
 
 #[derive(Default)]
+/// About panel
 pub struct AboutPanel {}
 
 impl super::PanelController for AboutPanel {
@@ -35,10 +37,7 @@ impl super::PanelView for AboutPanel {
         ui.add_space(12.0);
 
         ui.horizontal_wrapped(|ui| {
-            ui.hyperlink_to(
-                "notes.rezel.net",
-                "https://notes.rezel.net/22PBCZhXTvGsG5ipptTvwQ",
-            );
+            ui.hyperlink_to("github", "https://github.com/tramex/tramex");
         });
 
         ui.add_space(12.0);

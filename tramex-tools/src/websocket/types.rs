@@ -1,50 +1,77 @@
+//! This module contains the types used in the websocket module.
+
 use std::str::FromStr;
 
 use crate::websocket::onelog::OneLog;
 
 // deserialize the message
 #[derive(serde::Deserialize, Debug)]
+/// LogGet struct
 pub struct WebSocketLog {
-    pub message: String,         // Same as request
-    pub message_id: Option<u64>, //Any type, force as string // Same as in request.
-    pub time: f64, // Number representing time in seconds since start of the process. // Usefull to send command with absolute time.
-    pub utc: f64,  //Number representing UTC seconds.
+    /// Same as request
+    pub message: String,
+
+    ///Any type, force as string // Same as in request.
+    pub message_id: Option<u64>,
+
+    /// Number representing time in seconds since start of the process. // Usefull to send command with absolute time.
+    pub time: f64,
+
+    ///Number representing UTC seconds.
+    pub utc: f64,
+
+    /// Logs vectors
     pub logs: Vec<OneLog>,
 }
 
 #[derive(Debug, PartialEq)]
+/// LogLevel struct
 pub enum LogLevel {
+    /// Error log level
     ERROR = 1,
+
+    /// Warning log level
     WARN = 2,
+
+    /// Info log level
     INFO = 3,
+
+    /// Debug log level
     DEBUG = 4,
 }
 
 #[derive(serde::Deserialize, Debug, PartialEq)]
+/// SourceLog enum
 pub enum SourceLog {
+    /// ENB source
     ENB,
+
+    /// MME source
     MME,
 }
 
-#[derive(serde::Deserialize, Debug, PartialEq)]
+#[derive(serde::Deserialize, Debug, PartialEq, Default)]
+/// Direction enum
 pub enum Direction {
+    #[default]
+    /// Uplink direction
     UL,
-    DL,
-    FROM,
-    TO,
-}
 
-impl Default for Direction {
-    fn default() -> Self {
-        Direction::UL
-    }
+    /// Downlink direction
+    DL,
+
+    /// From direction
+    FROM,
+
+    /// To direction
+    TO,
 }
 
 impl FromStr for Direction {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+    fn from_str(input_string: &str) -> Result<Self, Self::Err> {
+        match input_string {
             "UL" => Ok(Direction::UL),
             "DL" => Ok(Direction::DL),
             "FROM" => Ok(Direction::FROM),
@@ -59,8 +86,8 @@ impl<'de> serde::Deserialize<'de> for LogLevel {
     where
         D: serde::Deserializer<'de>,
     {
-        let a = u8::deserialize(deserializer)?;
-        match a {
+        let deserialized_int = u8::deserialize(deserializer)?;
+        match deserialized_int {
             1 => Ok(LogLevel::ERROR),
             2 => Ok(LogLevel::WARN),
             3 => Ok(LogLevel::INFO),

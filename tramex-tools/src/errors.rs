@@ -1,18 +1,55 @@
-#[derive(serde::Deserialize, Debug, Clone)]
+//! Error handling for Tramex Tools
+
+#[derive(serde::Deserialize, Debug, Clone, PartialEq)]
+/// Error codes for Tramex Tools
 pub enum ErrorCode {
+    /// Not set
     NotSet = 0,
+
+    /// WebSocket: Failed to connect
     WebScoketFailedToConnect,
+
+    /// WebSocket: Error encoding message
     WebSocketErrorEncodingMessage,
+
+    /// WebSocket: Error decoding message
     WebSocketErrorDecodingMessage,
+
+    /// WebSocket: Unknown message received
     WebSocketUnknownMessageReceived,
+
+    /// WebSocket: Unknown binary message received
     WebSocketUnknownBinaryMessageReceived,
+
+    /// WebSocket: Error
     WebSocketError,
+
+    /// WebSocket: Closed
     WebSocketClosed,
+
+    /// WebSocket: Error closing
     WebSocketErrorClosing,
+
+    /// File: No file selected
     FileNotSelected,
+
+    /// File: Error reading file
     FileErrorReadingFile,
+
+    /// File: Not ready
     FileNotReady,
+
+    /// File: Invalid encoding (wrong UTF-8)
     FileInvalidEncoding,
+
+    /// Hexe decoding failed
+    HexeDecodingError,
+
+    /// File : End of the file
+    EndOfFile,
+
+    /// File: Error while parsing the file
+    FileParsing,
 }
 
 impl Default for ErrorCode {
@@ -23,59 +60,67 @@ impl Default for ErrorCode {
 
 impl std::fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self as &dyn std::fmt::Debug)
+        // use to_string() to get the string representation of the error code
+        let str = match self {
+            Self::WebScoketFailedToConnect => "WebSocket: Failed to connect",
+            Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message",
+            Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message",
+            Self::WebSocketUnknownMessageReceived => "WebSocket: Unknown message received",
+            Self::WebSocketUnknownBinaryMessageReceived => "WebSocket: Unknown binary message received",
+            Self::WebSocketError => "WebSocket: Error",
+            Self::WebSocketClosed => "WebSocket: Closed",
+            Self::WebSocketErrorClosing => "WebSocket: Error closing",
+            Self::FileNotSelected => "File: No file selected",
+            Self::FileErrorReadingFile => "File: Error reading file",
+            Self::FileNotReady => "File: Not ready",
+            Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)",
+            Self::NotSet => "Error code not set, please create an issue",
+            Self::HexeDecodingError => "Hexe decoding error",
+            Self::EndOfFile => "End of File",
+            Self::FileParsing => "File: Parsing error",
+        };
+        write!(f, "{}", str)
     }
 }
 
 impl ErrorCode {
-    pub fn to_string(&self) -> String {
-        match self {
-            Self::WebScoketFailedToConnect => "WebSocket: Failed to connect".to_owned(),
-            Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message".to_owned(),
-            Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message".to_owned(),
-            Self::WebSocketUnknownMessageReceived => {
-                "WebSocket: Unknown message received".to_owned()
-            }
-            Self::WebSocketUnknownBinaryMessageReceived => {
-                "WebSocket: Unknown binary message received".to_owned()
-            }
-            Self::WebSocketError => "WebSocket: Error".to_owned(),
-            Self::WebSocketClosed => "WebSocket: Closed".to_owned(),
-            Self::WebSocketErrorClosing => "WebSocket: Error closing".to_owned(),
-            Self::FileNotSelected => "File: No file selected".to_owned(),
-            Self::FileErrorReadingFile => "File: Error reading file".to_owned(),
-            Self::FileNotReady => "File: Not ready".to_owned(),
-            Self::FileInvalidEncoding => "File: Invalid encoding (wrong UTF-8)".to_owned(),
-            Self::NotSet => "Error code not set, please create an issue".to_owned(),
-        }
-    }
+    /// Check if the error is recoverable
     pub fn is_recoverable(&self) -> bool {
-        match self {
-            _ => true,
-        }
+        // match self {
+        //     _ => true,
+        // }
+        true
     }
 }
 
 #[derive(serde::Deserialize, Debug, Default, Clone)]
+/// Error structure for Tramex Tools
 pub struct TramexError {
+    /// Error message (human readable)
     pub message: String,
+
+    /// Error code
     pub code: ErrorCode,
 }
 
 impl TramexError {
+    /// Create a new error
     pub fn new(message: String, code: ErrorCode) -> Self {
-        Self {
-            message,
-            code,
-            ..Default::default()
-        }
+        Self { message, code }
     }
 
+    /// Check if the error is recoverable
     pub fn is_recoverable(&self) -> bool {
         self.code.is_recoverable()
     }
 
-    pub fn get_code(&self) -> String {
-        format!("[{}] {}", self.code, self.code.to_string())
+    /// Get the error message
+    pub fn get_msg(&self) -> String {
+        format!("[{}] {}", self.code, self.code)
+    }
+
+    /// Get the error code
+    pub fn get_code(&self) -> ErrorCode {
+        self.code.clone()
     }
 }

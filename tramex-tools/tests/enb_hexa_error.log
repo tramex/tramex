@@ -1,0 +1,687 @@
+11:01:08.348 [RRC] DL    - 01 BCCH: SIB
+        0000:  00 80 4c 61 bc 8c 8c c1  16 08 a8 02 40 04 08 01  ..La........@...
+        0010:  73 39 4f 52 d5 42 48 00  18 01 2e 38 03 84 28 c5  s9OR.BH....8..(.
+        0020:  b0 9d 4b 48                                       ..KH
+        {
+          message c1: systemInformation: {
+            criticalExtensions systemInformation-r8: {
+              sib-TypeAndInfo {
+                sib2: {
+                  radioResourceConfigCommon {
+                    rach-ConfigCommon {
+                      preambleInfo {
+                        numberOfRA-Preambles n52
+                      },
+                      powerRampingParameters {
+                        powerRampingStep dB2,
+                        preambleInitialReceivedTargetPower dBm-104
+                      },
+                      ra-SupervisionInfo {
+                        preambleTransMax n10,
+                        ra-ResponseWindowSize sf10,
+                        mac-ContentionResolutionTimer sf40
+                      },
+                      maxHARQ-Msg3Tx 5
+                    },
+                    bcch-Config {
+                      modificationPeriodCoeff n4
+                    },
+                    pcch-Config {
+                      defaultPagingCycle rf128,
+                      nB oneT
+                    },
+                    prach-Config {
+                      rootSequenceIndex 204,
+                      prach-ConfigInfo {
+                        prach-ConfigIndex 4,
+                        highSpeedFlag FALSE,
+                        zeroCorrelationZoneConfig 11,
+                        prach-FreqOffset 2
+                      }
+                    },
+                    pdsch-ConfigCommon {
+                      referenceSignalPower -39,
+                      p-b 0
+                    },
+                    pusch-ConfigCommon {
+                      pusch-ConfigBasic {
+                        n-SB 1,
+                        hoppingMode interSubFrame,
+                        pusch-HoppingOffset 4,
+                        enable64QAM TRUE
+                      },
+                      ul-ReferenceSignalsPUSCH {
+                        groupHoppingEnabled FALSE,
+                        groupAssignmentPUSCH 0,
+                        sequenceHoppingEnabled FALSE,
+                        cyclicShift 0
+                      }
+                    },
+                    pucch-ConfigCommon {
+                      deltaPUCCH-Shift ds2,
+                      nRB-CQI 1,
+                      nCS-AN 0,
+                      n1PUCCH-AN 11
+                    },
+                    soundingRS-UL-ConfigCommon setup: {
+                      srs-BandwidthConfig bw3,
+                      srs-SubframeConfig sc3,
+                      ackNackSRS-SimultaneousTransmission TRUE
+                    },
+                    uplinkPowerControlCommon {
+                      p0-NominalPUSCH -85,
+                      alpha al1,
+                      p0-NominalPUCCH -117,
+                      deltaFList-PUCCH {
+                        deltaF-PUCCH-Format1 deltaF0,
+                        deltaF-PUCCH-Format1b deltaF3,
+                        deltaF-PUCCH-Format2 deltaF1,
+                        deltaF-PUCCH-Format2a deltaF2,
+                        deltaF-PUCCH-Format2b deltaF2
+                      },
+                      deltaPreambleMsg3 4
+                    },
+                    ul-CyclicPrefixLength len1,
+                    pusch-ConfigCommon-v1270 {
+                      enable64QAM-v1270 true
+                    }
+                  },
+                  ue-TimersAndConstants {
+                    t300 ms200,
+                    t301 ms200,
+                    t310 ms200,
+                    n310 n6,
+                    t311 ms10000,
+                    n311 n5
+                  },
+                  freqInfo {
+                    additionalSpectrumEmission 1
+                  },
+                  timeAlignmentTimerCommon infinity
+                },
+                sib3: {
+                  cellReselectionInfoCommon {
+                    q-Hyst dB2
+                  },
+                  cellReselectionServingFreqInfo {
+                    s-NonIntraSearch 3,
+                    threshServingLow 2,
+                    cellReselectionPriority 6
+                  },
+                  intraFreqCellReselectionInfo {
+                    q-RxLevMin -61,
+                    p-Max 23,
+                    s-IntraSearch 5,
+                    presenceAntennaPort1 TRUE,
+                    neighCellConfig '01'B,
+                    t-ReselectionEUTRA 1
+                  }
+                }
+              }
+            }
+          }
+        }
+
+11:01:08.353 [RRC] DL    - 01 BCCH: SIB1
+        0000:  60 66 64 e1 00 01 1a 2d  00 18 02 80 80 42 0c 00  `fd....-.....B..
+        {
+          message c1: systemInformationBlockType1: {
+            cellAccessRelatedInfo {
+              plmn-IdentityList {
+                {
+                  plmn-Identity {
+                    mcc {
+                      9,
+                      9,
+                      9
+                    },
+                    mnc {
+                      7,
+                      0
+                    }
+                  },
+                  cellReservedForOperatorUse notReserved
+                }
+              },
+              trackingAreaCode '0001'H,
+              cellIdentity '1A2D001'H,
+              cellBarred notBarred,
+              intraFreqReselection allowed,
+              csg-Indication FALSE
+            },
+            cellSelectionInfo {
+              q-RxLevMin -70
+            },
+            p-Max 10,
+            freqBandIndicator 3,
+            schedulingInfoList {
+              {
+                si-Periodicity rf16,
+                sib-MappingInfo {
+                  sibType3
+                }
+              }
+            },
+            si-WindowLength ms40,
+            systemInfoValueTag 0
+          }
+        }
+
+11:01:08.388 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 24 00                                          K$.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'C9'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.428 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 28 00                                          K(.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'CA'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.433 [RRC] DL    - 01 BCCH: SIB1
+        0000:  60 66 64 e1 00 01 1a 2d  00 18 02 80 80 42 0c 00  `fd....-.....B..
+        {
+          message c1: systemInformationBlockType1: {
+            cellAccessRelatedInfo {
+              plmn-IdentityList {
+                {
+                  plmn-Identity {
+                    mcc {
+                      9,
+                      9,
+                      9
+                    },
+                    mnc {
+                      7,
+                      0
+                    }
+                  },
+                  cellReservedForOperatorUse notReserved
+                }
+              },
+              trackingAreaCode '0001'H,
+              cellIdentity '1A2D001'H,
+              cellBarred notBarred,
+              intraFreqReselection allowed,
+              csg-Indication FALSE
+            },
+            cellSelectionInfo {
+              q-RxLevMin -70
+            },
+            p-Max 10,
+            freqBandIndicator 3,
+            schedulingInfoList {
+              {
+                si-Periodicity rf16,
+                sib-MappingInfo {
+                  sibType3
+                }
+              }
+            },
+            si-WindowLength ms40,
+            systemInfoValueTag 0
+          }
+        }
+
+11:01:08.468 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 2c 00                                          K,.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'CB'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.508 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 30 00                                          K0.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'CC'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.508 [RRC] DL    - 01 BCCH: SIB
+        0000:  00 80 4c 61 bc 8c 8c c1  16 08 a8 02 40 04 08 01  ..La........@...
+        0010:  73 39 4f 52 d5 42 48 00  18 01 2e 38 03 84 28 c5  s9OR.BH....8..(.
+        0020:  b0 9d 4b 48                                       ..KH
+        {
+          message c1: systemInformation: {
+            criticalExtensions systemInformation-r8: {
+              sib-TypeAndInfo {
+                sib2: {
+                  radioResourceConfigCommon {
+                    rach-ConfigCommon {
+                      preambleInfo {
+                        numberOfRA-Preambles n52
+                      },
+                      powerRampingParameters {
+                        powerRampingStep dB2,
+                        preambleInitialReceivedTargetPower dBm-104
+                      },
+                      ra-SupervisionInfo {
+                        preambleTransMax n10,
+                        ra-ResponseWindowSize sf10,
+                        mac-ContentionResolutionTimer sf40
+                      },
+                      maxHARQ-Msg3Tx 5
+                    },
+                    bcch-Config {
+                      modificationPeriodCoeff n4
+                    },
+                    pcch-Config {
+                      defaultPagingCycle rf128,
+                      nB oneT
+                    },
+                    prach-Config {
+                      rootSequenceIndex 204,
+                      prach-ConfigInfo {
+                        prach-ConfigIndex 4,
+                        highSpeedFlag FALSE,
+                        zeroCorrelationZoneConfig 11,
+                        prach-FreqOffset 2
+                      }
+                    },
+                    pdsch-ConfigCommon {
+                      referenceSignalPower -39,
+                      p-b 0
+                    },
+                    pusch-ConfigCommon {
+                      pusch-ConfigBasic {
+                        n-SB 1,
+                        hoppingMode interSubFrame,
+                        pusch-HoppingOffset 4,
+                        enable64QAM TRUE
+                      },
+                      ul-ReferenceSignalsPUSCH {
+                        groupHoppingEnabled FALSE,
+                        groupAssignmentPUSCH 0,
+                        sequenceHoppingEnabled FALSE,
+                        cyclicShift 0
+                      }
+                    },
+                    pucch-ConfigCommon {
+                      deltaPUCCH-Shift ds2,
+                      nRB-CQI 1,
+                      nCS-AN 0,
+                      n1PUCCH-AN 11
+                    },
+                    soundingRS-UL-ConfigCommon setup: {
+                      srs-BandwidthConfig bw3,
+                      srs-SubframeConfig sc3,
+                      ackNackSRS-SimultaneousTransmission TRUE
+                    },
+                    uplinkPowerControlCommon {
+                      p0-NominalPUSCH -85,
+                      alpha al1,
+                      p0-NominalPUCCH -117,
+                      deltaFList-PUCCH {
+                        deltaF-PUCCH-Format1 deltaF0,
+                        deltaF-PUCCH-Format1b deltaF3,
+                        deltaF-PUCCH-Format2 deltaF1,
+                        deltaF-PUCCH-Format2a deltaF2,
+                        deltaF-PUCCH-Format2b deltaF2
+                      },
+                      deltaPreambleMsg3 4
+                    },
+                    ul-CyclicPrefixLength len1,
+                    pusch-ConfigCommon-v1270 {
+                      enable64QAM-v1270 true
+                    }
+                  },
+                  ue-TimersAndConstants {
+                    t300 ms200,
+                    t301 ms200,
+                    t310 ms200,
+                    n310 n6,
+                    t311 ms10000,
+                    n311 n5
+                  },
+                  freqInfo {
+                    additionalSpectrumEmission 1
+                  },
+                  timeAlignmentTimerCommon infinity
+                },
+                sib3: {
+                  cellReselectionInfoCommon {
+                    q-Hyst dB2
+                  },
+                  cellReselectionServingFreqInfo {
+                    s-NonIntraSearch 3,
+                    threshServingLow 2,
+                    cellReselectionPriority 6
+                  },
+                  intraFreqCellReselectionInfo {
+                    q-RxLevMin -61,
+                    p-Max 23,
+                    s-IntraSearch 5,
+                    presenceAntennaPort1 TRUE,
+                    neighCellConfig '01'B,
+                    t-ReselectionEUTRA 1
+                  }
+                }
+              }
+            }
+          }
+        }
+
+11:01:08.513 [RRC] DL    - 01 BCCH: SIB1
+        0000:  60 66 64 e1 00 01 1a 2d  00 18 02 80 80 42 0c 00  `fd....-.....B..
+        {
+          message c1: systemInformationBlockType1: {
+            cellAccessRelatedInfo {
+              plmn-IdentityList {
+                {
+                  plmn-Identity {
+                    mcc {
+                      9,
+                      9,
+                      9
+                    },
+                    mnc {
+                      7,
+                      0
+                    }
+                  },
+                  cellReservedForOperatorUse notReserved
+                }
+              },
+              trackingAreaCode '0001'H,
+              cellIdentity '1A2D001'H,
+              cellBarred notBarred,
+              intraFreqReselection allowed,
+              csg-Indication FALSE
+            },
+            cellSelectionInfo {
+              q-RxLevMin -70
+            },
+            p-Max 10,
+            freqBandIndicator 3,
+            schedulingInfoList {
+              {
+                si-Periodicity rf16,
+                sib-MappingInfo {
+                  sibType3
+                }
+              }
+            },
+            si-WindowLength ms40,
+            systemInfoValueTag 0
+          }
+        }
+
+11:01:08.548 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 34 00                                          K4.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'CD'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.588 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 38 00                                          K8.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'CE'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.593 [RRC] DL    - 01 BCCH: SIB1
+        0000:  60 66 64 e1 00 01 1a 2d  00 18 02 80 80 42 0c 00  `fd....-.....B..
+        {
+          message c1: systemInformationBlockType1: {
+            cellAccessRelatedInfo {
+              plmn-IdentityList {
+                {
+                  plmn-Identity {
+                    mcc {
+                      9,
+                      9,
+                      9
+                    },
+                    mnc {
+                      7,
+                      0
+                    }
+                  },
+                  cellReservedForOperatorUse notReserved
+                }
+              },
+              trackingAreaCode '0001'H,
+              cellIdentity '1A2D001'H,
+              cellBarred notBarred,
+              intraFreqReselection allowed,
+              csg-Indication FALSE
+            },
+            cellSelectionInfo {
+              q-RxLevMin -70
+            },
+            p-Max 10,
+            freqBandIndicator 3,
+            schedulingInfoList {
+              {
+                si-Periodicity rf16,
+                sib-MappingInfo {
+                  sibType3
+                }
+              }
+            },
+            si-WindowLength ms40,
+            systemInfoValueTag 0
+          }
+        }
+
+11:01:08.628 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 3c 00                                          K<.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'CF'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.668 [RRC] DL    - 01 BCCH-BCH: Master Information Block
+        0000:  4b 40 00                                          K@.
+        {
+          message {
+            dl-Bandwidth n25,
+            phich-Config {
+              phich-Duration normal,
+              phich-Resource one
+            },
+            systemFrameNumber 'D0'H,
+            schedulingInfoSIB1-BR-r13 0,
+            systemInfoUnchanged-BR-r15 FALSE,
+            partEARFCN-17 spare: '00'B,
+            spare '0'B
+          }
+        }
+
+11:01:08.668 [RRC] DL    - 01 BCCH: SIB
+        0000:  00 80 4c 61 bc 8c 8c c1  16 08 a8 02 40 04 08 01  ..La........@...
+        0010:  73 39 4f 52 d5 42 48 00  18 01 2e 38 03 84 28 c5  s9OR.BH....8..(.
+        0020:  b0 9d 4b 48                                       ..KH
+        {
+          message c1: systemInformation: {
+            criticalExtensions systemInformation-r8: {
+              sib-TypeAndInfo {
+                sib2: {
+                  radioResourceConfigCommon {
+                    rach-ConfigCommon {
+                      preambleInfo {
+                        numberOfRA-Preambles n52
+                      },
+                      powerRampingParameters {
+                        powerRampingStep dB2,
+                        preambleInitialReceivedTargetPower dBm-104
+                      },
+                      ra-SupervisionInfo {
+                        preambleTransMax n10,
+                        ra-ResponseWindowSize sf10,
+                        mac-ContentionResolutionTimer sf40
+                      },
+                      maxHARQ-Msg3Tx 5
+                    },
+                    bcch-Config {
+                      modificationPeriodCoeff n4
+                    },
+                    pcch-Config {
+                      defaultPagingCycle rf128,
+                      nB oneT
+                    },
+                    prach-Config {
+                      rootSequenceIndex 204,
+                      prach-ConfigInfo {
+                        prach-ConfigIndex 4,
+                        highSpeedFlag FALSE,
+                        zeroCorrelationZoneConfig 11,
+                        prach-FreqOffset 2
+                      }
+                    },
+                    pdsch-ConfigCommon {
+                      referenceSignalPower -39,
+                      p-b 0
+                    },
+                    pusch-ConfigCommon {
+                      pusch-ConfigBasic {
+                        n-SB 1,
+                        hoppingMode interSubFrame,
+                        pusch-HoppingOffset 4,
+                        enable64QAM TRUE
+                      },
+                      ul-ReferenceSignalsPUSCH {
+                        groupHoppingEnabled FALSE,
+                        groupAssignmentPUSCH 0,
+                        sequenceHoppingEnabled FALSE,
+                        cyclicShift 0
+                      }
+                    },
+                    pucch-ConfigCommon {
+                      deltaPUCCH-Shift ds2,
+                      nRB-CQI 1,
+                      nCS-AN 0,
+                      n1PUCCH-AN 11
+                    },
+                    soundingRS-UL-ConfigCommon setup: {
+                      srs-BandwidthConfig bw3,
+                      srs-SubframeConfig sc3,
+                      ackNackSRS-SimultaneousTransmission TRUE
+                    },
+                    uplinkPowerControlCommon {
+                      p0-NominalPUSCH -85,
+                      alpha al1,
+                      p0-NominalPUCCH -117,
+                      deltaFList-PUCCH {
+                        deltaF-PUCCH-Format1 deltaF0,
+                        deltaF-PUCCH-Format1b deltaF3,
+                        deltaF-PUCCH-Format2 deltaF1,
+                        deltaF-PUCCH-Format2a deltaF2,
+                        deltaF-PUCCH-Format2b deltaF2
+                      },
+                      deltaPreambleMsg3 4
+                    },
+                    ul-CyclicPrefixLength len1,
+                    pusch-ConfigCommon-v1270 {
+                      enable64QAM-v1270 true
+                    }
+                  },
+                  ue-TimersAndConstants {
+                    t300 ms200,
+                    t301 ms200,
+                    t310 ms200,
+                    n310 n6,
+                    t311 ms10000,
+                    n311 n5
+                  },
+                  freqInfo {
+                    additionalSpectrumEmission 1
+                  },
+                  timeAlignmentTimerCommon infinity
+                },
+                sib3: {
+                  cellReselectionInfoCommon {
+                    q-Hyst dB2
+                  },
+                  cellReselectionServingFreqInfo {
+                    s-NonIntraSearch 3,
+                    threshServingLow 2,
+                    cellReselectionPriority 6
+                  },
+                  intraFreqCellReselectionInfo {
+                    q-RxLevMin -61,
+                    p-Max 23,
+                    s-IntraSearch 5,
+                    presenceAntennaPort1 TRUE,
+                    neighCellConfig '01'B,
+                    t-ReselectionEUTRA 1
+                  }
+                }
+              }
+            }
+          }
+        }

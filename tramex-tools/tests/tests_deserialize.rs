@@ -1,6 +1,7 @@
 // tests
 #[cfg(test)]
 mod tests {
+    use tramex_tools::errors::ErrorCode;
     use tramex_tools::websocket::types::WebSocketLog;
 
     #[test]
@@ -55,16 +56,42 @@ mod tests {
         let data = vec![
             "0000:  00 80 4c 61 bc 8c 8c c1  16 08 a8 02 40 04 08 01  ..La........@...",
             "0010:  73 39 4f 52 d5 42 48 00  18 01 2e 38 03 84 28 c5  s9OR.BH....8..(.",
-            "0020:  b0 9d 4b 48",
+            "0020:  b0 9d 4b 48                                       ssdf............",
         ];
-        let hexe = extract_hexe(&data);
+        let res_hexe = extract_hexe(&data);
+        assert!(res_hexe.is_ok());
+        let hexe = res_hexe.unwrap();
         println!("{:?}", hexe);
         let res: Vec<u8> = vec![
-            0, 128, 76, 97, 188, 140, 140, 193, 22, 8, 168, 2, 64, 4, 8, 1, 115, 57, 79, 82, 213,
-            66, 72, 0, 24, 1, 46, 56, 3, 132, 40, 197,
-        ]
-        .into();
+            0, 128, 76, 97, 188, 140, 140, 193, 22, 8, 168, 2, 64, 4, 8, 1, 115, 57, 79, 82, 213, 66, 72, 0, 24, 1, 46, 56,
+            3, 132, 40, 197, 176, 157, 75, 72,
+        ];
 
         assert!(hexe == res)
+    }
+
+    #[test]
+    fn test_extract_hexe_1() {
+        let data = vec![
+            "0000:  00 80 4c 61 bc 8c 8c c1  16 08 a8 02 40 04 08 01  ..La........@...",
+            "0010:  73 39 4f 52 d5 42 48 00  18 01 2e 38 03 84 28 c5  s9OR.BH....8..(.",
+            "0020:  b0 9d 4b 48",
+        ];
+        let res_hexe = extract_hexe(&data);
+        assert!(res_hexe.is_err());
+        let err = res_hexe.unwrap_err();
+        assert!(err.get_code() == ErrorCode::HexeDecodingError);
+    }
+    #[test]
+    fn test_extract_hexe_2() {
+        let data = vec![
+            "0000:  00 80 4c 61 bc 8c 8c c1  16 08 a8 02 40 04 08 01  ..La........@...",
+            "0010:  73 39 4f 52 d5 42 48 00  18 01 2e 38 03 84 28 c5  s9OR.BH....8..(.",
+            "0020:  ",
+        ];
+        let res_hexe = extract_hexe(&data);
+        assert!(res_hexe.is_err());
+        let err = res_hexe.unwrap_err();
+        assert!(err.get_code() == ErrorCode::HexeDecodingError);
     }
 }

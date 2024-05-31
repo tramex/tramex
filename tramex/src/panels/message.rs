@@ -1,3 +1,4 @@
+//! Message panel
 use crate::display_log;
 use eframe::egui;
 use std::cell::RefCell;
@@ -5,11 +6,14 @@ use std::rc::Rc;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 
+/// Message box
 pub struct MessageBox {
+    /// Reference to the data
     data: Rc<RefCell<Connector>>,
 }
 
 impl MessageBox {
+    /// Create a new MessageBox
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self { data: ref_data }
     }
@@ -49,7 +53,7 @@ impl super::PanelView for MessageBox {
 
         if let Some(one_log) = events.get(current_index) {
             ui.label(format!("Current msg index: {}", current_index + 1));
-            display_log(ui, &one_log);
+            display_log(ui, one_log);
         }
     }
 }

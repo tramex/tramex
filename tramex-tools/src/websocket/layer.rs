@@ -1,28 +1,54 @@
+//! Layer enum and Layers struct
 use std::str::FromStr;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Default)]
+/// Layer enum
 pub enum Layer {
+    /// Physical layer
     PHY,
-    MAC,
-    RLC,
-    PDCP,
-    RRC,
-    NAS,
-    S1AP,
-    NGAP,
-    X2AP,
-    XNAP,
-    M2AP,
-    LPPA,
-    NRPPA,
-    GTPU,
-    None, // is good idea ?
-}
 
-impl Default for Layer {
-    fn default() -> Self {
-        Layer::None
-    }
+    /// Medium Access Control layer
+    MAC,
+
+    /// Radio Link Control layer
+    RLC,
+
+    /// Packet Data Convergence Protocol layer
+    PDCP,
+
+    /// Radio Resource Control layer
+    RRC,
+
+    /// Non Access Stratum layer
+    NAS,
+
+    /// S1 Application Protocol layer
+    S1AP,
+
+    /// Next Generation Application Protocol layer
+    NGAP,
+
+    /// X2 Application Protocol layer
+    X2AP,
+
+    /// Xn Application Protocol layer
+    XNAP,
+
+    /// M2 Application Protocol layer
+    M2AP,
+
+    /// LTE Positioning Protocol A layer
+    LPPA,
+
+    /// NR Positioning Protocol A layer
+    NRPPA,
+
+    /// GTPU layer
+    GTPU,
+
+    #[default]
+    /// None layer - is good idea ?
+    None,
 }
 
 impl FromStr for Layer {
@@ -50,41 +76,75 @@ impl FromStr for Layer {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone)]
+/// Layers struct
 pub struct Layers {
     #[serde(rename(serialize = "PHY"))]
+    /// Physical layer
     pub phy: String,
+
     #[serde(rename(serialize = "MAC"))]
+    /// Medium Access Control layer
     pub mac: String,
+
     #[serde(rename(serialize = "RLC"))]
+    /// Radio Link Control layer
     pub rlc: String,
+
     #[serde(rename(serialize = "PDCP"))]
+    /// Packet Data Convergence Protocol layer
     pub pdcp: String,
+
     #[serde(rename(serialize = "RRC"))]
+    /// Radio Resource Control layer
     pub rrc: String,
+
     #[serde(rename(serialize = "NAS"))]
+    /// Non Access Stratum layer
     pub nas: String,
+
     #[serde(rename(serialize = "S72"))]
+    /// S1 Application Protocol layer
     pub s72: String,
+
     #[serde(rename(serialize = "S1AP"))]
+    /// S1 Application Protocol layer
     pub s1ap: String,
+
     #[serde(rename(serialize = "NGAP"))]
+    /// Next Generation Application Protocol layer
     pub ngap: String,
+
     #[serde(rename(serialize = "GTPU"))]
+    /// GTPU layer
     pub gtpu: String,
+
     #[serde(rename(serialize = "X2AP"))]
+    /// X2 Application Protocol layer
     pub x2ap: String,
+
     #[serde(rename(serialize = "XnAP"))]
+    /// Xn Application Protocol layer
     pub xnap: String,
+
     #[serde(rename(serialize = "M2AP"))]
+    /// M2 Application Protocol layer
     pub m2ap: String,
+
     #[serde(rename(serialize = "LPPa"))]
+    /// LTE Positioning Protocol A layer
     pub lppa: String,
+
     #[serde(rename(serialize = "NRPPa"))]
+    /// NR Positioning Protocol A layer
     pub nrppa: String,
+
     #[serde(rename(serialize = "TRX"))]
+    /// TRX layer
     pub trx: String,
 }
+
 impl Layers {
+    /// Create new Layers struct
     pub fn new() -> Self {
         Self {
             phy: "debug".to_owned(),

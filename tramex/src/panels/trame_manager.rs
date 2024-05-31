@@ -1,14 +1,19 @@
+//! TrameManager
 use eframe::egui;
 use tramex_tools::connector::Connector;
 use tramex_tools::websocket::layer::Layers;
 
 #[derive(serde::Deserialize, serde::Serialize)]
+/// TrameManager
 pub struct TrameManager {
+    /// Layers
     pub layers_list: Layers,
+    /// boolean to get more log
     pub should_get_more_log: bool,
 }
 
 impl TrameManager {
+    /// Create a new TrameManager
     pub fn new() -> Self {
         Self {
             layers_list: Layers::new(),
@@ -24,6 +29,7 @@ impl Default for TrameManager {
 }
 
 impl TrameManager {
+    /// Show the options
     pub fn show_options(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
         ui.collapsing("Options", |ui| {
             ui.horizontal(|ui| {
@@ -53,28 +59,32 @@ impl TrameManager {
         });
     }
 
-    pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
+    /// Show the controls
+    pub fn show_controls(&mut self, ui: &mut egui::Ui, connector: &mut Connector) {
         if ui.button("More").clicked() {
             log::debug!("More");
             self.should_get_more_log = true;
         }
         if ui.button("Next").clicked() {
             log::debug!("Next");
-            if data.data.events.len() > data.data.current_index + 1 {
-                data.data.current_index += 1;
+            if connector.data.events.len() > connector.data.current_index + 1 {
+                connector.data.current_index += 1;
             } else {
                 self.should_get_more_log = true;
             }
         }
-        if ui.button("Previous").clicked() {
-            log::debug!("Previous");
-            if data.data.current_index > 0 {
-                data.data.current_index -= 1;
+        ui.add_enabled_ui(connector.data.current_index > 0, |ui| {
+            if ui.button("Previous").clicked() {
+                log::debug!("Previous");
+                if connector.data.current_index > 0 {
+                    connector.data.current_index -= 1;
+                }
             }
-        }
+        });
     }
 }
 
+/// Create a checkbox
 fn checkbox(ui: &mut egui::Ui, string: &mut String, text: &str) {
     let mut checked = string == "debug";
     if ui.checkbox(&mut checked, text).changed() {
