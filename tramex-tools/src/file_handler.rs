@@ -175,8 +175,6 @@ impl File {
                 "Could not parse the JSON like part, missing closing }".to_string(),
             )));
         }
-        #[cfg(feature = "debug-trame")]
-        eprintln!("Vector : {:#?}",lines[start_block..*ix].to_vec());
         let trace = Trace {
             trace_type: mtype,
             hexa: hex,
