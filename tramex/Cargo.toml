@@ -20,15 +20,16 @@ categories = ["visualization", "network-programming"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = []
+default = ["websocket"]
 debug = ["tramex-tools/debug"]
 
+websocket = ["tramex-tools/websocket"]
+
 ## Test the tokio backend:
-tokio = ["ewebsock/tokio", "dep:tokio"]
+tokio = ["tramex-tools/tokio", "dep:tokio"]
 
 
 [dependencies]
-ewebsock = { version = "0.5.0", features = ["tls"] }
 egui = "0.27.2"
 eframe = { version = "0.27.2", default-features = true, features = [
     "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.

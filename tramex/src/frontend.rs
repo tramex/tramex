@@ -15,6 +15,7 @@ pub enum Choice {
     File,
 
     /// WebSocket choice
+    #[cfg(feature = "websocket")]
     WebSocket,
 }
 
@@ -52,8 +53,8 @@ impl Default for FrontEnd {
             open_windows: BTreeSet::new(),
             windows: Vec::new(),
             open_menu_connector: true,
-            radio_choice: Choice::WebSocket,
-            file_upload: None,
+            radio_choice: Choice::File,
+            file_upload: Some(FileHandler::new()),
             trame_manager: TrameManager::new(),
         }
     }
@@ -98,9 +99,11 @@ impl FrontEnd {
     }
 
     /// Show the URL
+    #[cfg(feature = "websocket")]
     pub fn show_url(&mut self, ui: &mut Ui, new_ctx: egui::Context) -> Result<(), TramexError> {
         let connector = &mut self.connector.borrow_mut();
 
+        #[cfg(feature = "websocket")]
         if let Interface::Ws(_interface_ws) = &connector.interface {
             ui.label("URL:");
             ui.label(&connector.url);
@@ -148,18 +151,16 @@ impl FrontEnd {
                 .show_animated(ctx, self.open_menu_connector, |ui| {
                     ui.vertical_centered(|ui| {
                         ui.heading("Connector");
-                        let save = self.radio_choice.clone();
                         ui.horizontal(|ui| {
                             ui.add_enabled_ui(self.connector.borrow().interface.is_none(), |ui| {
                                 ui.label("Choose ws or file");
                                 ui.radio_value(&mut self.radio_choice, Choice::File, "File");
+                                #[cfg(feature = "websocket")]
                                 ui.radio_value(&mut self.radio_choice, Choice::WebSocket, "WebSocket");
                             });
                         });
-                        if save != self.radio_choice && self.radio_choice == Choice::File {
-                            self.file_upload = Some(FileHandler::new());
-                        }
                         ui.vertical(|ui| match &self.radio_choice {
+                            #[cfg(feature = "websocket")]
                             Choice::WebSocket => {
                                 if let Err(err) = self.show_url(ui, ctx.clone()) {
                                     error = Some(err);
@@ -236,12 +237,19 @@ impl FrontEnd {
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
                 // show nothing
-            } else if let Interface::Ws(_interface_ws) = &self.connector.borrow().interface {
-                ui.label("WebSocket not available");
-            } else if let Interface::File(_interface_file) = &self.connector.borrow().interface {
-                ui.label("File not available");
             } else {
-                ui.label("Not connected");
+                match &self.connector.borrow().interface {
+                    #[cfg(feature = "websocket")]
+                    Interface::Ws(_interface_ws) => {
+                        ui.label("WebSocket not available");
+                    }
+                    Interface::File(_interface_file) => {
+                        ui.label("File not available");
+                    }
+                    Interface::None => {
+                        ui.label("Not connected");
+                    }
+                }
             }
         });
         match error_to_return {

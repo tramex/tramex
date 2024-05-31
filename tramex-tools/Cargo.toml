@@ -21,6 +21,8 @@ categories = ["visualization", "network-programming"]
 [features]
 debug = ["debug-trame"]
 debug-trame = []
+websocket = ["dep:ewebsock"]
+tokio = ["ewebsock/tokio"]
 
 [dependencies]
 asn1-codecs = "0.6.1"
@@ -30,5 +32,5 @@ serde = { version = "1.0.197", features = ["derive"] }
 log = "0.4.20"
 serde_json = "1.0.114"
 regex = "1.10.4"
-ewebsock = "0.5.0"
+ewebsock = { version = "0.5.0", features = ["tls"], optional = true }
 chrono = "0.4.38"
