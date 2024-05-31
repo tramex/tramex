@@ -69,7 +69,7 @@ impl FrontEnd {
         let status = LinkPannel::new(Rc::clone(&ref_connector));
         let wins: Vec<Box<dyn PanelController>> = vec![
             Box::<MessageBox>::new(mb),
-            Box::<LogicalChannels>::new(lc)
+            Box::<LogicalChannels>::new(lc),
             Box::<LinkPannel>::new(status),
         ];
         let mut open_windows = BTreeSet::new();
