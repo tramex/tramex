@@ -30,7 +30,6 @@ pub struct Trace {
     /// Hexadecimal representation of the message.
     pub hexa: Vec<u8>,
 
-    #[cfg(feature = "debug-trame")]
     /// Text representation of the message from the API
     pub text: Vec<String>,
 }

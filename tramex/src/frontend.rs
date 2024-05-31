@@ -87,6 +87,7 @@ impl FrontEnd {
 
     /// Show tiny ui in about panel
     pub fn ui_about(&mut self, ui: &mut egui::Ui) {
+        ui.label("Index of files URL:");
         ui.add(egui::TextEdit::singleline(&mut self.url_files));
     }
 

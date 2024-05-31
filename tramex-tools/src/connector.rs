@@ -205,7 +205,6 @@ impl Connector {
                                                 let trace = Trace {
                                                     trace_type: msg_type,
                                                     hexa: hexa.unwrap_or_default(),
-                                                    #[cfg(feature = "debug-trame")]
                                                     text: one_log.data,
                                                 };
                                                 self.data.events.push(trace);
