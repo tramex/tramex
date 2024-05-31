@@ -119,7 +119,7 @@ impl File {
         }
         count
     }
-    /// Function that parses the JSON style bloc in each log
+    /// Function that parses one log
     fn parse_bloc(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Option<TramexError>> {
         let lines_len = lines.len();
         if (lines_len as i32 - *ix as i32) < 3 {
@@ -158,14 +158,10 @@ impl File {
             Err(e) => return Err(Some(e)),
         };
 
-        let trace = Trace {
-            trace_type: mtype,
-            hexa: hex,
-            #[cfg(feature = "debug-trame")]
-            text: vec![], // TODO: implement the text extraction
-        };
         let mut end = false;
         let mut brackets: i16 = 0;
+        #[cfg(feature = "debug-trame")]
+        let start_block = *ix;
         while (*ix < lines_len) && !end {
             brackets += Self::count_brackets(lines[*ix]);
             *ix += 1;
@@ -179,6 +175,12 @@ impl File {
                 "Could not parse the JSON like part, missing closing }".to_string(),
             )));
         }
+        let trace = Trace {
+            trace_type: mtype,
+            hexa: hex,
+            #[cfg(feature = "debug-trame")]
+            text: lines[start_block..*ix].iter().map(|&s| s.to_string()).collect(),
+        };
         *ix += 1;
         Ok(trace)
     }
