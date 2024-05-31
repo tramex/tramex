@@ -1,3 +1,4 @@
+//! Panel to display the RRC status
 use eframe::egui::Color32;
 use eframe::egui::{self, TextFormat};
 use std::cell::RefCell;
@@ -7,16 +8,20 @@ use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 use tramex_tools::websocket::types::Direction;
 
+/// Panel to display the RRC status
 pub struct LinkPannel {
+    /// Reference to the connector
     mtrace: Rc<RefCell<Connector>>,
 }
 
 impl LinkPannel {
+    /// Create a new instance of the LinkPannel
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
         Self { mtrace: ref_data }
     }
 }
 impl LinkPannel {
+    /// Display the control of the link
     pub fn ui_control(&self, ui: &mut egui::Ui, direction: &Direction) {
         ui.vertical_centered_justified(|ui| match direction {
             Direction::UL => {
@@ -31,12 +36,14 @@ impl LinkPannel {
         });
     }
 
+    /// Print on the grid
     pub fn print_on_grid(&self, ui: &mut egui::Ui, label: &str) {
         ui.vertical_centered(|ui| {
             ui.label(label);
         });
     }
 
+    /// Make a colored label
     pub fn make_label(&self, ui: &mut egui::Ui, label: &str, state: &str, color: &str) {
         use egui::text::LayoutJob;
         let mut job = LayoutJob::default();
@@ -67,6 +74,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the connection state of the LTE
     pub fn ui_con(&self, ui: &mut egui::Ui, direction: &Direction) {
         let etat = match direction {
             Direction::UL => "PCCH",
@@ -98,6 +106,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the idle state of the LTE
     pub fn ui_idle_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
         ui.vertical_centered_justified(|ui| match direction {
             Direction::UL => {
@@ -114,6 +123,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the LTE state
     pub fn ui_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
         ui.vertical_centered_justified(|ui| match direction {
             Direction::UL => {
@@ -130,6 +140,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the idle state of the UMTS
     pub fn ui_idle_umts(&self, ui: &mut egui::Ui, direction: &Direction) {
         ui.vertical_centered_justified(|ui| match direction {
             Direction::UL => {
@@ -146,6 +157,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the UMTS state
     pub fn ui_umts(&self, ui: &mut egui::Ui, direction: &Direction) {
         ui.vertical_centered_justified(|ui| match direction {
             Direction::UL => {
@@ -162,6 +174,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the content of the link
     pub fn ui_content(&self, ui: &mut egui::Ui, direction: &Direction) {
         const SPACE_RIGHT: f32 = 100.0;
         const SPACE_LEFT: f32 = 8.0;
@@ -205,6 +218,7 @@ impl LinkPannel {
         });
     }
 
+    /// Display the content of the link
     pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
         const SPACE_RIGHT: f32 = 10.0;
         const SPACE_LEFT: f32 = 2.0;

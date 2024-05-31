@@ -72,7 +72,7 @@ impl FrontEnd {
             Box::<LogicalChannels>::new(lc),
             Box::<LinkPannel>::new(status),
         ];
-        let mut open_windows = BTreeSet::new();
+        let open_windows = BTreeSet::new();
         Self {
             connector: ref_connector,
             open_windows,
