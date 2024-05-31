@@ -8,10 +8,11 @@ use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::Interface;
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
 /// Choice enum
 pub enum Choice {
     /// File choice
+    #[default]
     File,
 
     /// WebSocket choice
@@ -44,6 +45,9 @@ pub struct FrontEnd {
 
     /// Radio choice
     pub radio_choice: Choice,
+
+    /// URL files
+    pub url_files: String,
 }
 
 impl Default for FrontEnd {
@@ -53,9 +57,10 @@ impl Default for FrontEnd {
             open_windows: BTreeSet::new(),
             windows: Vec::new(),
             open_menu_connector: true,
-            radio_choice: Choice::File,
-            file_upload: Some(FileHandler::new()),
+            radio_choice: Choice::default(),
+            file_upload: None,
             trame_manager: TrameManager::new(),
+            url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
         }
     }
 }
@@ -78,6 +83,10 @@ impl FrontEnd {
             windows: wins,
             ..Default::default()
         }
+    }
+
+    pub fn ui_about(&mut self, ui: &mut egui::Ui) {
+        ui.add(egui::TextEdit::singleline(&mut self.url_files));
     }
 
     /// Menu bar
@@ -151,6 +160,7 @@ impl FrontEnd {
                 .show_animated(ctx, self.open_menu_connector, |ui| {
                     ui.vertical_centered(|ui| {
                         ui.heading("Connector");
+                        let save = self.radio_choice.clone();
                         ui.horizontal(|ui| {
                             ui.add_enabled_ui(self.connector.borrow().interface.is_none(), |ui| {
                                 ui.label("Choose ws or file");
@@ -167,6 +177,9 @@ impl FrontEnd {
                                 }
                             }
                             Choice::File => {
+                                if save != self.radio_choice || self.file_upload.is_none() {
+                                    self.file_upload = Some(FileHandler::new(&self.url_files));
+                                }
                                 if let Some(file_handle) = &mut self.file_upload {
                                     let is_file_path = file_handle.get_picket_path().is_some();
                                     ui.add_enabled_ui(!is_file_path, |ui| match file_handle.ui(ui) {

@@ -31,8 +31,7 @@ pub struct FileHandler {
 
 impl FileHandler {
     /// Create a new file handler
-    pub fn new() -> Self {
-        let url = "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true";
+    pub fn new(url: &str) -> Self {
         let callback = move |res: Result<ehttp::Response, String>| match res {
             Ok(res) => {
                 log::info!("File list fetched");
@@ -50,10 +49,7 @@ impl FileHandler {
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                Err(TramexError::new(
-                    e.to_string(),
-                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
-                ))
+                Err(TramexError::new(e.to_string(), tramex_tools::errors::ErrorCode::RequestError))
             }
         };
         let request = ehttp::Request::get(url);
@@ -89,17 +85,22 @@ impl FileHandler {
     /// Clear the file handler
     pub fn clear(&mut self) {
         self.file_upload = None;
+        self.file_list = None;
     }
 
     /// Get the result
     /// # Errors
     /// Return an error if the file contains errors
     pub fn get_result(&mut self) -> Result<File, TramexError> {
-        match &self.file_upload {
+        let mut should_clean = false;
+        let res = match &self.file_upload {
             Some(result) => match &result.ready() {
                 Some(ready) => match ready {
                     Ok(curr_file) => Ok(curr_file.clone()),
-                    Err(e) => Err(e.to_owned()),
+                    Err(e) => {
+                        should_clean = true;
+                        Err(e.to_owned())
+                    }
                 },
                 None => Err(TramexError::new(
                     "File not ready".to_string(),
@@ -110,7 +111,13 @@ impl FileHandler {
                 "No file selected".to_string(),
                 tramex_tools::errors::ErrorCode::FileNotSelected,
             )),
+        };
+        log::debug!("Result: {:?}", res);
+        if should_clean {
+            log::debug!("Cleaning file upload");
+            self.clear();
         }
+        res
     }
 
     /// Load file from URL
@@ -266,6 +273,7 @@ impl FileHandler {
                     }
                     Err(e) => {
                         error_to_return = Some(e.to_owned());
+                        self.clear();
                     }
                 }
             }
