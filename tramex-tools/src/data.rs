@@ -31,7 +31,7 @@ pub struct Trace {
     pub hexa: Vec<u8>,
 
     /// Text representation of the message from the API
-    pub text: Vec<String>,
+    pub text: Option<Vec<String>>,
 }
 #[derive(Debug)]
 /// Data structure to store the message type (from the amarisoft API)

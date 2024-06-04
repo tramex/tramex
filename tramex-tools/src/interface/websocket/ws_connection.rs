@@ -97,7 +97,7 @@ impl InterfaceTrait for WsConnection {
                                         let trace = Trace {
                                             trace_type: msg_type,
                                             hexa: hexa.unwrap_or_default(),
-                                            text: one_log.data,
+                                            text: Some(one_log.data),
                                         };
                                         data.events.push(trace);
                                     }

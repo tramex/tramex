@@ -215,7 +215,7 @@ impl File {
         let trace = Trace {
             trace_type: mtype,
             hexa: hex,
-            text: lines[start_block..*ix].iter().map(|&s| s.to_string()).collect(),
+            text: Some(lines[start_block..*ix].iter().map(|&s| s.to_string()).collect()),
         };
         *ix += 1;
         Ok(trace)
