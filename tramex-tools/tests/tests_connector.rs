@@ -4,9 +4,9 @@ mod tests {
     use connector::Connector;
     use tramex_tools::{
         connector,
-        websocket::{
-            self,
+        interface::{
             layer::{Layer, Layers},
+            types::Direction,
         },
     };
 
@@ -18,7 +18,7 @@ mod tests {
         let _ = f.get_more_data(Layers::all());
         assert!(f.data.events.len() == 15);
         let event = f.data.events.pop().unwrap();
-        assert!(event.trace_type.direction == websocket::types::Direction::DL);
+        assert!(event.trace_type.direction == Direction::DL);
         assert!(event.trace_type.canal == "BCCH");
         assert!(event.trace_type.canal_msg == "SIB");
         assert!(event.trace_type.layer == Layer::RRC);
@@ -29,7 +29,7 @@ mod tests {
         assert!(f_event.trace_type.layer == Layer::RRC);
         assert!(f_event.trace_type.canal == "BCCH");
         assert!(f_event.trace_type.canal_msg == "SIB");
-        assert!(f_event.trace_type.direction == websocket::types::Direction::DL);
+        assert!(f_event.trace_type.direction == Direction::DL);
     }
 
     #[test]

@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use crate::websocket::onelog::OneLog;
+use crate::interface::onelog::OneLog;
 
 // deserialize the message
 #[derive(serde::Deserialize, Debug)]

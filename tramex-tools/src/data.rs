@@ -1,5 +1,5 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::websocket::{layer::Layer, types::Direction};
+use crate::interface::{layer::Layer, types::Direction};
 use core::fmt::Debug;
 
 #[derive(Debug)]
@@ -31,7 +31,7 @@ pub struct Trace {
     pub hexa: Vec<u8>,
 
     /// Text representation of the message from the API
-    pub text: Vec<String>,
+    pub text: Option<Vec<String>>,
 }
 #[derive(Debug)]
 /// Data structure to store the message type (from the amarisoft API)

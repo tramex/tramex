@@ -1,7 +1,7 @@
 //! TrameManager
 use eframe::egui;
 use tramex_tools::connector::Connector;
-use tramex_tools::websocket::layer::Layers;
+use tramex_tools::interface::layer::Layers;
 
 #[derive(serde::Deserialize, serde::Serialize)]
 /// TrameManager
