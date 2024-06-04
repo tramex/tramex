@@ -12,5 +12,4 @@
 pub mod connector;
 pub mod data;
 pub mod errors;
-pub mod functions;
 pub mod interface;

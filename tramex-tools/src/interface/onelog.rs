@@ -1,7 +1,7 @@
 //! This module contains the definition of the OneLog struct.
 
 use crate::errors::TramexError;
-use crate::functions::extract_hexe;
+use crate::interface::functions::extract_hexe;
 
 use crate::interface::{
     layer::Layer,
