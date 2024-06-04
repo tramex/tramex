@@ -1,23 +1,23 @@
 //! Panel to display the RRC status
 use eframe::egui::Color32;
-use eframe::egui::{self, TextFormat};
-use std::cell::RefCell;
+use eframe::egui::TextFormat;
 use std::primitive::f32;
-use std::rc::Rc;
-use tramex_tools::connector::Connector;
+use tramex_tools::data::Data;
+use tramex_tools::data::Trace;
 use tramex_tools::errors::TramexError;
-use tramex_tools::websocket::types::Direction;
+use tramex_tools::interface::types::Direction;
 
 /// Panel to display the RRC status
+#[derive(Debug, Default)]
 pub struct LinkPannel {
-    /// Reference to the connector
-    mtrace: Rc<RefCell<Connector>>,
+    /// current trace
+    current_trace: Option<Trace>,
 }
 
 impl LinkPannel {
     /// Create a new instance of the LinkPannel
-    pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
-        Self { mtrace: ref_data }
+    pub fn new() -> Self {
+        Self { ..Default::default() }
     }
 }
 impl LinkPannel {
@@ -284,7 +284,10 @@ impl super::PanelController for LinkPannel {
         "RRC Status"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
+        if let Some(trace) = data.get_current_trace() {
+            self.current_trace = Some(trace.clone());
+        }
         let size = egui::Vec2::new(215.0, 200.0);
         egui::Window::new(self.name()).open(open).fixed_size(size).show(ctx, |ui| {
             use super::PanelView as _;
@@ -296,9 +299,7 @@ impl super::PanelController for LinkPannel {
 
 impl super::PanelView for LinkPannel {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        let binding = self.mtrace.borrow();
-        let curr_trace = binding.data.get_current_trace();
-        if let Some(trace) = curr_trace {
+        if let Some(trace) = &self.current_trace {
             let direction = &trace.trace_type.direction;
             self.ui_control(ui, direction);
             ui.separator();
