@@ -16,7 +16,7 @@ The Tramex interface is always alike, no matter the mode used. In this section, 
 
 ### Documentation access
 
-**General information** are accessible with a click on the `Menu` button on the left of the top bar then `About`.
+**General information** is accessible with a click on the `Menu` button on the left of the top bar then `About`.
 
 **Tramex repository** is also accessible from the Tramex interface with a click on the `About` button on the left of the top bar then [`Tramex repository`](https://github.com/tramex/tramex).
 
