@@ -11,6 +11,13 @@ pub struct Data {
     pub current_index: usize,
 }
 
+impl Data {
+    /// return the current trace
+    pub fn get_current_trace(&self) -> Option<&Trace> {
+        return self.events.get(self.current_index);
+    }
+}
+
 impl Default for Data {
     fn default() -> Self {
         let default_data_size = 2048;
@@ -21,7 +28,7 @@ impl Default for Data {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// Data structure to store Trace of the application.
 pub struct Trace {
     /// Message type.
@@ -33,7 +40,7 @@ pub struct Trace {
     /// Text representation of the message from the API
     pub text: Option<Vec<String>>,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// Data structure to store the message type (from the amarisoft API)
 pub struct MessageType {
     /// Timestamp of the message.

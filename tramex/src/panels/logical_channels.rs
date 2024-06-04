@@ -1,17 +1,13 @@
 //! Logical Channels panel
 use asn1_codecs::{uper::UperCodec, PerCodecData};
 use eframe::egui::{self, Color32, TextFormat};
-use std::cell::RefCell;
-use std::rc::Rc;
-use tramex_tools::connector::Connector;
+use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
 use types_lte_3gpp::uper::spec_rrc;
 
 /// Logical Channels data
+#[derive(Default)]
 pub struct LogicalChannels {
-    /// Reference to the data
-    data: Rc<RefCell<Connector>>,
-
     /// Current channel
     channel: String,
 
@@ -30,15 +26,8 @@ pub struct LogicalChannels {
 
 impl LogicalChannels {
     /// Create a new LogicalChannels
-    pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
-        Self {
-            data: ref_data,
-            channel: "".to_string(),
-            canal: "".to_string(),
-            canal_msg: "".to_string(),
-            current_index: 0,
-            hex: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { ..Default::default() }
     }
 
     /// Handle the logic of the panel
@@ -73,20 +62,19 @@ impl super::PanelController for LogicalChannels {
         "Téléphone - Canaux logiques (couche 3)"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
         let mut new_index = None;
         {
             // in a closure to avoid borrow checker
-            let borrowed = &self.data.borrow();
-            let events = &borrowed.data.events;
-            if self.current_index != borrowed.data.current_index {
-                if let Some(one_log) = events.get(borrowed.data.current_index) {
+            let events = &data.events;
+            if self.current_index != data.current_index {
+                if let Some(one_log) = events.get(data.current_index) {
                     self.channel = one_log.trace_type.canal.to_owned();
                     self.canal = one_log.trace_type.canal.to_owned();
                     self.canal_msg = one_log.trace_type.canal_msg.to_owned();
                     self.hex = one_log.hexa.to_owned();
                 }
-                new_index = Some(borrowed.data.current_index);
+                new_index = Some(data.current_index);
             }
         }
         if let Some(idx) = new_index {
