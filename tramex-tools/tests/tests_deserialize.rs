@@ -2,7 +2,7 @@
 #[cfg(test)]
 mod tests {
     use tramex_tools::errors::ErrorCode;
-    use tramex_tools::websocket::types::WebSocketLog;
+    use tramex_tools::interface::types::WebSocketLog;
 
     #[test]
     fn test_deserialize() {
