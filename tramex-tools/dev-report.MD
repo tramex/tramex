@@ -6,9 +6,10 @@
 
 ## What is tramex-tools
 
-    Tramex tools is a crate for the Tramex Project.
+Tramex tools is a crate for the Tramex Project.
 
 ### Connector
+
 You will find in here the `Connector` (connector.rs), that is the structure that handles reading from different sources to return `Data`. It is the main exposed struct of this crate, and the point of entry when used by the project Tramex.
 
 #### First what is `Data`
@@ -21,12 +22,11 @@ The `Hexa` is hexadecimal representation of ASN1 binary, that when rightly decod
 
 #### What is an `Interface`
 
-Now that we know what we want to retreive, we need to figure out how. 
+Now that we know what we want to retreive, we need to figure out how.
 For this project, we gather the 4G traces from a Software 4G Core, powered by Amarisoft.
 We can retreive traces two ways, first by reading a .log File with multiple traces, or we can retreive traces by asking a Websocket API.
 
 So we have two different `Interface`: `File` and `WsConnection`.
-
 
 #### The Code
 
@@ -49,9 +49,9 @@ The`try_recv` function, is the function that reads from the `WsConnection` Recei
 
 I am going to talk now about details in parsing, when the `WsConnection` or `File` `Interface` serialize its stream
 
-#### `File` Parsing 
+#### `File` Parsing
 
 the `File` parsing is done in the `file_handler` file.
-The entry of the parsing is the 
+The entry of the parsing is the
 
 TODO Finish
