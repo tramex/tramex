@@ -1,7 +1,7 @@
 //! Layer enum and Layers struct
 use std::str::FromStr;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Default, Clone)]
 /// Layer enum
 pub enum Layer {
     /// Physical layer

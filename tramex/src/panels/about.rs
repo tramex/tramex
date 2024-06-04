@@ -1,6 +1,6 @@
 //! About panel
 use eframe::egui;
-use tramex_tools::errors::TramexError;
+use tramex_tools::{data::Data, errors::TramexError};
 
 #[derive(Default)]
 /// About panel
@@ -14,7 +14,7 @@ impl super::PanelController for AboutPanel {
         "About"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool, _data: &mut Data) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
