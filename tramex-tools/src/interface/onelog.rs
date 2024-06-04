@@ -3,7 +3,7 @@
 use crate::errors::TramexError;
 use crate::functions::extract_hexe;
 
-use crate::websocket::{
+use crate::interface::{
     layer::Layer,
     types::{Direction, LogLevel, SourceLog},
 };

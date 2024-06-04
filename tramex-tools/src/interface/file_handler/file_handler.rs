@@ -1,11 +1,15 @@
 //! File Handler
 
+use crate::data::Data;
 use crate::data::MessageType;
 use crate::data::Trace;
+use crate::errors::ErrorCode;
 use crate::errors::TramexError;
 use crate::functions::extract_hexe;
-use crate::websocket::layer::Layer;
-use crate::websocket::types::Direction;
+use crate::interface::interface::InterfaceTrait;
+use crate::interface::layer::Layer;
+use crate::interface::layer::Layers;
+use crate::interface::types::Direction;
 use chrono::NaiveTime;
 use chrono::Timelike;
 use std::path::PathBuf;
@@ -38,6 +42,40 @@ impl Default for File {
             nb_read: DEFAULT_NB,
             ix: 0,
         }
+    }
+}
+
+impl InterfaceTrait for File {
+    fn get_more_data(
+        &mut self,
+        _layer_list: Layers,
+        _max_size: u64,
+        data: &mut Data,
+        available: &mut bool,
+    ) -> Result<(), TramexError> {
+        if self.readed {
+            return Ok(());
+        }
+        let (m_vec, opt_err) = &mut self.process();
+        data.events.append(m_vec);
+        *available = true;
+        match opt_err {
+            Some(err) => {
+                if !(matches!(err.code, ErrorCode::EndOfFile)) {
+                    return Err(err.clone());
+                }
+            }
+            None => {}
+        }
+        Ok(())
+    }
+
+    fn try_recv(&mut self, _data: &mut Data, _available: &mut bool) -> Result<(), TramexError> {
+        Ok(())
+    }
+
+    fn close(&mut self) -> Result<(), TramexError> {
+        Ok(())
     }
 }
 

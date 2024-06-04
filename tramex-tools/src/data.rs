@@ -1,5 +1,5 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::websocket::{layer::Layer, types::Direction};
+use crate::interface::{layer::Layer, types::Direction};
 use core::fmt::Debug;
 
 #[derive(Debug)]

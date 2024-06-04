@@ -12,8 +12,5 @@
 pub mod connector;
 pub mod data;
 pub mod errors;
-pub mod file_handler;
 pub mod functions;
 pub mod interface;
-
-pub mod websocket;

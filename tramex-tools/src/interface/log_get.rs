@@ -1,5 +1,5 @@
 //! LogGet struct for sending log_get message to the server
-use crate::websocket::layer::Layers;
+use crate::interface::layer::Layers;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// LogGet struct

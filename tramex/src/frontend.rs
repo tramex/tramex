@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
-use tramex_tools::interface::Interface;
+use tramex_tools::interface::interface::Interface;
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
 /// Choice enum
@@ -114,13 +114,14 @@ impl FrontEnd {
     pub fn show_url(&mut self, ui: &mut Ui, new_ctx: egui::Context) -> Result<(), TramexError> {
         let connector = &mut self.connector.borrow_mut();
 
-        #[cfg(feature = "websocket")]
-        if let Interface::Ws(_interface_ws) = &connector.interface {
+        let current_url = connector.url.clone();
+
+        if let Some(Interface::Ws(interface_ws)) = &mut connector.interface {
             ui.label("URL:");
-            ui.label(&connector.url);
+            ui.label(&current_url);
             if ui.button("Close").clicked() {
                 // close connection
-                match connector.interface.close() {
+                match interface_ws.close_impl() {
                     Ok(_) => {
                         connector.clear_interface();
                     }
@@ -132,7 +133,7 @@ impl FrontEnd {
         }
 
         match &connector.interface {
-            Interface::Ws(interface_ws) => {
+            Some(Interface::Ws(interface_ws)) => {
                 if interface_ws.connecting {
                     ui.label("Connecting...");
                     ui.spinner();
@@ -255,13 +256,13 @@ impl FrontEnd {
             } else {
                 match &self.connector.borrow().interface {
                     #[cfg(feature = "websocket")]
-                    Interface::Ws(_interface_ws) => {
+                    Some(Interface::Ws(_interface_ws)) => {
                         ui.label("WebSocket not available");
                     }
-                    Interface::File(_interface_file) => {
+                    Some(Interface::File(_interface_file)) => {
                         ui.label("File not available");
                     }
-                    Interface::None => {
+                    None => {
                         ui.label("Not connected");
                     }
                 }
