@@ -2,7 +2,7 @@
 
 use crate::data::Data;
 use crate::errors::TramexError;
-use crate::interface::file_handler::file_handler::File;
+use crate::interface::interface_file::file_handler::File;
 use crate::interface::layer::Layers;
 #[cfg(feature = "websocket")]
 use crate::interface::websocket::ws_connection::WsConnection;

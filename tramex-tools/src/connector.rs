@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use crate::data::Data;
 use crate::errors::TramexError;
-use crate::interface::file_handler::file_handler::File;
-use crate::interface::interface::{Interface, InterfaceTrait};
+use crate::interface::interface_file::file_handler::File;
+use crate::interface::interface_types::{Interface, InterfaceTrait};
 use crate::interface::layer::Layers;
 #[cfg(feature = "websocket")]
 use crate::interface::websocket::ws_connection::WsConnection;
@@ -74,7 +74,7 @@ impl Connector {
                 log::error!("Failed to connect to {:?}: {}", url, error);
                 Err(TramexError::new(
                     error.to_string(),
-                    crate::errors::ErrorCode::WebScoketFailedToConnect,
+                    crate::errors::ErrorCode::WebSocketFailedToConnect,
                 ))
             }
         }

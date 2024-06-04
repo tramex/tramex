@@ -6,7 +6,7 @@ use crate::data::Trace;
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
 use crate::functions::extract_hexe;
-use crate::interface::interface::InterfaceTrait;
+use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layer;
 use crate::interface::layer::Layers;
 use crate::interface::types::Direction;
@@ -25,8 +25,8 @@ pub struct File {
     /// Content of the file.
     pub file_content: String,
 
-    /// Readed status of the file.
-    pub readed: bool,
+    /// Full read status of the file.
+    pub full_read: bool,
     /// the number of log to read each batch
     nb_read: usize,
     /// The previous line number
@@ -38,7 +38,7 @@ impl Default for File {
         Self {
             file_path: PathBuf::from(""),
             file_content: "".to_string(),
-            readed: false,
+            full_read: false,
             nb_read: DEFAULT_NB,
             ix: 0,
         }
@@ -53,7 +53,7 @@ impl InterfaceTrait for File {
         data: &mut Data,
         available: &mut bool,
     ) -> Result<(), TramexError> {
-        if self.readed {
+        if self.full_read {
             return Ok(());
         }
         let (m_vec, opt_err) = &mut self.process();
@@ -95,7 +95,7 @@ impl File {
         Self {
             file_path,
             file_content,
-            readed: false,
+            full_read: false,
             nb_read: DEFAULT_NB,
             ix: 0,
         }
@@ -105,7 +105,7 @@ impl File {
         Self {
             file_path,
             file_content,
-            readed: false,
+            full_read: false,
             nb_read: nb_to_read,
             ix: 0,
         }
@@ -118,7 +118,7 @@ impl File {
     pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
         let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
         if opt_err.is_some() {
-            self.readed = true;
+            self.full_read = true;
         }
         (vec_trace, opt_err)
     }

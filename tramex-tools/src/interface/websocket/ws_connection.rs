@@ -7,7 +7,7 @@ use crate::{
     errors::TramexError,
 };
 
-use crate::interface::{interface::InterfaceTrait, layer::Layers, log_get::LogGet, types::WebSocketLog};
+use crate::interface::{interface_types::InterfaceTrait, layer::Layers, log_get::LogGet, types::WebSocketLog};
 /// WsConnection struct
 pub struct WsConnection {
     /// WebSocket sender
@@ -29,7 +29,7 @@ impl WsConnection {
     /// Return an error as String if the connection failed - see [`ewebsock::connect_with_wakeup`] for more details
     pub fn connect(url: &str, wakup: impl Fn() + Send + Sync + 'static) -> Result<(WsSender, WsReceiver), String> {
         let options = ewebsock::Options::default();
-        return ewebsock::connect_with_wakeup(url, options, wakup);
+        ewebsock::connect_with_wakeup(url, options, wakup)
     }
 
     /// Try to close the ws
@@ -154,7 +154,7 @@ impl InterfaceTrait for WsConnection {
     }
 
     fn close(&mut self) -> Result<(), TramexError> {
-        return self.close_impl();
+        self.close_impl()
     }
 }
 

@@ -1,4 +1,4 @@
-# Developement
+# Development
 
 To start developing on the project, you will first need to install [rustup](https://rustup.rs/).
 

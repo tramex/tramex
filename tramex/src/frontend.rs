@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
-use tramex_tools::interface::interface::Interface;
+use tramex_tools::interface::interface_types::Interface;
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
 /// Choice enum
@@ -144,9 +144,9 @@ impl FrontEnd {
                     && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                     || ui.button("Connect").clicked()
                 {
-                    let wakup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
+                    let wakeup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
                     let local_url = connector.url.clone();
-                    connector.connect(&local_url, wakup_fn)?
+                    connector.connect(&local_url, wakeup_fn)?
                 }
             }
         }

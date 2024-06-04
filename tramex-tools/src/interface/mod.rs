@@ -1,10 +1,10 @@
 //! Interface module
 
-pub mod interface;
+pub mod interface_types;
 pub mod layer;
 pub mod log_get;
 pub mod onelog;
 pub mod types;
 
-pub mod file_handler;
+pub mod interface_file;
 pub mod websocket;
