@@ -7,12 +7,7 @@ pub mod message;
 pub mod rrc_status;
 pub mod trame_manager;
 
-pub use about::AboutPanel;
-pub use file_upload::FileHandler;
-pub use logical_channels::LogicalChannels;
-pub use message::MessageBox;
-pub use rrc_status::LinkPanel;
-pub use trame_manager::TrameManager;
+pub mod functions_panels;
 
 use eframe::egui;
 use tramex_tools::{data::Data, errors::TramexError};

@@ -1,5 +1,8 @@
 //! Frontend module
-use crate::panels::{FileHandler, LinkPanel, LogicalChannels, MessageBox, PanelController, TrameManager};
+use crate::panels::{
+    file_upload::FileHandler, logical_channels::LogicalChannels, message::MessageBox, rrc_status::LinkPanel,
+    trame_manager::TrameManager, PanelController,
+};
 use crate::set_open;
 use egui::Ui;
 use std::collections::BTreeSet;
