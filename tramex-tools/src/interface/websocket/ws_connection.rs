@@ -27,9 +27,9 @@ impl WsConnection {
     /// Connect to a WebSocket
     /// # Errors
     /// Return an error as String if the connection failed - see [`ewebsock::connect_with_wakeup`] for more details
-    pub fn connect(url: &str, wakup: impl Fn() + Send + Sync + 'static) -> Result<(WsSender, WsReceiver), String> {
+    pub fn connect(url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(WsSender, WsReceiver), String> {
         let options = ewebsock::Options::default();
-        ewebsock::connect_with_wakeup(url, options, wakup)
+        ewebsock::connect_with_wakeup(url, options, wakeup)
     }
 
     /// Try to close the ws
