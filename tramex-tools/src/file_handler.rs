@@ -159,7 +159,6 @@ impl File {
 
         let mut end = false;
         let mut brackets: i16 = 0;
-        #[cfg(feature = "debug-trame")]
         let start_block = *ix;
         while (*ix < lines_len) && !end {
             brackets += Self::count_brackets(lines[*ix]);
@@ -177,7 +176,6 @@ impl File {
         let trace = Trace {
             trace_type: mtype,
             hexa: hex,
-            #[cfg(feature = "debug-trame")]
             text: lines[start_block..*ix].iter().map(|&s| s.to_string()).collect(),
         };
         *ix += 1;

@@ -10,12 +10,18 @@ use tramex_tools::errors::TramexError;
 pub struct MessageBox {
     /// Reference to the data
     data: Rc<RefCell<Connector>>,
+
+    /// show full message
+    show_full: bool,
 }
 
 impl MessageBox {
     /// Create a new MessageBox
     pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
-        Self { data: ref_data }
+        Self {
+            data: ref_data,
+            show_full: false,
+        }
     }
 }
 
@@ -44,6 +50,7 @@ impl super::PanelController for MessageBox {
 impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Received events:");
+        ui.checkbox(&mut self.show_full, "Show full message");
         let borrowed = &self.data.borrow();
         let events = &borrowed.data.events;
         ui.horizontal(|ui| {
@@ -53,7 +60,7 @@ impl super::PanelView for MessageBox {
 
         if let Some(one_log) = events.get(current_index) {
             ui.label(format!("Current msg index: {}", current_index + 1));
-            display_log(ui, one_log);
+            display_log(ui, one_log, self.show_full);
         }
     }
 }
