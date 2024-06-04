@@ -4,7 +4,10 @@ mod tests {
     use connector::Connector;
     use tramex_tools::{
         connector,
-        websocket::{self, layer::Layer},
+        websocket::{
+            self,
+            layer::{Layer, Layers},
+        },
     };
 
     #[test]
@@ -12,7 +15,7 @@ mod tests {
         let filename = "tests/enb.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
-        let _ = f.try_recv();
+        let _ = f.get_more_data(Layers::all());
         assert!(f.data.events.len() == 15);
         let event = f.data.events.pop().unwrap();
         assert!(event.trace_type.direction == websocket::types::Direction::DL);
@@ -34,12 +37,13 @@ mod tests {
         let filename = "tests/enb_jsonlike_error.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
-        match f.try_recv() {
+        match f.get_more_data(Layers::all()) {
             Ok(_) => {
                 unreachable!();
             }
             Err(e) => {
-                assert!(e.message == "Could not parse the JSON like part, missing closing }");
+                eprintln!("{:?}", e);
+                assert!(e.message.contains("Could not parse the JSON like part, missing closing }"));
             }
         }
     }
@@ -48,12 +52,13 @@ mod tests {
         let filename = "tests/enb_canal_or_canal_message_malformed.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
-        match f.try_recv() {
+        match f.get_more_data(Layers::all()) {
             Ok(_) => {
                 unreachable!();
             }
             Err(e) => {
-                assert!(e.message == "The canal and/or canal message could not be parsed");
+                eprintln!("{:?}", e);
+                assert!(e.message.contains("The canal and/or canal message could not be parsed"));
             }
         }
     }
@@ -62,12 +67,13 @@ mod tests {
         let filename = "tests/enb_date_err.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
-        match f.try_recv() {
+        match f.get_more_data(Layers::all()) {
             Ok(_) => {
                 unreachable!();
             }
             Err(e) => {
-                assert!(e.message == "Error while parsing date");
+                eprintln!("{:?}", e);
+                assert!(e.message.contains("Error while parsing date"));
             }
         }
     }

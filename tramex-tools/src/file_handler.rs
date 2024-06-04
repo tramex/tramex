@@ -95,8 +95,9 @@ impl File {
                 }
                 Err(err) => match err {
                     Some(e) => {
-                        log::error!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
-                        return (vtraces, Some(e));
+                        let msg = format!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
+                        log::error!("{msg}");
+                        return (vtraces, Some(Self::parsing_error(msg)));
                     }
                     None => {
                         return (vtraces, Some(Self::eof_error()));

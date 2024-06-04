@@ -259,13 +259,8 @@ impl Connector {
                     }
                 }
             }
-            Interface::File(ref mut file) => {
-                if file.full_read {
-                    return Ok(());
-                }
-                let layers_list = Layers::new(); //TODO change
-                return self.get_more_data(layers_list);
-            }
+            //Do nothing if its a File & None
+            Interface::File(_) => {}
             _ => {}
         }
         Ok(())
