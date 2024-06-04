@@ -165,4 +165,26 @@ impl Layers {
             trx: "warn".to_owned(),
         }
     }
+
+    /// Create new Layers struct with all debug
+    pub fn all() -> Self {
+        Self {
+            phy: "debug".to_owned(),
+            mac: "debug".to_owned(),
+            rlc: "debug".to_owned(),
+            pdcp: "debug".to_owned(),
+            rrc: "debug".to_owned(),
+            nas: "debug".to_owned(),
+            s72: "debug".to_owned(),
+            s1ap: "debug".to_owned(),
+            ngap: "debug".to_owned(),
+            gtpu: "debug".to_owned(),
+            x2ap: "debug".to_owned(),
+            xnap: "debug".to_owned(),
+            m2ap: "debug".to_owned(),
+            lppa: "debug".to_owned(),
+            nrppa: "debug".to_owned(),
+            trx: "debug".to_owned(),
+        }
+    }
 }
