@@ -11,7 +11,7 @@ pub use about::AboutPanel;
 pub use file_upload::FileHandler;
 pub use logical_channels::LogicalChannels;
 pub use message::MessageBox;
-pub use rrc_status::LinkPannel;
+pub use rrc_status::LinkPanel;
 pub use trame_manager::TrameManager;
 
 use eframe::egui;

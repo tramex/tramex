@@ -1,5 +1,5 @@
 //! Frontend module
-use crate::panels::{FileHandler, LinkPannel, LogicalChannels, MessageBox, PanelController, TrameManager};
+use crate::panels::{FileHandler, LinkPanel, LogicalChannels, MessageBox, PanelController, TrameManager};
 use crate::set_open;
 use egui::Ui;
 use std::collections::BTreeSet;
@@ -69,11 +69,11 @@ impl FrontEnd {
     pub fn new() -> Self {
         let mb = MessageBox::new();
         let lc = LogicalChannels::new();
-        let status = LinkPannel::new();
+        let status = LinkPanel::new();
         let wins: Vec<Box<dyn PanelController>> = vec![
             Box::<MessageBox>::new(mb),
             Box::<LogicalChannels>::new(lc),
-            Box::<LinkPannel>::new(status),
+            Box::<LinkPanel>::new(status),
         ];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {

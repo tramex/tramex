@@ -9,18 +9,18 @@ use tramex_tools::interface::types::Direction;
 
 /// Panel to display the RRC status
 #[derive(Debug, Default)]
-pub struct LinkPannel {
+pub struct LinkPanel {
     /// current trace
     current_trace: Option<Trace>,
 }
 
-impl LinkPannel {
-    /// Create a new instance of the LinkPannel
+impl LinkPanel {
+    /// Create a new instance of the LinkPanel
     pub fn new() -> Self {
         Self { ..Default::default() }
     }
 }
-impl LinkPannel {
+impl LinkPanel {
     /// Display the control of the link
     pub fn ui_control(&self, ui: &mut egui::Ui, direction: &Direction) {
         ui.vertical_centered_justified(|ui| match direction {
@@ -275,7 +275,7 @@ impl LinkPannel {
     }
 }
 
-impl super::PanelController for LinkPannel {
+impl super::PanelController for LinkPanel {
     fn name(&self) -> &'static str {
         "RRC Status"
     }
@@ -297,7 +297,7 @@ impl super::PanelController for LinkPannel {
     }
 }
 
-impl super::PanelView for LinkPannel {
+impl super::PanelView for LinkPanel {
     fn ui(&mut self, ui: &mut egui::Ui) {
         if let Some(trace) = &self.current_trace {
             let direction = &trace.trace_type.direction;
