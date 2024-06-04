@@ -85,7 +85,7 @@ impl Connector {
                 log::error!("Failed to connect to {:?}: {}", url, error);
                 Err(TramexError::new(
                     error.to_string(),
-                    crate::errors::ErrorCode::WebScoketFailedToConnect,
+                    crate::errors::ErrorCode::WebSocketFailedToConnect,
                 ))
             }
         }
@@ -155,7 +155,7 @@ impl Connector {
                 }
             }
             Interface::File(ref mut curr_file) => {
-                if curr_file.readed {
+                if curr_file.full_read {
                     return Ok(());
                 }
                 let (m_vec, opt_err) = &mut curr_file.process();
@@ -260,7 +260,7 @@ impl Connector {
                 }
             }
             Interface::File(ref mut file) => {
-                if file.readed {
+                if file.full_read {
                     return Ok(());
                 }
                 let layers_list = Layers::new(); //TODO change

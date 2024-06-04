@@ -143,9 +143,9 @@ impl FrontEnd {
                     && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                     || ui.button("Connect").clicked()
                 {
-                    let wakup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
+                    let wakeup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
                     let local_url = connector.url.clone();
-                    connector.connect(&local_url, wakup_fn)?
+                    connector.connect(&local_url, wakeup_fn)?
                 }
             }
         }

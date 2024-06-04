@@ -181,7 +181,7 @@ impl FileHandler {
                 let file_selected = rfd::AsyncFileDialog::new().pick_file().await;
                 if let Some(curr_file) = file_selected {
                     let buf = curr_file.read().await;
-                    log::info!("File readed from wasm");
+                    log::info!("File reading from wasm");
                     return match std::str::from_utf8(&buf) {
                         Ok(v) => Ok(File::new(curr_file.file_name().into(), v.to_string())),
                         Err(e) => Err(TramexError::new(

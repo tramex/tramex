@@ -7,7 +7,7 @@ pub enum ErrorCode {
     NotSet = 0,
 
     /// WebSocket: Failed to connect
-    WebScoketFailedToConnect,
+    WebSocketFailedToConnect,
 
     /// WebSocket: Error encoding message
     WebSocketErrorEncodingMessage,
@@ -65,7 +65,7 @@ impl std::fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // use to_string() to get the string representation of the error code
         let str = match self {
-            Self::WebScoketFailedToConnect => "WebSocket: Failed to connect",
+            Self::WebSocketFailedToConnect => "WebSocket: Failed to connect",
             Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message",
             Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message",
             Self::WebSocketUnknownMessageReceived => "WebSocket: Unknown message received",

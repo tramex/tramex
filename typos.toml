@@ -1,0 +1,8 @@
+[files]
+extend-exclude = ["*.log"]
+
+
+[default.extend-words]
+UE = "UE"
+uper = "uper"
+MCH = "MCH"
