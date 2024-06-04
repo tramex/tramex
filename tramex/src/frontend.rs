@@ -6,15 +6,17 @@ use std::rc::Rc;
 use std::{cell::RefCell, collections::BTreeSet};
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
-use tramex_tools::interface::Interface;
+use tramex_tools::interface::interface_types::Interface;
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
 /// Choice enum
 pub enum Choice {
     /// File choice
+    #[default]
     File,
 
     /// WebSocket choice
+    #[cfg(feature = "websocket")]
     WebSocket,
 }
 
@@ -43,6 +45,9 @@ pub struct FrontEnd {
 
     /// Radio choice
     pub radio_choice: Choice,
+
+    /// URL files
+    pub url_files: String,
 }
 
 impl Default for FrontEnd {
@@ -52,9 +57,10 @@ impl Default for FrontEnd {
             open_windows: BTreeSet::new(),
             windows: Vec::new(),
             open_menu_connector: true,
-            radio_choice: Choice::WebSocket,
+            radio_choice: Choice::default(),
             file_upload: None,
             trame_manager: TrameManager::new(),
+            url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
         }
     }
 }
@@ -81,6 +87,12 @@ impl FrontEnd {
         }
     }
 
+    /// Show tiny ui in about panel
+    pub fn ui_about(&mut self, ui: &mut egui::Ui) {
+        ui.label("Index of files URL:");
+        ui.add(egui::TextEdit::singleline(&mut self.url_files));
+    }
+
     /// Menu bar
     pub fn menu_bar(&mut self, ui: &mut Ui) {
         if self.connector.borrow().available {
@@ -100,15 +112,18 @@ impl FrontEnd {
     }
 
     /// Show the URL
+    #[cfg(feature = "websocket")]
     pub fn show_url(&mut self, ui: &mut Ui, new_ctx: egui::Context) -> Result<(), TramexError> {
         let connector = &mut self.connector.borrow_mut();
 
-        if let Interface::Ws(_interface_ws) = &connector.interface {
+        let current_url = connector.url.clone();
+
+        if let Some(Interface::Ws(interface_ws)) = &mut connector.interface {
             ui.label("URL:");
-            ui.label(&connector.url);
+            ui.label(&current_url);
             if ui.button("Close").clicked() {
                 // close connection
-                match connector.interface.close() {
+                match interface_ws.close_impl() {
                     Ok(_) => {
                         connector.clear_interface();
                     }
@@ -120,7 +135,7 @@ impl FrontEnd {
         }
 
         match &connector.interface {
-            Interface::Ws(interface_ws) => {
+            Some(Interface::Ws(interface_ws)) => {
                 if interface_ws.connecting {
                     ui.label("Connecting...");
                     ui.spinner();
@@ -131,9 +146,9 @@ impl FrontEnd {
                     && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                     || ui.button("Connect").clicked()
                 {
-                    let wakup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
+                    let wakeup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
                     let local_url = connector.url.clone();
-                    connector.connect(&local_url, wakup_fn)?
+                    connector.connect(&local_url, wakeup_fn)?
                 }
             }
         }
@@ -155,19 +170,21 @@ impl FrontEnd {
                             ui.add_enabled_ui(self.connector.borrow().interface.is_none(), |ui| {
                                 ui.label("Choose ws or file");
                                 ui.radio_value(&mut self.radio_choice, Choice::File, "File");
+                                #[cfg(feature = "websocket")]
                                 ui.radio_value(&mut self.radio_choice, Choice::WebSocket, "WebSocket");
                             });
                         });
-                        if save != self.radio_choice && self.radio_choice == Choice::File {
-                            self.file_upload = Some(FileHandler::new());
-                        }
                         ui.vertical(|ui| match &self.radio_choice {
+                            #[cfg(feature = "websocket")]
                             Choice::WebSocket => {
                                 if let Err(err) = self.show_url(ui, ctx.clone()) {
                                     error = Some(err);
                                 }
                             }
                             Choice::File => {
+                                if save != self.radio_choice || self.file_upload.is_none() {
+                                    self.file_upload = Some(FileHandler::new(&self.url_files));
+                                }
                                 if let Some(file_handle) = &mut self.file_upload {
                                     let is_file_path = file_handle.get_picket_path().is_some();
                                     ui.add_enabled_ui(!is_file_path, |ui| match file_handle.ui(ui) {
@@ -238,12 +255,19 @@ impl FrontEnd {
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
                 // show nothing
-            } else if let Interface::Ws(_interface_ws) = &self.connector.borrow().interface {
-                ui.label("WebSocket not available");
-            } else if let Interface::File(_interface_file) = &self.connector.borrow().interface {
-                ui.label("File not available");
             } else {
-                ui.label("Not connected");
+                match &self.connector.borrow().interface {
+                    #[cfg(feature = "websocket")]
+                    Some(Interface::Ws(_interface_ws)) => {
+                        ui.label("WebSocket not available");
+                    }
+                    Some(Interface::File(_interface_file)) => {
+                        ui.label("File not available");
+                    }
+                    None => {
+                        ui.label("Not connected");
+                    }
+                }
             }
         });
         match error_to_return {

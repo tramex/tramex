@@ -19,8 +19,11 @@ pub struct TramexApp {
     /// Error panel
     error_panel: Vec<TramexError>,
 
-    /// Show about
-    show_about: bool,
+    /// Show about windows
+    show_about_windows: bool,
+
+    /// Show about windows
+    show_options_windows: bool,
 }
 
 impl TramexApp {
@@ -46,7 +49,10 @@ impl TramexApp {
                 ui.ctx().memory_mut(|mem| mem.reset_areas());
             }
             if ui.button("About").clicked() {
-                self.show_about = !self.show_about;
+                self.show_about_windows = !self.show_about_windows;
+            }
+            if ui.button("Options").clicked() {
+                self.show_options_windows = !self.show_options_windows;
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
@@ -105,7 +111,7 @@ impl TramexApp {
     /// Display the about windows
     fn ui_about_windows(&mut self, ctx: &egui::Context) {
         egui::Window::new("About")
-            .open(&mut self.show_about)
+            .open(&mut self.show_about_windows)
             .resizable([true, true])
             .show(ctx, |ui| {
                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
@@ -144,6 +150,18 @@ impl TramexApp {
                 });
             });
     }
+
+    /// Display the options windows
+    fn ui_options_windows(&mut self, ctx: &egui::Context) {
+        egui::Window::new("Options")
+            .open(&mut self.show_options_windows)
+            .resizable([true, true])
+            .show(ctx, |ui| {
+                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                    self.frontend.ui_about(ui);
+                });
+            });
+    }
 }
 
 impl Default for TramexApp {
@@ -151,7 +169,8 @@ impl Default for TramexApp {
         Self {
             frontend: FrontEnd::new(),
             error_panel: vec![],
-            show_about: false,
+            show_about_windows: false,
+            show_options_windows: false,
         }
     }
 }
@@ -177,8 +196,11 @@ impl eframe::App for TramexApp {
         }
 
         self.ui_error_panel(ctx);
-        if self.show_about {
+        if self.show_about_windows {
             self.ui_about_windows(ctx);
+        }
+        if self.show_options_windows {
+            self.ui_options_windows(ctx);
         }
     }
 }

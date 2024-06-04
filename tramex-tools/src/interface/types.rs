@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use crate::websocket::onelog::OneLog;
+use crate::interface::onelog::OneLog;
 
 // deserialize the message
 #[derive(serde::Deserialize, Debug)]
@@ -14,7 +14,7 @@ pub struct WebSocketLog {
     ///Any type, force as string // Same as in request.
     pub message_id: Option<u64>,
 
-    /// Number representing time in seconds since start of the process. // Usefull to send command with absolute time.
+    /// Number representing time in seconds since start of the process. // Useful to send command with absolute time.
     pub time: f64,
 
     ///Number representing UTC seconds.

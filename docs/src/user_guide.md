@@ -4,7 +4,7 @@ This section is meant to help get started with Tramex.
 
 ## Tramex in a nutshell
 
-Tramex is a 4G network scanner. With Tramex, it is possible to analyze each message of a 4G communication. Those messages are called frames. Tramex allows users to read 4G frames and display the content data such as the channels followed during the communication or the RRC state. Tramex was developped to be accessible from several platforms:
+Tramex is a 4G network scanner. With Tramex, it is possible to analyze each message of a 4G communication. Those messages are called frames. Tramex allows users to read 4G frames and display the content data such as the channels followed during the communication or the RRC state. Tramex was developed to be accessible from several platforms:
 
 - in browser mode: the user only needs to go on the [`tramex website`](https://tramex.github.io/tramex/)
 - in binary mode: the user needs to download the binary file of tramex from the [releases page](https://github.com/tramex/tramex/releases) and run it
@@ -16,11 +16,11 @@ The Tramex interface is always alike, no matter the mode used. In this section, 
 
 ### Documentation access
 
-**General informations** are accessible with a click on the `Menu` button on the left of the top bar then `About`.
+**General information** is accessible with a click on the `Menu` button on the left of the top bar then `About`.
 
 **Tramex repository** is also accessible from the Tramex interface with a click on the `About` button on the left of the top bar then [`Tramex repository`](https://github.com/tramex/tramex).
 
-From the Tramex interface, it is possible to access differents documentations:
+From the Tramex interface, it is possible to access different documentations:
 
 - **User documentation**: Click on the `About` button on the left of the top bar then [`User documentation`](https://tramex.github.io/tramex/docs/documentation.html).
 - **Tramex code documentation**: Click on the `About` button on the left of the top bar then [`tramex type`](https://tramex.github.io/tramex/crates/tramex/).
@@ -64,7 +64,7 @@ The current message panel contains the information regarding the current frame. 
 
 ### Logical channels panel
 
-In this panel, it is possible to visualize the channels used to transmit the current message. The panel is divided into three rows and two columns. The first row corresponds to the logical channels, the second row to the transport channels and the thrid row to the physical channels. The three rows are separated into two, the left hand-side corresponds to a downlink communication whereas the right hand-side corresponds to an uplink communication.
+In this panel, it is possible to visualize the channels used to transmit the current message. The panel is divided into three rows and two columns. The first row corresponds to the logical channels, the second row to the transport channels and the third row to the physical channels. The three rows are separated into two, the left hand-side corresponds to a downlink communication whereas the right hand-side corresponds to an uplink communication.
 
 This panel allows the user to easily spot the channels followed for the current message by illuminating the name of the used channels with specific colors. Moreover, the direction of the communication is therefore also highlighted.
 
@@ -73,7 +73,7 @@ The color applied to the name of the channel specifies the channel type:
 - red is for broadcast channels: the message is intended for every UE in the network
 - blue is for shared channels: the message is intended for a group of UEs
 - orange is for dedicated channels: the message is intended for a specific UE alone
-- green is for trafic channels: the message contains data
+- green is for traffic channels: the message contains data
 
 ### RRC state panel
 

@@ -14,14 +14,14 @@ pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Result<Vec<u8>, TramexError> {
     });
     let mut data: Vec<String> = Vec::new();
     for one_string in iter {
-        let trimed = one_string.as_ref().trim();
-        if trimed.len() > 57 {
-            let str_piece = &trimed[7..56];
+        let trimmed = one_string.as_ref().trim();
+        if trimmed.len() > 57 {
+            let str_piece = &trimmed[7..56];
             let chars_only: String = str_piece.chars().filter(|c| !c.is_whitespace()).collect();
             data.push(chars_only);
         } else {
             return Err(TramexError::new(
-                format!("Error decoding hexe {:?} ({})", trimed, trimed.len()),
+                format!("Error decoding hexe {:?} ({})", trimmed, trimmed.len()),
                 ErrorCode::HexeDecodingError,
             ));
         }

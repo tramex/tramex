@@ -1,20 +1,20 @@
 //! Connector module
 use std::path::PathBuf;
 
-use crate::data::{Data, MessageType, Trace};
-use crate::errors::{ErrorCode, TramexError};
-use crate::file_handler::File;
-use crate::interface::Interface;
-use crate::websocket::{layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection};
-use ewebsock::{WsEvent, WsMessage};
-
+use crate::data::Data;
+use crate::errors::TramexError;
+use crate::interface::interface_file::file_handler::File;
+use crate::interface::interface_types::{Interface, InterfaceTrait};
+use crate::interface::layer::Layers;
+#[cfg(feature = "websocket")]
+use crate::interface::websocket::ws_connection::WsConnection;
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
 #[serde(default)]
 /// Connector
 pub struct Connector {
     #[serde(skip)]
     /// Interface
-    pub interface: Interface,
+    pub interface: Option<Interface>,
 
     #[serde(skip)]
     /// Data
@@ -35,7 +35,7 @@ impl Connector {
     /// Create a new Connector
     pub fn new() -> Self {
         Self {
-            interface: Interface::None,
+            interface: None,
             data: Data::default(),
             available: false,
             asking_size_max: 1024,
@@ -51,30 +51,30 @@ impl Connector {
 
     /// Clear connector interface
     pub fn clear_interface(&mut self) {
-        self.interface = Interface::None;
+        self.interface = None;
         self.available = false;
     }
 
     /// Connect to a websocket
     /// # Errors
     /// Return an error if the connection failed
+    #[cfg(feature = "websocket")]
     pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
-        let options = ewebsock::Options::default();
-        match ewebsock::connect_with_wakeup(url, options, wakeup) {
+        match WsConnection::connect(url, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
-                self.interface = Interface::Ws(WsConnection {
+                self.interface = Some(Interface::Ws(WsConnection {
                     ws_sender,
                     ws_receiver,
                     msg_id: 1,
                     connecting: true,
-                });
+                }));
                 Ok(())
             }
             Err(error) => {
                 log::error!("Failed to connect to {:?}: {}", url, error);
                 Err(TramexError::new(
                     error.to_string(),
-                    crate::errors::ErrorCode::WebScoketFailedToConnect,
+                    crate::errors::ErrorCode::WebSocketFailedToConnect,
                 ))
             }
         }
@@ -83,14 +83,16 @@ impl Connector {
     /// Set file mode using a File
     pub fn set_file(&mut self, file: File) {
         log::debug!("Set file available");
-        self.interface = Interface::File(file);
+        self.interface = Some(Interface::File(file));
         self.available = true;
     }
 
     /// Set ws mode
+    #[cfg(feature = "websocket")]
     pub fn new_ws(ws: WsConnection) -> Self {
         Self {
-            interface: Interface::Ws(ws),
+            #[cfg(feature = "websocket")]
+            interface: Some(Interface::Ws(ws)),
             data: Data::default(),
             available: false,
             ..Default::default()
@@ -100,7 +102,7 @@ impl Connector {
     /// set file mode using a path
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
-            interface: Interface::File(File::new_with_to_read(file_path, String::new(), 50)),
+            interface: Some(Interface::File(File::new_with_to_read(file_path, String::new(), 50))),
             data: Data::default(),
             available: false,
             ..Default::default()
@@ -110,7 +112,7 @@ impl Connector {
     /// set file mode using a path and content
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
-            interface: Interface::File(File::new_with_to_read(file_path, file_content, 50)),
+            interface: Some(Interface::File(File::new_with_to_read(file_path, file_content, 50))),
             data: Data::default(),
             available: true,
             ..Default::default()
@@ -120,45 +122,15 @@ impl Connector {
     /// Get more data depending on the interface
     /// # Errors
     /// Return an error if the interface is not set
-    pub fn get_more_data(&mut self, layers_list: Layers) -> Result<(), TramexError> {
+    pub fn get_more_data(&mut self, _layers_list: Layers) -> Result<(), TramexError> {
         log::debug!("Get more data");
         match &mut self.interface {
-            Interface::Ws(ref mut ws) => {
-                let msg = LogGet::new(ws.msg_id, layers_list, self.asking_size_max);
-                match serde_json::to_string(&msg) {
-                    Ok(msg_stringed) => {
-                        log::debug!("{}", msg_stringed);
-                        ws.ws_sender.send(WsMessage::Text(msg_stringed));
-                        ws.msg_id += 1;
-                    }
-                    Err(err) => {
-                        log::error!("Error encoding message: {:?}", err);
-                        return Err(TramexError::new(
-                            err.to_string(),
-                            crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
-                        ));
-                    }
-                }
+            Some(inter) => inter.get_more_data(_layers_list, self.asking_size_max, &mut self.data, &mut self.available),
+            None => {
+                log::debug!("Error: Interface not set");
+                Ok(())
             }
-            Interface::File(ref mut curr_file) => {
-                if curr_file.readed {
-                    return Ok(());
-                }
-                let (m_vec, opt_err) = &mut curr_file.process();
-                self.data.events.append(m_vec);
-                self.available = true;
-                match opt_err {
-                    Some(err) => {
-                        if !(matches!(err.code, ErrorCode::EndOfFile)) {
-                            return Err(err.clone());
-                        }
-                    }
-                    None => {}
-                }
-            }
-            _ => {}
         }
-        Ok(())
     }
 
     /// Try to receive data
@@ -166,94 +138,11 @@ impl Connector {
     /// Return an error if the interface is not set
     pub fn try_recv(&mut self) -> Result<(), TramexError> {
         match &mut self.interface {
-            Interface::Ws(ref mut ws) => {
-                while let Some(event) = ws.ws_receiver.try_recv() {
-                    ws.connecting = false;
-                    match event {
-                        WsEvent::Message(msg) => {
-                            self.available = true;
-                            match msg {
-                                WsMessage::Text(event_text) => {
-                                    let decoded: Result<WebSocketLog, serde_json::Error> = serde_json::from_str(&event_text);
-                                    match decoded {
-                                        Ok(decoded_data) => {
-                                            for one_log in decoded_data.logs {
-                                                let canal_msg = one_log.extract_canal_msg().unwrap_or("".to_owned());
-                                                let hexa = one_log.extract_hexe();
-                                                let msg_type = MessageType {
-                                                    timestamp: one_log.timestamp.to_owned(),
-                                                    layer: one_log.layer,
-                                                    direction: one_log.dir.unwrap_or_default(),
-                                                    canal: one_log.channel.unwrap_or_default(),
-                                                    canal_msg,
-                                                };
-                                                let trace = Trace {
-                                                    trace_type: msg_type,
-                                                    hexa: hexa.unwrap_or_default(),
-                                                    #[cfg(feature = "debug-trame")]
-                                                    text: one_log.data,
-                                                };
-                                                self.data.events.push(trace);
-                                            }
-                                        }
-                                        Err(err) => {
-                                            log::error!("Error decoding message: {:?}", err);
-                                            log::error!("Message: {:?}", event_text);
-                                            return Err(TramexError::new(
-                                                err.to_string(),
-                                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
-                                            ));
-                                        }
-                                    }
-                                }
-                                WsMessage::Unknown(str_error) => {
-                                    log::error!("Unknown message: {:?}", str_error);
-                                    return Err(TramexError::new(
-                                        str_error,
-                                        crate::errors::ErrorCode::WebSocketUnknownMessageReceived,
-                                    ));
-                                }
-                                WsMessage::Binary(bin) => {
-                                    log::error!("Unknown binary message: {:?}", bin);
-                                    return Err(TramexError::new(
-                                        format!("Unknown binary message: {:?}", bin),
-                                        crate::errors::ErrorCode::WebSocketUnknownBinaryMessageReceived,
-                                    ));
-                                }
-                                _ => {
-                                    log::debug!("Received Ping-Pong")
-                                }
-                            }
-                        }
-                        WsEvent::Opened => {
-                            self.available = true;
-                            log::debug!("WebSocket opened");
-                        }
-                        WsEvent::Closed => {
-                            self.available = false;
-                            log::debug!("WebSocket closed");
-                            return Err(TramexError::new(
-                                "WebSocket closed".to_string(),
-                                crate::errors::ErrorCode::WebSocketClosed,
-                            ));
-                        }
-                        WsEvent::Error(str_err) => {
-                            self.available = false;
-                            log::error!("WebSocket error: {:?}", str_err);
-                            return Err(TramexError::new(str_err, crate::errors::ErrorCode::WebSocketError));
-                        }
-                    }
-                }
+            Some(inter) => inter.try_recv(&mut self.data, &mut self.available),
+            None => {
+                log::debug!("Error: Interface not set");
+                Ok(())
             }
-            Interface::File(ref mut file) => {
-                if file.readed {
-                    return Ok(());
-                }
-                let layers_list = Layers::new(); //TODO change
-                return self.get_more_data(layers_list);
-            }
-            _ => {}
         }
-        Ok(())
     }
 }
