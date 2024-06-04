@@ -2,7 +2,7 @@
 
 ## What you can find in this report
 
-    This report is here to explain the choices we made developping this crate, and explaining the architecture and what we had in mind when we designed this crate.
+    This report is here to explain the choices we made developing this crate, and explaining the architecture and what we had in mind when we designed this crate.
 
 ## What is tramex-tools
 
@@ -14,7 +14,7 @@ You will find in here the `Connector` (connector.rs), that is the structure that
 
 #### First what is `Data`
 
-`Data` is what the `Connector` aims to retreive, in it is a Vector of `Trace` and the index of the current `Trace`.
+`Data` is what the `Connector` aims to retrieve, in it is a Vector of `Trace` and the index of the current `Trace`.
 A `Trace` is a struct with a `MessageType` and a `Hexa`.
 It represents a 4G trace, with in `MessageType` the information about what `Layer` is this message, what is the `direction` of the trace, from which `Canal` does it comes from etc...
 All this `MessageType` information, is used to know what type of trace it is, so we can rightly decode the `Hexa`.
@@ -22,9 +22,9 @@ The `Hexa` is hexadecimal representation of ASN1 binary, that when rightly decod
 
 #### What is an `Interface`
 
-Now that we know what we want to retreive, we need to figure out how.
+Now that we know what we want to retrieve, we need to figure out how.
 For this project, we gather the 4G traces from a Software 4G Core, powered by Amarisoft.
-We can retreive traces two ways, first by reading a .log File with multiple traces, or we can retreive traces by asking a Websocket API.
+We can retrieve traces two ways, first by reading a .log File with multiple traces, or we can retrieve traces by asking a Websocket API.
 
 So we have two different `Interface`: `File` and `WsConnection`.
 
@@ -32,13 +32,13 @@ So we have two different `Interface`: `File` and `WsConnection`.
 
 In `Connector`, you'll see first all the different constructors, but the two major part of this Structure, is the `get_more_data` and `try_recv` functions, that are what you call when you use a Connector.
 
-`get_more_data` is the function that is called when you want to retreive more `Data` into the `Connector`.
+`get_more_data` is the function that is called when you want to retrieve more `Data` into the `Connector`.
 For the `WsConnection` `Interface`, it means sending a WsMessage to the WebSocket server for more traces.
 For the `File` `Interface`, it means (if the file is not already entirely read) to try and read the new part of the `File` and save the `Data` in the `Connector`.
 
 #### How does `WsConnection` works
 
-But to dive deeper into how the data is retreived, you need to understand how a `WsConnection` works.
+But to dive deeper into how the data is retrieved, you need to understand how a `WsConnection` works.
 When a `WsConnection` is opened, all the messages sent by the server goes into a receive buffer, and there is typically two ways of handling theses received messages. First you can when you want try to read the buffer to see if something has appeared. Or you can give the WsConnection a callback, to wake up the UI.
 
 #### Back to the Code
