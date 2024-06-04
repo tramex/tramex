@@ -6,11 +6,7 @@ pub mod logical_channels;
 pub mod message;
 pub mod trame_manager;
 
-pub use about::AboutPanel;
-pub use file_upload::FileHandler;
-pub use logical_channels::LogicalChannels;
-pub use message::MessageBox;
-pub use trame_manager::TrameManager;
+pub mod functions_panels;
 
 use eframe::egui;
 use tramex_tools::{data::Data, errors::TramexError};
