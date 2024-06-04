@@ -177,9 +177,6 @@ impl Default for TramexApp {
 
 impl eframe::App for TramexApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // load images
-        egui_extras::install_image_loaders(ctx);
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
                 self.menu_bar(ctx, ui);
