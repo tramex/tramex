@@ -21,7 +21,7 @@ If the website is running on HTTPS, connections to insecure endpoints (like `ws`
 - use a local WS proxy to remove CORS issue
 
 ```bash
-# example of a local WS proxy (and with a orign header) using npx
+# example of a local WS proxy (and with a origin header) using npx
 npx @n4n5/proxy-ws -t ws://10.0.0.1:9001 -h '{"origin":"toto"}'
 # will redirect ws://127.0.0.1:9001 -> ws://10.0.0.1:9001
 # cors will not be an issue anymore with the local address 127.0.0.1

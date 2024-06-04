@@ -1,13 +1,23 @@
 //! Connector module
 use std::path::PathBuf;
 
-use crate::data::{Data, MessageType, Trace};
+use crate::data::Data;
+#[cfg(feature = "websocket")]
+use crate::data::MessageType;
+#[cfg(feature = "websocket")]
+use crate::data::Trace;
 use crate::errors::{ErrorCode, TramexError};
 use crate::file_handler::File;
 use crate::interface::Interface;
-use crate::websocket::{layer::Layers, log_get::LogGet, types::WebSocketLog, ws_connection::WsConnection};
+use crate::websocket::layer::Layers;
+#[cfg(feature = "websocket")]
+use crate::websocket::log_get::LogGet;
+#[cfg(feature = "websocket")]
+use crate::websocket::types::WebSocketLog;
+#[cfg(feature = "websocket")]
+use crate::websocket::ws_connection::WsConnection;
+#[cfg(feature = "websocket")]
 use ewebsock::{WsEvent, WsMessage};
-
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
 #[serde(default)]
 /// Connector
@@ -58,6 +68,7 @@ impl Connector {
     /// Connect to a websocket
     /// # Errors
     /// Return an error if the connection failed
+    #[cfg(feature = "websocket")]
     pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
         let options = ewebsock::Options::default();
         match ewebsock::connect_with_wakeup(url, options, wakeup) {
@@ -74,7 +85,7 @@ impl Connector {
                 log::error!("Failed to connect to {:?}: {}", url, error);
                 Err(TramexError::new(
                     error.to_string(),
-                    crate::errors::ErrorCode::WebScoketFailedToConnect,
+                    crate::errors::ErrorCode::WebSocketFailedToConnect,
                 ))
             }
         }
@@ -88,8 +99,10 @@ impl Connector {
     }
 
     /// Set ws mode
+    #[cfg(feature = "websocket")]
     pub fn new_ws(ws: WsConnection) -> Self {
         Self {
+            #[cfg(feature = "websocket")]
             interface: Interface::Ws(ws),
             data: Data::default(),
             available: false,
@@ -120,11 +133,12 @@ impl Connector {
     /// Get more data depending on the interface
     /// # Errors
     /// Return an error if the interface is not set
-    pub fn get_more_data(&mut self, layers_list: Layers) -> Result<(), TramexError> {
+    pub fn get_more_data(&mut self, _layers_list: Layers) -> Result<(), TramexError> {
         log::debug!("Get more data");
         match &mut self.interface {
+            #[cfg(feature = "websocket")]
             Interface::Ws(ref mut ws) => {
-                let msg = LogGet::new(ws.msg_id, layers_list, self.asking_size_max);
+                let msg = LogGet::new(ws.msg_id, _layers_list, self.asking_size_max);
                 match serde_json::to_string(&msg) {
                     Ok(msg_stringed) => {
                         log::debug!("{}", msg_stringed);
@@ -141,7 +155,7 @@ impl Connector {
                 }
             }
             Interface::File(ref mut curr_file) => {
-                if curr_file.readed {
+                if curr_file.full_read {
                     return Ok(());
                 }
                 let (m_vec, opt_err) = &mut curr_file.process();
@@ -166,6 +180,7 @@ impl Connector {
     /// Return an error if the interface is not set
     pub fn try_recv(&mut self) -> Result<(), TramexError> {
         match &mut self.interface {
+            #[cfg(feature = "websocket")]
             Interface::Ws(ref mut ws) => {
                 while let Some(event) = ws.ws_receiver.try_recv() {
                     ws.connecting = false;
@@ -190,7 +205,6 @@ impl Connector {
                                                 let trace = Trace {
                                                     trace_type: msg_type,
                                                     hexa: hexa.unwrap_or_default(),
-                                                    #[cfg(feature = "debug-trame")]
                                                     text: one_log.data,
                                                 };
                                                 self.data.events.push(trace);
@@ -245,8 +259,8 @@ impl Connector {
                     }
                 }
             }
-            Interface::File(_) => {}
             //Do nothing if its a File & None
+            Interface::File(_) => {}
             _ => {}
         }
         Ok(())

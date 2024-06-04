@@ -7,7 +7,7 @@ pub enum ErrorCode {
     NotSet = 0,
 
     /// WebSocket: Failed to connect
-    WebScoketFailedToConnect,
+    WebSocketFailedToConnect,
 
     /// WebSocket: Error encoding message
     WebSocketErrorEncodingMessage,
@@ -50,6 +50,9 @@ pub enum ErrorCode {
 
     /// File: Error while parsing the file
     FileParsing,
+
+    /// Request error
+    RequestError,
 }
 
 impl Default for ErrorCode {
@@ -62,7 +65,7 @@ impl std::fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // use to_string() to get the string representation of the error code
         let str = match self {
-            Self::WebScoketFailedToConnect => "WebSocket: Failed to connect",
+            Self::WebSocketFailedToConnect => "WebSocket: Failed to connect",
             Self::WebSocketErrorEncodingMessage => "WebSocket: Error encoding message",
             Self::WebSocketErrorDecodingMessage => "WebSocket: Error decoding message",
             Self::WebSocketUnknownMessageReceived => "WebSocket: Unknown message received",
@@ -78,6 +81,7 @@ impl std::fmt::Display for ErrorCode {
             Self::HexeDecodingError => "Hexe decoding error",
             Self::EndOfFile => "End of File",
             Self::FileParsing => "File: Parsing error",
+            Self::RequestError => "Request error",
         };
         write!(f, "{}", str)
     }
@@ -106,6 +110,7 @@ pub struct TramexError {
 impl TramexError {
     /// Create a new error
     pub fn new(message: String, code: ErrorCode) -> Self {
+        log::debug!("Error: {} - {}\n{}", code, message, std::backtrace::Backtrace::capture());
         Self { message, code }
     }
 

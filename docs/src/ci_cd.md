@@ -44,7 +44,7 @@ After the deployment, the accessible URLs are:
 
 This file is executed when a push command is performed or when a pull is requested on the main branch of the Git repository. It is used to test code before any new modification is accepted in order to preserve the consistency of the Tramex code through the development.
 
-The Tests file sets up the cargo cache, builds the project and runs the tests implemented in the `cargo test` command on the whole workspace. The `--verbose` flag is used to facilitate the debuging in the event of an error.
+The Tests file sets up the cargo cache, builds the project and runs the tests implemented in the `cargo test` command on the whole workspace. The `--verbose` flag is used to facilitate the debugging in the event of an error.
 
 ## WASM file
 

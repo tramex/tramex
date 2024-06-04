@@ -4,13 +4,12 @@ use crate::data::MessageType;
 use crate::data::Trace;
 use crate::errors::TramexError;
 use crate::functions::extract_hexe;
+use crate::websocket::layer::Layer;
 use crate::websocket::types::Direction;
 use chrono::NaiveTime;
 use chrono::Timelike;
 use std::path::PathBuf;
 use std::str::FromStr;
-
-use crate::websocket::layer::Layer;
 /// The default number of log processed by batch
 const DEFAULT_NB: usize = 6;
 #[derive(Debug, Clone)]
@@ -22,8 +21,8 @@ pub struct File {
     /// Content of the file.
     pub file_content: String,
 
-    /// Readed status of the file.
-    pub readed: bool,
+    /// Full read status of the file.
+    pub full_read: bool,
     /// the number of log to read each batch
     nb_read: usize,
     /// The previous line number
@@ -35,7 +34,7 @@ impl Default for File {
         Self {
             file_path: PathBuf::from(""),
             file_content: "".to_string(),
-            readed: false,
+            full_read: false,
             nb_read: DEFAULT_NB,
             ix: 0,
         }
@@ -58,7 +57,7 @@ impl File {
         Self {
             file_path,
             file_content,
-            readed: false,
+            full_read: false,
             nb_read: DEFAULT_NB,
             ix: 0,
         }
@@ -68,7 +67,7 @@ impl File {
         Self {
             file_path,
             file_content,
-            readed: false,
+            full_read: false,
             nb_read: nb_to_read,
             ix: 0,
         }
@@ -81,7 +80,7 @@ impl File {
     pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
         let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
         if opt_err.is_some() {
-            self.readed = true;
+            self.full_read = true;
         }
         (vec_trace, opt_err)
     }
@@ -161,7 +160,6 @@ impl File {
 
         let mut end = false;
         let mut brackets: i16 = 0;
-        #[cfg(feature = "debug-trame")]
         let start_block = *ix;
         while (*ix < lines_len) && !end {
             brackets += Self::count_brackets(lines[*ix]);
@@ -179,7 +177,6 @@ impl File {
         let trace = Trace {
             trace_type: mtype,
             hexa: hex,
-            #[cfg(feature = "debug-trame")]
             text: lines[start_block..*ix].iter().map(|&s| s.to_string()).collect(),
         };
         *ix += 1;
