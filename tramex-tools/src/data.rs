@@ -28,7 +28,7 @@ impl Default for Data {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// Data structure to store Trace of the application.
 pub struct Trace {
     /// Message type.
@@ -40,7 +40,7 @@ pub struct Trace {
     /// Text representation of the message from the API
     pub text: Option<Vec<String>>,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// Data structure to store the message type (from the amarisoft API)
 pub struct MessageType {
     /// Timestamp of the message.

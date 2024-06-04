@@ -15,7 +15,7 @@ pub use rrc_status::LinkPannel;
 pub use trame_manager::TrameManager;
 
 use eframe::egui;
-use tramex_tools::errors::TramexError;
+use tramex_tools::{data::Data, errors::TramexError};
 
 /// Something to view in the demo windows
 pub trait PanelView {
@@ -39,5 +39,5 @@ pub trait PanelController {
     /// Show windows, etc
     /// # Errors
     /// Return an error if the panel can't be shown
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError>;
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError>;
 }

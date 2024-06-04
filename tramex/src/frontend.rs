@@ -2,8 +2,7 @@
 use crate::panels::{FileHandler, LinkPannel, LogicalChannels, MessageBox, PanelController, TrameManager};
 use crate::set_open;
 use egui::Ui;
-use std::rc::Rc;
-use std::{cell::RefCell, collections::BTreeSet};
+use std::collections::BTreeSet;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::interface_types::Interface;
@@ -24,7 +23,7 @@ pub enum Choice {
 /// FrontEnd struct
 pub struct FrontEnd {
     /// Connector
-    pub connector: Rc<RefCell<Connector>>,
+    pub connector: Connector,
 
     /// Open windows
     pub open_windows: BTreeSet<String>,
@@ -53,7 +52,7 @@ pub struct FrontEnd {
 impl Default for FrontEnd {
     fn default() -> Self {
         Self {
-            connector: Rc::new(RefCell::new(Connector::new())),
+            connector: Connector::new(),
             open_windows: BTreeSet::new(),
             windows: Vec::new(),
             open_menu_connector: true,
@@ -68,19 +67,20 @@ impl Default for FrontEnd {
 impl FrontEnd {
     /// Create a new frontend
     pub fn new() -> Self {
-        let connector = Connector::new();
-        let ref_connector = Rc::new(RefCell::new(connector));
-        let mb = MessageBox::new(Rc::clone(&ref_connector));
-        let lc = LogicalChannels::new(Rc::clone(&ref_connector));
-        let status = LinkPannel::new(Rc::clone(&ref_connector));
+        let mb = MessageBox::new();
+        let lc = LogicalChannels::new();
+        let status = LinkPannel::new();
         let wins: Vec<Box<dyn PanelController>> = vec![
             Box::<MessageBox>::new(mb),
             Box::<LogicalChannels>::new(lc),
             Box::<LinkPannel>::new(status),
         ];
-        let open_windows = BTreeSet::new();
+        let mut open_windows = BTreeSet::new();
+        for one_box in wins.iter() {
+            open_windows.insert(one_box.name().to_owned());
+        }
         Self {
-            connector: ref_connector,
+            connector: Connector::new(),
             open_windows,
             windows: wins,
             ..Default::default()
@@ -95,10 +95,10 @@ impl FrontEnd {
 
     /// Menu bar
     pub fn menu_bar(&mut self, ui: &mut Ui) {
-        if self.connector.borrow().available {
+        if self.connector.available {
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
                 ui.horizontal(|ui| {
-                    self.trame_manager.show_controls(ui, &mut self.connector.borrow_mut());
+                    self.trame_manager.show_controls(ui, &mut self.connector);
                     ui.menu_button("Windows", |ui| {
                         for one_window in self.windows.iter_mut() {
                             let mut is_open: bool = self.open_windows.contains(one_window.name());
@@ -114,7 +114,7 @@ impl FrontEnd {
     /// Show the URL
     #[cfg(feature = "websocket")]
     pub fn show_url(&mut self, ui: &mut Ui, new_ctx: egui::Context) -> Result<(), TramexError> {
-        let connector = &mut self.connector.borrow_mut();
+        let connector = &mut self.connector;
 
         let current_url = connector.url.clone();
 
@@ -167,7 +167,7 @@ impl FrontEnd {
                         ui.heading("Connector");
                         let save = self.radio_choice.clone();
                         ui.horizontal(|ui| {
-                            ui.add_enabled_ui(self.connector.borrow().interface.is_none(), |ui| {
+                            ui.add_enabled_ui(self.connector.interface.is_none(), |ui| {
                                 ui.label("Choose ws or file");
                                 ui.radio_value(&mut self.radio_choice, Choice::File, "File");
                                 #[cfg(feature = "websocket")]
@@ -189,10 +189,10 @@ impl FrontEnd {
                                     let is_file_path = file_handle.get_picket_path().is_some();
                                     ui.add_enabled_ui(!is_file_path, |ui| match file_handle.ui(ui) {
                                         Ok(bo) => {
-                                            if bo && self.connector.borrow().interface.is_none() {
+                                            if bo && self.connector.interface.is_none() {
                                                 match file_handle.get_result() {
                                                     Ok(curr_file) => {
-                                                        self.connector.borrow_mut().set_file(curr_file);
+                                                        self.connector.set_file(curr_file);
                                                         file_handle.clear();
                                                     }
                                                     Err(err) => {
@@ -206,27 +206,24 @@ impl FrontEnd {
                                             log::error!("Error in file_handle {:?}", err);
                                             error = Some(err);
                                             file_handle.reset();
-                                            self.connector.borrow_mut().clear_data();
+                                            self.connector.clear_data();
                                         }
                                     });
                                     if is_file_path && ui.button("Close").on_hover_text("Close file").clicked() {
                                         file_handle.reset();
-                                        self.connector.borrow_mut().clear_data();
-                                        self.connector.borrow_mut().clear_interface();
+                                        self.connector.clear_data();
+                                        self.connector.clear_interface();
                                     }
                                 }
                             }
                         });
                     });
                     ui.separator();
-                    if self.connector.borrow().available {
-                        self.trame_manager.show_options(ui, &mut self.connector.borrow_mut());
+                    if self.connector.available {
+                        self.trame_manager.show_options(ui, &mut self.connector);
                         if self.trame_manager.should_get_more_log {
                             self.trame_manager.should_get_more_log = false;
-                            return self
-                                .connector
-                                .borrow_mut()
-                                .get_more_data(self.trame_manager.layers_list.clone());
+                            return self.connector.get_more_data(self.trame_manager.layers_list.clone());
                         }
                     }
                     Ok(())
@@ -241,14 +238,14 @@ impl FrontEnd {
     /// Show the UI
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
         let mut error_to_return = None;
-        if let Err(err) = self.connector.borrow_mut().try_recv() {
+        if let Err(err) = self.connector.try_recv() {
             error_to_return = Some(err);
         }
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.connector.borrow().available {
+            if self.connector.available {
                 for one_window in self.windows.iter_mut() {
                     let mut is_open: bool = self.open_windows.contains(one_window.name());
-                    if let Err(err) = one_window.show(ctx, &mut is_open) {
+                    if let Err(err) = one_window.show(ctx, &mut is_open, &mut self.connector.data) {
                         log::error!("Error in window {}", one_window.name());
                         error_to_return = Some(err);
                     }
@@ -256,7 +253,7 @@ impl FrontEnd {
                 }
                 // show nothing
             } else {
-                match &self.connector.borrow().interface {
+                match &self.connector.interface {
                     #[cfg(feature = "websocket")]
                     Some(Interface::Ws(_interface_ws)) => {
                         ui.label("WebSocket not available");

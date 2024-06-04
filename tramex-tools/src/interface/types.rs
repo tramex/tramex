@@ -50,7 +50,7 @@ pub enum SourceLog {
     MME,
 }
 
-#[derive(serde::Deserialize, Debug, PartialEq, Default)]
+#[derive(serde::Deserialize, Debug, PartialEq, Default, Clone)]
 /// Direction enum
 pub enum Direction {
     #[default]
