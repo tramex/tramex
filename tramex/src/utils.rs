@@ -47,13 +47,20 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool) {
     ui.label(format!("{:?}", &curr_trace.hexa));
     if full {
         ui.separator();
-        egui::ScrollArea::vertical()
-            .max_height(300.0)
-            .auto_shrink([false, true])
-            .show(ui, |ui| {
-                for elem in &curr_trace.text {
-                    ui.label(elem);
-                }
-            });
+        match &curr_trace.text {
+            Some(vec_text) => {
+                egui::ScrollArea::vertical()
+                    .max_height(300.0)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        for elem in vec_text {
+                            ui.label(elem);
+                        }
+                    });
+            }
+            None => {
+                ui.label("No text available for this trame");
+            }
+        }
     }
 }
