@@ -1,23 +1,33 @@
 //! Panel to display the RRC status
 use eframe::egui::Color32;
-use eframe::egui::TextFormat;
-use std::primitive::f32;
 use tramex_tools::data::Data;
 use tramex_tools::data::Trace;
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::types::Direction;
+
+use super::functions_panels::make_arrow;
+use super::functions_panels::make_label_equal;
+use super::functions_panels::ArrowColor;
+use super::functions_panels::ArrowDirection;
+use super::functions_panels::CustomLabelColor;
 
 /// Panel to display the RRC status
 #[derive(Debug, Default)]
 pub struct LinkPanel {
     /// current trace
     current_trace: Option<Trace>,
+
+    /// Arrow font
+    font_id: egui::FontId,
 }
 
 impl LinkPanel {
     /// Create a new instance of the LinkPanel
     pub fn new() -> Self {
-        Self { ..Default::default() }
+        Self {
+            current_trace: None,
+            font_id: egui::FontId::monospace(60.0),
+        }
     }
 }
 impl LinkPanel {
@@ -44,35 +54,6 @@ impl LinkPanel {
     }
 
     /// Make a colored label
-    pub fn make_label(&self, ui: &mut egui::Ui, label: &str, state: &str, color: &str) {
-        use egui::text::LayoutJob;
-        let mut job = LayoutJob::default();
-        let (default_color, _strong_color) = (Color32::BLACK, Color32::BLACK);
-        let background = if label == state {
-            match color {
-                "red" => Color32::from_rgb(255, 84, 84),
-                "blue" => Color32::from_rgb(68, 143, 255),
-                "orange" => Color32::from_rgb(255, 181, 68),
-                "green" => Color32::from_rgb(90, 235, 100),
-                _ => Color32::from_rgb(90, 235, 100),
-            }
-        } else {
-            Color32::from_rgb(255, 255, 255)
-        };
-
-        job.append(
-            label,
-            0.0,
-            TextFormat {
-                color: default_color,
-                background,
-                ..Default::default()
-            },
-        );
-        ui.vertical_centered(|ui| {
-            ui.label(job);
-        });
-    }
 
     /// Display the connection state of the LTE
     pub fn ui_con(&self, ui: &mut egui::Ui, direction: &Direction) {
@@ -93,15 +74,15 @@ impl LinkPanel {
 
         egui::Grid::new("some_unique_id").max_col_width(50.0).show(ui, |ui| {
             ui.add_space(20.0);
-            self.make_label(ui, "PCCH", etat, "red");
+            make_label_equal(ui, "PCCH", etat, CustomLabelColor::Red);
             self.print_on_grid(ui, "|");
-            self.make_label(ui, "BCCH", etat, "red");
+            make_label_equal(ui, "BCCH", etat, CustomLabelColor::Red);
             ui.end_row();
 
             ui.add_space(20.0);
-            self.make_label(ui, "PCH", etat, "red");
+            make_label_equal(ui, "PCH", etat, CustomLabelColor::Red);
             self.print_on_grid(ui, "|");
-            self.make_label(ui, "BCH", etat, "red");
+            make_label_equal(ui, "BCH", etat, CustomLabelColor::Red);
             ui.end_row();
         });
     }
@@ -176,100 +157,53 @@ impl LinkPanel {
 
     /// Display the content of the link
     pub fn ui_content(&self, ui: &mut egui::Ui, direction: &Direction) {
-        /// Spacing
-        const SPACE_RIGHT: f32 = 100.0;
-        /// Spacing left
-        const SPACE_LEFT: f32 = 8.0;
-        let size = egui::Vec2::new(50.0, 45.0);
-
-        let upblack = egui::Image::new(egui::include_image!("../../assets/up.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downblack = egui::Image::new(egui::include_image!("../../assets/down.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downgreen = egui::Image::new(egui::include_image!("../../assets/down-green.png"))
-            .max_size(size)
-            .maintain_aspect_ratio(true);
-        let upblue = egui::Image::new(egui::include_image!("../../assets/up-green.png"))
-            .max_size(size)
-            .maintain_aspect_ratio(true);
-
-        //ui.vertical(|ui| match self.mtrace.direction.as_str() {
-        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| match direction {
-            Direction::UL => {
-                ui.add_space(SPACE_LEFT);
-                ui.add(upblue);
-                ui.add_space(SPACE_RIGHT);
-                ui.add(downblack);
-            }
-            Direction::DL => {
-                ui.add_space(SPACE_LEFT);
-                ui.add(upblack);
-                ui.add_space(SPACE_RIGHT);
-                ui.add(downgreen);
-            }
-            _ => {
-                ui.add_space(SPACE_LEFT);
-                ui.add(upblack);
-                ui.add_space(SPACE_RIGHT);
-                ui.add(downblack);
+        ui.horizontal_wrapped(|ui| {
+            match direction {
+                Direction::UL => {
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Blue, &self.font_id);
+                }
+                Direction::DL => {
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                }
+                _ => {
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                }
+            };
+            ui.min_rect();
+            match direction {
+                Direction::UL => {
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                }
+                Direction::DL => {
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
+                }
+                _ => {
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                }
             }
         });
     }
 
     /// Display the content of the link
     pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
-        /// Spacing
-        const SPACE_RIGHT: f32 = 10.0;
-        /// Spacing left
-        const SPACE_LEFT: f32 = 2.0;
-        let size = egui::Vec2::new(50.0, 45.0);
-
-        let upblack = egui::Image::new(egui::include_image!("../../assets/up.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downblack = egui::Image::new(egui::include_image!("../../assets/down.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downgreen = egui::Image::new(egui::include_image!("../../assets/down-green.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let upgreen = egui::Image::new(egui::include_image!("../../assets/up-green.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-
-        //ui.vertical(|ui| match self.mtrace.direction.as_str() {
-        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| match direction {
+        ui.horizontal_wrapped(|ui| match direction {
             Direction::UL => {
-                ui.add_space(SPACE_LEFT);
-                ui.add(upgreen.clone());
-                ui.add(upgreen);
-                ui.add_space(SPACE_RIGHT);
-                ui.add(downblack.clone());
-                ui.add(downblack);
+                make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
+                make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
             }
             Direction::DL => {
-                ui.add_space(SPACE_LEFT);
-                ui.add(upblack.clone());
-                ui.add(upblack);
-                ui.add_space(SPACE_RIGHT);
-                ui.add(downgreen.clone());
-                ui.add(downgreen);
+                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
             }
             _ => {
-                ui.add_space(SPACE_LEFT);
-                ui.add(upblack.clone());
-                ui.add(upblack);
-                ui.add_space(SPACE_RIGHT);
-                ui.add(downblack.clone());
-                ui.add(downblack);
+                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
             }
         });
     }
@@ -288,8 +222,7 @@ impl super::PanelController for LinkPanel {
         if let Some(trace) = data.get_current_trace() {
             self.current_trace = Some(trace.clone());
         }
-        let size = egui::Vec2::new(215.0, 200.0);
-        egui::Window::new(self.name()).open(open).fixed_size(size).show(ctx, |ui| {
+        egui::Window::new(self.name()).open(open).show(ctx, |ui| {
             use super::PanelView as _;
             self.ui(ui)
         });
