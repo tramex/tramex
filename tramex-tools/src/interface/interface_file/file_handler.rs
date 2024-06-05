@@ -51,11 +51,10 @@ impl InterfaceTrait for File {
         if self.full_read {
             return Ok(());
         }
-        let procced = self.process();
-        let mut m_vec = procced.0;
-        data.events.append(&mut m_vec);
+        let (mut traces, err_processed) = self.process();
+        data.events.append(&mut traces);
         *available = true;
-        if let Some(err) = procced.1 {
+        if let Some(err) = err_processed {
             if !(matches!(err.code, ErrorCode::EndOfFile)) {
                 return Err(err);
             }
