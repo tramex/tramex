@@ -207,8 +207,6 @@ impl LinkPanel {
             }
         });
     }
-
-    
 }
 
 impl super::PanelController for LinkPanel {
@@ -238,7 +236,7 @@ impl super::PanelView for LinkPanel {
             let direction = &trace.trace_type.direction;
             self.ui_control(ui, direction);
             ui.separator();
-            self.ui_content(ui, upblack.clone(), downblack.clone(), upgreen.clone(), downgreen.clone(), direction);
+            self.ui_content(ui, direction);
             ui.separator();
             self.ui_idle_lte(ui, direction);
             ui.separator();
@@ -246,7 +244,7 @@ impl super::PanelView for LinkPanel {
             ui.separator();
             self.ui_con(ui, direction);
             ui.separator();
-            self.ui_content_level2(ui, upblack, downblack, upgreen, downgreen, direction);
+            self.ui_content_level2(ui, direction);
             ui.separator();
             self.ui_idle_umts(ui, direction);
             ui.separator();
