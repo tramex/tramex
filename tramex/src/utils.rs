@@ -1,8 +1,11 @@
 //! This module contains some utility functions used in the application.
-use std::collections::BTreeSet;
-
+#[cfg(feature = "types_lte_3gpp")]
+use asn1_codecs::{uper::UperCodec, PerCodecData};
 use egui::{text::LayoutJob, Color32, TextFormat, Ui};
+use std::collections::BTreeSet;
 use tramex_tools::data::Trace;
+#[cfg(feature = "types_lte_3gpp")]
+use types_lte_3gpp::uper::spec_rrc;
 
 /// Create an hyperlink open in a new tab
 pub fn make_hyperlink(ui: &mut egui::Ui, label: &str, url: &str, new_tab: bool) {
@@ -62,5 +65,33 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool) {
                 ui.label("No text available for this trame");
             }
         }
+        #[cfg(feature = "types_lte_3gpp")]
+        {
+            let text = hexe_decoding(curr_trace);
+            egui::ScrollArea::vertical()
+                .max_height(300.0)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    for line in text.replace("{", "{\n").replace(",", ",\n").split("\n") {
+                        ui.label(line);
+                    }
+                });
+        }
     }
+}
+
+/// Decode the hexa value with types_lte_3gpp
+#[cfg(feature = "types_lte_3gpp")]
+pub fn hexe_decoding(curr_trace: &Trace) -> String {
+    let mut codec_data = PerCodecData::from_slice_uper(&curr_trace.hexa);
+    let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
+    if let Ok(res) = sib1 {
+        return format!("{:?}", res);
+    }
+    match (curr_trace.trace_type.canal.as_str(), curr_trace.trace_type.canal_msg.as_str()) {
+        ("BCCH-BCH", "Master Information Block") => {}
+        ("BCCH", "SIB1") => {}
+        _ => return format!("No value"),
+    }
+    return format!("No value");
 }

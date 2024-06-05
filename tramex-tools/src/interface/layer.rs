@@ -75,116 +75,148 @@ impl FromStr for Layer {
     }
 }
 
+#[derive(Debug, serde::Deserialize, Clone, Default)]
+/// LayerLogLevel enum
+pub enum LayerLogLevel {
+    /// Debug log level
+    Debug,
+
+    #[default]
+    /// Warn log level
+    Warn,
+}
+
+impl serde::Serialize for LayerLogLevel {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            LayerLogLevel::Debug => serializer.serialize_str("debug"),
+            LayerLogLevel::Warn => serializer.serialize_str("warn"),
+        }
+    }
+}
+
+impl ToString for LayerLogLevel {
+    fn to_string(&self) -> String {
+        match self {
+            LayerLogLevel::Debug => "debug".to_string(),
+            LayerLogLevel::Warn => "warn".to_string(),
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug, Clone)]
 /// Layers struct
 pub struct Layers {
     #[serde(rename(serialize = "PHY"))]
     /// Physical layer
-    pub phy: String,
+    pub phy: LayerLogLevel,
 
     #[serde(rename(serialize = "MAC"))]
     /// Medium Access Control layer
-    pub mac: String,
+    pub mac: LayerLogLevel,
 
     #[serde(rename(serialize = "RLC"))]
     /// Radio Link Control layer
-    pub rlc: String,
+    pub rlc: LayerLogLevel,
 
     #[serde(rename(serialize = "PDCP"))]
     /// Packet Data Convergence Protocol layer
-    pub pdcp: String,
+    pub pdcp: LayerLogLevel,
 
     #[serde(rename(serialize = "RRC"))]
     /// Radio Resource Control layer
-    pub rrc: String,
+    pub rrc: LayerLogLevel,
 
     #[serde(rename(serialize = "NAS"))]
     /// Non Access Stratum layer
-    pub nas: String,
+    pub nas: LayerLogLevel,
 
     #[serde(rename(serialize = "S72"))]
     /// S1 Application Protocol layer
-    pub s72: String,
+    pub s72: LayerLogLevel,
 
     #[serde(rename(serialize = "S1AP"))]
     /// S1 Application Protocol layer
-    pub s1ap: String,
+    pub s1ap: LayerLogLevel,
 
     #[serde(rename(serialize = "NGAP"))]
     /// Next Generation Application Protocol layer
-    pub ngap: String,
+    pub ngap: LayerLogLevel,
 
     #[serde(rename(serialize = "GTPU"))]
     /// GTPU layer
-    pub gtpu: String,
+    pub gtpu: LayerLogLevel,
 
     #[serde(rename(serialize = "X2AP"))]
     /// X2 Application Protocol layer
-    pub x2ap: String,
+    pub x2ap: LayerLogLevel,
 
     #[serde(rename(serialize = "XnAP"))]
     /// Xn Application Protocol layer
-    pub xnap: String,
+    pub xnap: LayerLogLevel,
 
     #[serde(rename(serialize = "M2AP"))]
     /// M2 Application Protocol layer
-    pub m2ap: String,
+    pub m2ap: LayerLogLevel,
 
     #[serde(rename(serialize = "LPPa"))]
     /// LTE Positioning Protocol A layer
-    pub lppa: String,
+    pub lppa: LayerLogLevel,
 
     #[serde(rename(serialize = "NRPPa"))]
     /// NR Positioning Protocol A layer
-    pub nrppa: String,
+    pub nrppa: LayerLogLevel,
 
     #[serde(rename(serialize = "TRX"))]
     /// TRX layer
-    pub trx: String,
+    pub trx: LayerLogLevel,
 }
 
 impl Layers {
     /// Create new Layers struct
     pub fn new() -> Self {
         Self {
-            phy: "debug".to_owned(),
-            mac: "warn".to_owned(),
-            rlc: "warn".to_owned(),
-            pdcp: "warn".to_owned(),
-            rrc: "debug".to_owned(),
-            nas: "debug".to_owned(),
-            s72: "warn".to_owned(),
-            s1ap: "warn".to_owned(),
-            ngap: "warn".to_owned(),
-            gtpu: "warn".to_owned(),
-            x2ap: "warn".to_owned(),
-            xnap: "warn".to_owned(),
-            m2ap: "warn".to_owned(),
-            lppa: "warn".to_owned(),
-            nrppa: "warn".to_owned(),
-            trx: "warn".to_owned(),
+            phy: LayerLogLevel::Debug,
+            mac: LayerLogLevel::Warn,
+            rlc: LayerLogLevel::Warn,
+            pdcp: LayerLogLevel::Warn,
+            rrc: LayerLogLevel::Debug,
+            nas: LayerLogLevel::Debug,
+            s72: LayerLogLevel::Warn,
+            s1ap: LayerLogLevel::Warn,
+            ngap: LayerLogLevel::Warn,
+            gtpu: LayerLogLevel::Warn,
+            x2ap: LayerLogLevel::Warn,
+            xnap: LayerLogLevel::Warn,
+            m2ap: LayerLogLevel::Warn,
+            lppa: LayerLogLevel::Warn,
+            nrppa: LayerLogLevel::Warn,
+            trx: LayerLogLevel::Warn,
         }
     }
 
     /// Create new Layers struct with all debug
     pub fn all() -> Self {
         Self {
-            phy: "debug".to_owned(),
-            mac: "debug".to_owned(),
-            rlc: "debug".to_owned(),
-            pdcp: "debug".to_owned(),
-            rrc: "debug".to_owned(),
-            nas: "debug".to_owned(),
-            s72: "debug".to_owned(),
-            s1ap: "debug".to_owned(),
-            ngap: "debug".to_owned(),
-            gtpu: "debug".to_owned(),
-            x2ap: "debug".to_owned(),
-            xnap: "debug".to_owned(),
-            m2ap: "debug".to_owned(),
-            lppa: "debug".to_owned(),
-            nrppa: "debug".to_owned(),
-            trx: "debug".to_owned(),
+            phy: LayerLogLevel::Debug,
+            mac: LayerLogLevel::Debug,
+            rlc: LayerLogLevel::Debug,
+            pdcp: LayerLogLevel::Debug,
+            rrc: LayerLogLevel::Debug,
+            nas: LayerLogLevel::Debug,
+            s72: LayerLogLevel::Debug,
+            s1ap: LayerLogLevel::Debug,
+            ngap: LayerLogLevel::Debug,
+            gtpu: LayerLogLevel::Debug,
+            x2ap: LayerLogLevel::Debug,
+            xnap: LayerLogLevel::Debug,
+            m2ap: LayerLogLevel::Debug,
+            lppa: LayerLogLevel::Debug,
+            nrppa: LayerLogLevel::Debug,
+            trx: LayerLogLevel::Debug,
         }
     }
 }
