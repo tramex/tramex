@@ -90,10 +90,10 @@ impl std::fmt::Display for ErrorCode {
 impl ErrorCode {
     /// Check if the error is recoverable
     pub fn is_recoverable(&self) -> bool {
-        // match self {
-        //     _ => true,
-        // }
-        true
+        match self {
+            Self::FileInvalidEncoding => false,
+            _ => true,
+        }
     }
 }
 
