@@ -51,16 +51,14 @@ impl InterfaceTrait for File {
         if self.full_read {
             return Ok(());
         }
-        let (m_vec, opt_err) = &mut self.process();
-        data.events.append(m_vec);
+        let procced = self.process();
+        let mut m_vec = procced.0;
+        data.events.append(&mut m_vec);
         *available = true;
-        match opt_err {
-            Some(err) => {
-                if !(matches!(err.code, ErrorCode::EndOfFile)) {
-                    return Err(err.clone());
-                }
+        if let Some(err) = procced.1 {
+            if !(matches!(err.code, ErrorCode::EndOfFile)) {
+                return Err(err);
             }
-            None => {}
         }
         Ok(())
     }
