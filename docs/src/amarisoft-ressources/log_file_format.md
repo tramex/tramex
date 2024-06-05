@@ -1,14 +1,18 @@
 # Amarisoft File Log Format
 
+From the amarisoft documentation: <https://https://tech-academy.amarisoft.com/>
+
 ## LTE Software eNodeB and NR Software gNB
 
 ### PHY
 
 #### Format
+
 time layer dir ue_id cell rnti frame.subframe channel:short_content
         long_content
 
 #### Doc
+
 time
 Time using the selected format.
 
@@ -40,6 +44,7 @@ long_content
 Hexadecimal dump of the message if phy.max_size > 0.
 
 ### RLC PDCP NAS
+
 #### Format
 
 When a message is dumped, the format is:
