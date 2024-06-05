@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::primitive::f32;
 use eframe::egui::{self, TextFormat};
 use eframe::egui::Color32;
+use egui::Image;
 use tramex_tools::connector::Connector;
 use tramex_tools::errors::TramexError;
 use tramex_tools::websocket::types::Direction;
@@ -166,73 +167,68 @@ impl LinkPannel {
         });
     }
 
-    pub fn ui_content(&self, ui: &mut egui::Ui, direction: &Direction) {
-        const SPACE_RIGHT: f32 = 100.0;
-        const SPACE_LEFT: f32 = 8.0;
-        let size = egui::Vec2::new(50.0, 45.0);
 
-        let upblack = egui::Image::new(egui::include_image!("../../assets/up.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downblack = egui::Image::new(egui::include_image!("../../assets/down.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downgreen = egui::Image::new(egui::include_image!("../../assets/down-green.png"))
-            .max_size(size)
-            .maintain_aspect_ratio(true);
-        let upblue = egui::Image::new(egui::include_image!("../../assets/up-green.png"))
-            .max_size(size)
-            .maintain_aspect_ratio(true);
 
-        //ui.vertical(|ui| match self.mtrace.direction.as_str() {
-        ui.with_layout(
-            egui::Layout::left_to_right(egui::Align::TOP),
-            |ui| match direction {
-                Direction::UL => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblue);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack);
-                }
-                Direction::DL => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblack);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downgreen);
-                }
-                _ => {
-                    ui.add_space(SPACE_LEFT);
-                    ui.add(upblack);
-                    ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack);
-                }
-            },
-        );
-    }
-
-    pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
+    pub fn ui_content_level2<'b>(
+        &self,
+        ui: &mut egui::Ui,
+        up_black: Image<'b>,
+        down_black: Image<'b>,
+        up_green: Image<'b>,
+        down_green: Image<'b>,
+        direction: &Direction,
+    ) {
         const SPACE_RIGHT: f32 = 10.0;
         const SPACE_LEFT: f32 = 2.0;
-        let size = egui::Vec2::new(50.0, 45.0);
+    
+        // Clone the images to use multiple times
+        let up_black_clone = up_black.clone();
+        let down_black_clone = down_black.clone();
+        let up_green_clone = up_green.clone();
+        let down_green_clone = down_green.clone();
+    
+        ui.with_layout(
+            egui::Layout::left_to_right(egui::Align::TOP),
+            |ui| match direction {
+                Direction::UL => {
+                    ui.add_space(SPACE_LEFT);
+                    ui.add(up_green_clone);
+                    ui.add(up_green);
+                    ui.add_space(SPACE_RIGHT);
+                    ui.add(down_black_clone);
+                    ui.add(down_black);
+                }
+                Direction::DL => {
+                    ui.add_space(SPACE_LEFT);
+                    ui.add(up_black_clone);
+                    ui.add(up_black);
+                    ui.add_space(SPACE_RIGHT);
+                    ui.add(down_green_clone);
+                    ui.add(down_green);
+                }
+                _ => {
+                    ui.add_space(SPACE_LEFT);
+                    ui.add(up_black_clone);
+                    ui.add(up_black);
+                    ui.add_space(SPACE_RIGHT);
+                    ui.add(down_black_clone);
+                    ui.add(down_black);
+                }
+            },
+        );
+    }
 
-        let upblack = egui::Image::new(egui::include_image!("../../assets/up.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downblack = egui::Image::new(egui::include_image!("../../assets/down.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let downgreen = egui::Image::new(egui::include_image!("../../assets/down-green.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
-        let upgreen = egui::Image::new(egui::include_image!("../../assets/up-green.png"))
-            .max_size(size)
-            .fit_to_fraction(size)
-            .maintain_aspect_ratio(true);
+    pub fn ui_content<'a>(
+        &self,
+        ui: &mut egui::Ui,
+        up_black: Image<'a>,
+        down_black: Image<'a>,
+        up_green: Image<'a>,
+        down_green: Image<'a>,
+        direction: &Direction,
+    ) {
+        const SPACE_RIGHT: f32 = 100.0;
+        const SPACE_LEFT: f32 = 8.0;
 
         //ui.vertical(|ui| match self.mtrace.direction.as_str() {
         ui.with_layout(
@@ -240,31 +236,27 @@ impl LinkPannel {
             |ui| match direction {
                 Direction::UL => {
                     ui.add_space(SPACE_LEFT);
-                    ui.add(upgreen.clone());
-                    ui.add(upgreen);
+                    ui.add(up_green);
                     ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack.clone());
-                    ui.add(downblack);
+                    ui.add(down_black);
                 }
                 Direction::DL => {
                     ui.add_space(SPACE_LEFT);
-                    ui.add(upblack.clone());
-                    ui.add(upblack);
+                    ui.add(up_black);
                     ui.add_space(SPACE_RIGHT);
-                    ui.add(downgreen.clone());
-                    ui.add(downgreen);
+                    ui.add(down_green);
                 }
                 _ => {
                     ui.add_space(SPACE_LEFT);
-                    ui.add(upblack.clone());
-                    ui.add(upblack);
+                    ui.add(up_black);
                     ui.add_space(SPACE_RIGHT);
-                    ui.add(downblack.clone());
-                    ui.add(downblack);
+                    ui.add(down_black);
                 }
             },
         );
     }
+
+    
 }
 
 impl super::PanelController for LinkPannel {
@@ -295,11 +287,30 @@ impl super::PanelView for LinkPannel {
     fn ui(&mut self, ui: &mut egui::Ui) {
         let binding = self.mtrace.borrow();
         let curr_trace = binding.data.get_current_trace();
+        
+        let size = egui::Vec2::new(50.0, 45.0);
+        let upblack = Image::new(egui::include_image!("../../assets/up.png"))
+        .max_size(size)
+        .fit_to_fraction(size)
+        .maintain_aspect_ratio(true);
+        let downblack = Image::new(egui::include_image!("../../assets/down.png"))
+        .max_size(size)
+        .fit_to_fraction(size)
+        .maintain_aspect_ratio(true);
+        let downgreen = Image::new(egui::include_image!("../../assets/down-green.png"))
+        .max_size(size)
+        .fit_to_fraction(size)
+        .maintain_aspect_ratio(true);
+        let upgreen = Image::new(egui::include_image!("../../assets/up-green.png"))
+        .max_size(size)
+        .fit_to_fraction(size)
+        .maintain_aspect_ratio(true);
+        
         if let Some(trace) = curr_trace {
             let direction = &trace.trace_type.direction;
             self.ui_control(ui, direction);
             ui.separator();
-            self.ui_content(ui, direction);
+            self.ui_content(ui, upblack.clone(), downblack.clone(), upgreen.clone(), downgreen.clone(), direction);
             ui.separator();
             self.ui_idle_lte(ui, direction);
             ui.separator();
@@ -307,7 +318,7 @@ impl super::PanelView for LinkPannel {
             ui.separator();
             self.ui_con(ui, direction);
             ui.separator();
-            self.ui_content_level2(ui, direction);
+            self.ui_content_level2(ui, upblack, downblack, upgreen, downgreen, direction);
             ui.separator();
             self.ui_idle_umts(ui, direction);
             ui.separator();
