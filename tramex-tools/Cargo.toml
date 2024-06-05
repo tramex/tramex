@@ -2,14 +2,26 @@
 name = "tramex-tools"
 version = "0.1.0"
 edition = "2021"
+description = "Tramex utilities"
+license = "GPL-3.0"
 authors = [
     "n4n5 <its.just.n4n5@gmail.com>",
     "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>",
     "katheleligaf",
-    "comeyrd <ce.eyraud@gmail.com>"
+    "comeyrd <ce.eyraud@gmail.com>",
 ]
+repository = "https://github.com/tramex/tramex"
+homepage = "https://tramex.github.io/tramex"
+readme = "README.md"
+keywords = ["frame", "4G", "LTE"]
+categories = ["visualization", "network-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+debug = []
+websocket = ["dep:ewebsock"]
+tokio = ["ewebsock/tokio"]
 
 [dependencies]
 asn1-codecs = "0.6.1"
@@ -19,5 +31,5 @@ serde = { version = "1.0.197", features = ["derive"] }
 log = "0.4.20"
 serde_json = "1.0.114"
 regex = "1.10.4"
-ewebsock = "0.5.0"
+ewebsock = { version = "0.5.0", features = ["tls"], optional = true }
 chrono = "0.4.38"

@@ -1,14 +1,19 @@
-use crate::websocket::{layer::Layer, types::Direction};
+//! This module contains the data structures used to store the data of the application.
+use crate::interface::{layer::Layer, types::Direction};
 use core::fmt::Debug;
 
 #[derive(Debug)]
+/// Data structure to store Trace of the application.
 pub struct Data {
+    /// Vector of Trace.
     pub events: Vec<Trace>,
+    /// Current index of the vector.
     pub current_index: usize,
 }
 
 impl Data {
-    pub fn get_current_trace(&self) -> Option<&Trace>{
+    /// return the current trace
+    pub fn get_current_trace(&self) -> Option<&Trace> {
         return self.events.get(self.current_index);
     }
 }
@@ -23,16 +28,33 @@ impl Default for Data {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+/// Data structure to store Trace of the application.
 pub struct Trace {
+    /// Message type.
     pub trace_type: MessageType,
+
+    /// Hexadecimal representation of the message.
     pub hexa: Vec<u8>,
+
+    /// Text representation of the message from the API
+    pub text: Option<Vec<String>>,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+/// Data structure to store the message type (from the amarisoft API)
 pub struct MessageType {
+    /// Timestamp of the message.
     pub timestamp: u64,
+
+    /// Layer of the message.
     pub layer: Layer,
+
+    /// Direction of the message.
     pub direction: Direction,
+
+    /// canal of the message.
     pub canal: String,
+
+    /// Message of the canal.
     pub canal_msg: String,
 }

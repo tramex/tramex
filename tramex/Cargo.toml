@@ -3,7 +3,7 @@ name = "tramex"
 version = "0.1.0"
 edition = "2021"
 description = "Tramex is a 4G frame analyser"
-license = "MIT"
+license = "GPL-3.0"
 authors = [
     "n4n5 <its.just.n4n5@gmail.com>",
     "Sacha Di Costanzo <sacha.dicostanzo@telecom-paris.fr>",
@@ -12,18 +12,24 @@ authors = [
 ]
 repository = "https://github.com/tramex/tramex"
 homepage = "https://tramex.github.io/tramex"
+readme = "README.md"
+keywords = ["frame", "4G", "LTE"]
+categories = ["visualization", "network-programming"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = []
+default = ["websocket"]
+debug = ["tramex-tools/debug"]
+
+websocket = ["tramex-tools/websocket"]
 
 ## Test the tokio backend:
-tokio = ["ewebsock/tokio", "dep:tokio"]
+tokio = ["tramex-tools/tokio", "dep:tokio"]
 
 
 [dependencies]
-ewebsock = { version = "0.5.0", features = ["tls"] }
 egui = "0.27.2"
 eframe = { version = "0.27.2", default-features = true, features = [
     "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
@@ -35,13 +41,13 @@ eframe = { version = "0.27.2", default-features = true, features = [
 log = "0.4"
 serde_json = "1.0.113"
 env_logger = "0.11.3"
-egui_extras = { version = "*", features = ["all_loaders"] }
-image = { version = "0.25.1", features = ["jpeg", "png"] }
 serde = { version = "1.0.197", features = ["derive"] }
 rfd = "0.14.0"
 poll-promise = { version = "0.3.0", features = ["web"] }
 tramex-tools = { path = "../tramex-tools" }
 ehttp = { version = "0.5.0" }
+types_lte_3gpp = { version = "1.0.4", features = ["rrc"] }
+asn1-codecs = "0.6.1"
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1.16", optional = true, features = [
@@ -52,3 +58,4 @@ tokio = { version = "1.16", optional = true, features = [
 # web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3.4" }

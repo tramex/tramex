@@ -1,17 +1,31 @@
+//! Message panel
 use crate::display_log;
 use eframe::egui;
-use std::cell::RefCell;
-use std::rc::Rc;
-use tramex_tools::connector::Connector;
-use tramex_tools::errors::TramexError;
+use tramex_tools::{
+    data::{Data, Trace},
+    errors::TramexError,
+};
 
+/// Message box
+#[derive(Default)]
 pub struct MessageBox {
-    data: Rc<RefCell<Connector>>,
+    /// current trace
+    current_trace: Option<Trace>,
+
+    /// events length
+    events_len: usize,
+
+    /// current index
+    current_index: usize,
+
+    /// show full message
+    show_full: bool,
 }
 
 impl MessageBox {
-    pub fn new(ref_data: Rc<RefCell<Connector>>) -> Self {
-        Self { data: ref_data }
+    /// Create a new MessageBox
+    pub fn new() -> Self {
+        Self { ..Default::default() }
     }
 }
 
@@ -24,7 +38,12 @@ impl super::PanelController for MessageBox {
         "Current Message"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
+        if let Some(trace) = data.get_current_trace() {
+            self.current_trace = Some(trace.clone());
+        }
+        self.events_len = data.events.len();
+        self.current_index = data.current_index;
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
@@ -40,16 +59,14 @@ impl super::PanelController for MessageBox {
 impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading("Received events:");
-        let borrowed = &self.data.borrow();
-        let events = &borrowed.data.events;
+        ui.checkbox(&mut self.show_full, "Show full message");
         ui.horizontal(|ui| {
-            ui.label(format!("Received events: {}", events.len()));
+            ui.label(format!("Received events: {}", self.events_len));
         });
-        let current_index = borrowed.data.current_index;
 
-        if let Some(one_log) = events.get(current_index) {
-            ui.label(format!("Current msg index: {}", current_index + 1));
-            display_log(ui, &one_log);
+        if let Some(one_trace) = &self.current_trace {
+            ui.label(format!("Current msg index: {}", self.current_index + 1));
+            display_log(ui, one_trace, self.show_full);
         }
     }
 }

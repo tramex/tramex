@@ -1,4 +1,4 @@
-# Developement
+# Development
 
 To start developing on the project, you will first need to install [rustup](https://rustup.rs/).
 
@@ -28,4 +28,24 @@ trunk serve
 
 # for the desktop application
 cargo run
+```
+
+## Tips
+
+To check the code style, you can run the following command :
+
+```bash
+cargo clippy
+```
+
+## Debug mode
+
+To run the application in debug mode, you can run the following command :
+
+```bash
+# this will activate the debug features in tramex and tramex-tools
+cargo run --features debug
+
+# more logs
+RUST_BACKTRACE=1 RUST_LOG=debug cargo run --features debug
 ```

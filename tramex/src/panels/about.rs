@@ -1,7 +1,9 @@
+//! About panel
 use eframe::egui;
-use tramex_tools::errors::TramexError;
+use tramex_tools::{data::Data, errors::TramexError};
 
 #[derive(Default)]
+/// About panel
 pub struct AboutPanel {}
 
 impl super::PanelController for AboutPanel {
@@ -12,7 +14,7 @@ impl super::PanelController for AboutPanel {
         "About"
     }
 
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+    fn show(&mut self, ctx: &egui::Context, open: &mut bool, _data: &mut Data) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
@@ -35,10 +37,7 @@ impl super::PanelView for AboutPanel {
         ui.add_space(12.0);
 
         ui.horizontal_wrapped(|ui| {
-            ui.hyperlink_to(
-                "notes.rezel.net",
-                "https://notes.rezel.net/22PBCZhXTvGsG5ipptTvwQ",
-            );
+            ui.hyperlink_to("github", "https://github.com/tramex/tramex");
         });
 
         ui.add_space(12.0);

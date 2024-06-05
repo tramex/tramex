@@ -29,3 +29,11 @@ python -m docx_asn1 file.docx > output.asn1
 
 # the converted asn1 file is then called output.asn1 and can be found in the current directory
 ```
+
+## asn1c
+
+For raw decoding, the tool `asn1c` (<https://github.com/vlm/asn1c>) can be used to generate C code from the ASN.1 file. The generated code can be used to decode the messages.
+
+## `types_lte_3gpp`
+
+The crate `types_lte_3gpp` (<https://github.com/tramex/types_lte_3gpp/>) is used to automatically generate Rust code from ASN.1 files (extracted automatically from docx files created by 3gpp). It is used in the Tramex project to generate the code for the LTE protocol.
