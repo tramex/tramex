@@ -44,7 +44,7 @@ jobs:
             - uses: taiki-e/install-action@cargo-llvm-cov
             - name: Run coverage
               run: |
-                  cargo llvm-cov --html --no-cfg-coverage
+                  cargo llvm-cov --all --html --no-cfg-coverage
                   rsync -a target/llvm-cov/html/ dist/coverage/
                   chmod -R +rx dist/coverage/
             - name: Setup mdBook

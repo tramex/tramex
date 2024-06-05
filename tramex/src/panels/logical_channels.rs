@@ -1,9 +1,7 @@
 //! Logical Channels panel
-use asn1_codecs::{uper::UperCodec, PerCodecData};
 use eframe::egui;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
-use types_lte_3gpp::uper::spec_rrc;
 
 use super::functions_panels::{make_label, CustomLabelColor};
 
@@ -35,20 +33,8 @@ impl LogicalChannels {
     /// Handle the logic of the panel
     pub fn handle_logic(&mut self) {
         match (self.canal.as_str(), self.canal_msg.as_str()) {
-            ("BCCH-BCH", "Master Information Block") => {
-                let mut codec_data = PerCodecData::from_slice_uper(&self.hex);
-                let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
-                if let Ok(res) = sib1 {
-                    log::info!("{:?}", res);
-                }
-            }
-            ("BCCH", "SIB1") => {
-                let mut codec_data = PerCodecData::from_slice_uper(&self.hex);
-                let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
-                if let Ok(res) = sib1 {
-                    log::info!("{:?}", res);
-                }
-            }
+            ("BCCH-BCH", "Master Information Block") => {}
+            ("BCCH", "SIB1") => {}
             _ => {
                 log::info!("Unknown message");
             }
