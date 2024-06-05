@@ -14,8 +14,8 @@
   - [Knowledge base](./knowledge_base.md)
   - [ASN.1](./asn1.md)
   - [CI/CD](./ci_cd.md)
-  - [Amarisoft Ressources](./amarisoft-ressources/index.md)
-    - [Log File Format](./amarisoft-ressources/log_file_format.md)
+  - [Amarisoft Resources](./amarisoft-resources/index.md)
+    - [Log File Format](./amarisoft-resources/log_file_format.md)
 
 ---
 
