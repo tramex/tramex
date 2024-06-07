@@ -60,35 +60,46 @@ impl LinkPanel {
 
     /// Display the connection state of the LTE
     pub fn ui_con(&self, ui: &mut egui::Ui) {
-        let etat = match self.direction {
-            Some(Direction::UL) => "PCCH",
-            Some(Direction::DL) => "BCCH",
-            _ => "Unknown",
-        };
-
-        let dark_mode = ui.visuals().dark_mode;
-        let faded_color = ui.visuals().window_fill();
-        let _faded_color = |color: Color32| -> Color32 {
-            use egui::Rgba;
-            let t = if dark_mode { 0.95 } else { 0.8 };
-            egui::lerp(Rgba::from(color)..=Rgba::from(faded_color), t).into()
-        };
-        //let etat = "PCCH";
-
-        egui::Grid::new("some_unique_id").max_col_width(50.0).show(ui, |ui| {
-            ui.add_space(20.0);
-            make_label_equal(ui, "PCCH", etat, CustomLabelColor::Red);
-            self.print_on_grid(ui, "|");
-            make_label_equal(ui, "BCCH", etat, CustomLabelColor::Red);
-            ui.end_row();
-
-            ui.add_space(20.0);
-            make_label_equal(ui, "PCH", etat, CustomLabelColor::Red);
-            self.print_on_grid(ui, "|");
-            make_label_equal(ui, "BCH", etat, CustomLabelColor::Red);
-            ui.end_row();
+        ui.vertical_centered_justified(|ui|{
+            let etat = match self.direction {
+                Some(Direction::UL) => "PCCH",
+                Some(Direction::DL) => "BCCH",
+                _ => "Unknown",
+            };
+    
+            let available_width = ui.available_width();
+            let max_label_width = 100.0; // Maximum label width
+            let num_labels = 2; // Number of labels horizontally
+            let total_max_label_width = max_label_width * num_labels as f32;
+            let label_width = (available_width / num_labels as f32).min(max_label_width);
+            let space_between_labels = (available_width - total_max_label_width) / (num_labels + 1) as f32;
+    
+            let color = match self.direction {
+                Some(Direction::UL) => egui::Color32::RED,
+                Some(Direction::DL) => egui::Color32::BLUE,
+                _ => egui::Color32::BLACK,
+            };
+    
+            ui.horizontal(|ui| {
+                ui.add_space(space_between_labels);
+                make_label_equal(ui, "PCCH", etat, CustomLabelColor::Red);
+                ui.add_space(space_between_labels);
+                self.print_on_grid(ui, "|");
+                ui.add_space(space_between_labels);
+                make_label_equal(ui, "BCCH", etat, CustomLabelColor::Red);
+            });
+    
+            ui.horizontal(|ui| {
+                ui.add_space(space_between_labels);
+                make_label_equal(ui, "PCH", etat, CustomLabelColor::Red);
+                ui.add_space(space_between_labels);
+                self.print_on_grid(ui, "|");
+                ui.add_space(space_between_labels);
+                make_label_equal(ui, "BCH", etat, CustomLabelColor::Red);
+            });
         });
     }
+    
 
     /// Display the idle state of the LTE
     pub fn ui_idle_lte(&self, ui: &mut egui::Ui) {
@@ -160,7 +171,14 @@ impl LinkPanel {
 
     /// Display the content of the link
     pub fn ui_content(&self, ui: &mut egui::Ui) {
-        ui.horizontal_wrapped(|ui| {
+        let available_width = ui.available_width();
+        let arrow_width = 60.0; // Assuming the arrow's width is 60.0 units, adjust as needed
+        let num_arrows = 2; // Number of arrows horizontally
+        let total_arrow_width = arrow_width * num_arrows as f32; // Cast num_arrows to f32
+        let space_between_arrows = (available_width - total_arrow_width) / (num_arrows + 1) as f32;
+    
+        ui.horizontal(|ui| {
+            ui.add_space(space_between_arrows);
             match self.direction {
                 Some(Direction::UL) => {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Blue, &self.font_id);
@@ -172,7 +190,7 @@ impl LinkPanel {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
                 }
             };
-            ui.min_rect();
+            ui.add_space(space_between_arrows);
             match self.direction {
                 Some(Direction::UL) => {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
@@ -184,32 +202,58 @@ impl LinkPanel {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
                 }
             }
+            ui.add_space(space_between_arrows);
         });
     }
+    
 
     /// Display the content of the link
     pub fn ui_content_level2(&self, ui: &mut egui::Ui) {
-        ui.horizontal_wrapped(|ui| match self.direction {
-            Some(Direction::UL) => {
-                make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
-                make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
-                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
-                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+        let available_width = ui.available_width();
+        let arrow_width = 60.0; // Assuming the arrow's width is 60.0 units, adjust as needed
+        let num_arrows = 4; // Number of arrows horizontally
+        let total_arrow_width = arrow_width * num_arrows as f32; // Cast num_arrows to f32
+        let space_between_arrows = (available_width - total_arrow_width) / (num_arrows + 1) as f32;
+    
+        ui.horizontal(|ui| {
+            ui.add_space(space_between_arrows);
+            match self.direction {
+                Some(Direction::UL) => {
+                    make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                }
+                Some(Direction::DL) => {
+                    make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
+                }
+                _ => {
+                    make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                    ui.add_space(space_between_arrows);
+                    make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                }
             }
-            Some(Direction::DL) => {
-                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
-                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
-                make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
-                make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
-            }
-            _ => {
-                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
-                make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
-                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
-                make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
-            }
+            ui.add_space(space_between_arrows);
         });
     }
+    
+    
+
+    
+    
 }
 
 impl super::PanelController for LinkPanel {
