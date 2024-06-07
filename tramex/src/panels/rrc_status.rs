@@ -17,6 +17,9 @@ pub struct LinkPanel {
     /// current trace
     current_trace: Option<Trace>,
 
+    /// direction
+    direction: Option<Direction>,
+
     /// Arrow font
     font_id: egui::FontId,
 }
@@ -27,17 +30,17 @@ impl LinkPanel {
         Self {
             current_trace: None,
             font_id: egui::FontId::monospace(60.0),
+            direction: None,
         }
     }
-}
-impl LinkPanel {
+
     /// Display the control of the link
-    pub fn ui_control(&self, ui: &mut egui::Ui, direction: &Direction) {
-        ui.vertical_centered_justified(|ui| match direction {
-            Direction::UL => {
+    pub fn ui_control(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered_justified(|ui| match self.direction {
+            Some(Direction::UL) => {
                 ui.colored_label(egui::Color32::RED, "Link Control");
             }
-            Direction::DL => {
+            Some(Direction::DL) => {
                 ui.colored_label(egui::Color32::BLUE, "Link Control");
             }
             _ => {
@@ -56,10 +59,10 @@ impl LinkPanel {
     /// Make a colored label
 
     /// Display the connection state of the LTE
-    pub fn ui_con(&self, ui: &mut egui::Ui, direction: &Direction) {
-        let etat = match direction {
-            Direction::UL => "PCCH",
-            Direction::DL => "BCCH",
+    pub fn ui_con(&self, ui: &mut egui::Ui) {
+        let etat = match self.direction {
+            Some(Direction::UL) => "PCCH",
+            Some(Direction::DL) => "BCCH",
             _ => "Unknown",
         };
 
@@ -88,13 +91,13 @@ impl LinkPanel {
     }
 
     /// Display the idle state of the LTE
-    pub fn ui_idle_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
-        ui.vertical_centered_justified(|ui| match direction {
-            Direction::UL => {
+    pub fn ui_idle_lte(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered_justified(|ui| match self.direction {
+            Some(Direction::UL) => {
                 ui.colored_label(egui::Color32::RED, "IDLE");
             }
 
-            Direction::DL => {
+            Some(Direction::DL) => {
                 ui.colored_label(egui::Color32::BLACK, "IDLE");
             }
 
@@ -105,13 +108,13 @@ impl LinkPanel {
     }
 
     /// Display the LTE state
-    pub fn ui_lte(&self, ui: &mut egui::Ui, direction: &Direction) {
-        ui.vertical_centered_justified(|ui| match direction {
-            Direction::UL => {
+    pub fn ui_lte(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered_justified(|ui| match self.direction {
+            Some(Direction::UL) => {
                 ui.colored_label(egui::Color32::GREEN, "LTE");
             }
 
-            Direction::DL => {
+            Some(Direction::DL) => {
                 ui.colored_label(egui::Color32::BLACK, "LTE");
             }
 
@@ -122,13 +125,13 @@ impl LinkPanel {
     }
 
     /// Display the idle state of the UMTS
-    pub fn ui_idle_umts(&self, ui: &mut egui::Ui, direction: &Direction) {
-        ui.vertical_centered_justified(|ui| match direction {
-            Direction::UL => {
+    pub fn ui_idle_umts(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered_justified(|ui| match self.direction {
+            Some(Direction::UL) => {
                 ui.colored_label(egui::Color32::RED, "IDLE");
             }
 
-            Direction::DL => {
+            Some(Direction::DL) => {
                 ui.colored_label(egui::Color32::BLACK, "IDLE");
             }
 
@@ -139,13 +142,13 @@ impl LinkPanel {
     }
 
     /// Display the UMTS state
-    pub fn ui_umts(&self, ui: &mut egui::Ui, direction: &Direction) {
-        ui.vertical_centered_justified(|ui| match direction {
-            Direction::UL => {
+    pub fn ui_umts(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered_justified(|ui| match self.direction {
+            Some(Direction::UL) => {
                 ui.colored_label(egui::Color32::RED, "UMTS");
             }
 
-            Direction::DL => {
+            Some(Direction::DL) => {
                 ui.colored_label(egui::Color32::BLACK, "UMTS");
             }
 
@@ -156,13 +159,13 @@ impl LinkPanel {
     }
 
     /// Display the content of the link
-    pub fn ui_content(&self, ui: &mut egui::Ui, direction: &Direction) {
+    pub fn ui_content(&self, ui: &mut egui::Ui) {
         ui.horizontal_wrapped(|ui| {
-            match direction {
-                Direction::UL => {
+            match self.direction {
+                Some(Direction::UL) => {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Blue, &self.font_id);
                 }
-                Direction::DL => {
+                Some(Direction::DL) => {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
                 }
                 _ => {
@@ -170,11 +173,11 @@ impl LinkPanel {
                 }
             };
             ui.min_rect();
-            match direction {
-                Direction::UL => {
+            match self.direction {
+                Some(Direction::UL) => {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
                 }
-                Direction::DL => {
+                Some(Direction::DL) => {
                     make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
                 }
                 _ => {
@@ -185,15 +188,15 @@ impl LinkPanel {
     }
 
     /// Display the content of the link
-    pub fn ui_content_level2(&self, ui: &mut egui::Ui, direction: &Direction) {
-        ui.horizontal_wrapped(|ui| match direction {
-            Direction::UL => {
+    pub fn ui_content_level2(&self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| match self.direction {
+            Some(Direction::UL) => {
                 make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
                 make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
                 make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
                 make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
             }
-            Direction::DL => {
+            Some(Direction::DL) => {
                 make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
                 make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
                 make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
@@ -221,34 +224,37 @@ impl super::PanelController for LinkPanel {
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
         if let Some(trace) = data.get_current_trace() {
             self.current_trace = Some(trace.clone());
+            self.direction = Some(trace.trace_type.direction.clone());
         }
-        egui::Window::new(self.name()).open(open).show(ctx, |ui| {
-            use super::PanelView as _;
-            self.ui(ui)
-        });
+        egui::Window::new(self.window_title())
+            .default_width(160.0)
+            .default_height(160.0)
+            .open(open)
+            .resizable([true, true])
+            .show(ctx, |ui| {
+                use super::PanelView as _;
+                self.ui(ui)
+            });
         Ok(())
     }
 }
 
 impl super::PanelView for LinkPanel {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        if let Some(trace) = &self.current_trace {
-            let direction = &trace.trace_type.direction;
-            self.ui_control(ui, direction);
-            ui.separator();
-            self.ui_content(ui, direction);
-            ui.separator();
-            self.ui_idle_lte(ui, direction);
-            ui.separator();
-            self.ui_lte(ui, direction);
-            ui.separator();
-            self.ui_con(ui, direction);
-            ui.separator();
-            self.ui_content_level2(ui, direction);
-            ui.separator();
-            self.ui_idle_umts(ui, direction);
-            ui.separator();
-            self.ui_umts(ui, direction);
-        }
+        self.ui_control(ui);
+        ui.separator();
+        self.ui_content(ui);
+        ui.separator();
+        self.ui_idle_lte(ui);
+        ui.separator();
+        self.ui_lte(ui);
+        ui.separator();
+        self.ui_con(ui);
+        ui.separator();
+        self.ui_content_level2(ui);
+        ui.separator();
+        self.ui_idle_umts(ui);
+        ui.separator();
+        self.ui_umts(ui);
     }
 }
