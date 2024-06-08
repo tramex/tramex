@@ -51,9 +51,7 @@ pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabel
             ..Default::default()
         },
     );
-    ui.vertical_centered(|ui| {
-        ui.label(job);
-    });
+    ui.label(job);
 }
 
 /// Arrow direction
@@ -67,7 +65,7 @@ pub enum ArrowDirection {
 }
 
 /// Arrow color
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ArrowColor {
     /// Green arrow
     Green,
