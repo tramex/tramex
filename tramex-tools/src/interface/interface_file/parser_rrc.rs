@@ -1,5 +1,5 @@
 //! Parser for RRC traces
-use crate::data::{AdditionalInfos, RRCInfos, Trace};
+use crate::data::{AdditionalInfos, Trace};
 use crate::interface::interface_file::parser::parsing_error;
 use std::str::FromStr;
 
@@ -9,6 +9,19 @@ use crate::{
 };
 
 use super::parser::FileParser;
+
+#[derive(Debug, Clone)]
+/// Data structure to store the message type (from the amarisoft API)
+pub struct RRCInfos {
+    /// Direction of the message.
+    pub direction: Direction,
+
+    /// canal of the message.
+    pub canal: String,
+
+    /// Message of the canal.
+    pub canal_msg: String,
+}
 
 /// RRC Parser
 pub struct RRCParser;

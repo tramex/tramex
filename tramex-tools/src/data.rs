@@ -1,5 +1,5 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::interface::{layer::Layer, types::Direction};
+use crate::interface::{interface_file::parser_rrc::RRCInfos, layer::Layer};
 use core::fmt::Debug;
 
 #[derive(Debug)]
@@ -61,17 +61,4 @@ pub struct Trace {
 pub enum AdditionalInfos {
     /// RRC message
     RRCInfos(RRCInfos),
-}
-
-#[derive(Debug, Clone)]
-/// Data structure to store the message type (from the amarisoft API)
-pub struct RRCInfos {
-    /// Direction of the message.
-    pub direction: Direction,
-
-    /// canal of the message.
-    pub canal: String,
-
-    /// Message of the canal.
-    pub canal_msg: String,
 }

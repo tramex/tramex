@@ -4,6 +4,7 @@ mod tests {
     use connector::Connector;
     use tramex_tools::{
         connector,
+        data::AdditionalInfos,
         interface::{
             layer::{Layer, Layers},
             types::Direction,
@@ -11,25 +12,34 @@ mod tests {
     };
 
     #[test]
+    #[allow(unreachable_patterns)]
     fn test_file() {
         let filename = "tests/enb.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         let _ = f.get_more_data(Layers::all());
         assert!(f.data.events.len() == 15);
-        let event = f.data.events.pop().unwrap();
-        assert!(event.trace_type.direction == Direction::DL);
-        assert!(event.trace_type.canal == "BCCH");
-        assert!(event.trace_type.canal_msg == "SIB");
-        assert!(event.layer == Layer::RRC);
-        assert!(event.timestamp == 39668668);
+        let one_trace = f.data.events.pop().unwrap();
+        let infos = match one_trace.additional_infos {
+            AdditionalInfos::RRCInfos(infos) => infos,
+            _ => unreachable!(),
+        };
+        assert!(infos.direction == Direction::DL);
+        assert!(infos.canal == "BCCH");
+        assert!(infos.canal_msg == "SIB");
+        assert!(one_trace.layer == Layer::RRC);
+        assert!(one_trace.timestamp == 39668668);
         assert!(f.data.events.len() == 14);
-        let f_event = &f.data.events[0];
-        assert!(f_event.timestamp == 39668348);
-        assert!(f_event.layer == Layer::RRC);
-        assert!(f_event.trace_type.canal == "BCCH");
-        assert!(f_event.trace_type.canal_msg == "SIB");
-        assert!(f_event.trace_type.direction == Direction::DL);
+        let one_trace = f.data.events[0].clone();
+        let infos = match one_trace.additional_infos {
+            AdditionalInfos::RRCInfos(infos) => infos,
+            _ => unreachable!(),
+        };
+        assert!(one_trace.timestamp == 39668348);
+        assert!(one_trace.layer == Layer::RRC);
+        assert!(infos.canal == "BCCH");
+        assert!(infos.canal_msg == "SIB");
+        assert!(infos.direction == Direction::DL);
     }
 
     #[test]
