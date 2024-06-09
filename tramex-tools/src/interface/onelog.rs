@@ -47,6 +47,8 @@ impl OneLog {
     }
 
     /// Extract the data of the log.
+    /// # Errors
+    /// Returns a TramexError if the data could not be extracted.
     pub fn extract_data(&self) -> Result<Trace, TramexError> {
         match self.layer {
             Layer::RRC => {
@@ -73,12 +75,10 @@ impl OneLog {
                 };
                 Ok(trace)
             }
-            _ => {
-                return Err(TramexError::new(
-                    "Layer not implemented".to_owned(),
-                    crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
-                ));
-            }
+            _ => Err(TramexError::new(
+                "Layer not implemented".to_owned(),
+                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+            )),
         }
     }
 }

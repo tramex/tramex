@@ -54,12 +54,12 @@ impl super::PanelController for MessageBox {
                         .replace(',', ",\n")
                         .split('\n')
                         .map(|x| {
-                            if x.contains("{") {
+                            if x.contains('{') {
                                 count += 1;
-                            } else if x.contains("}") {
+                            } else if x.contains('}') {
                                 count -= 1;
                             }
-                            format!("{} {}", " ".repeat(count * 4), x.to_string())
+                            format!("{} {}", " ".repeat(count * 4), x)
                         })
                         .collect();
                 }
