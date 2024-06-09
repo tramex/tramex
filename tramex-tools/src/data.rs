@@ -16,6 +16,14 @@ impl Data {
     pub fn get_current_trace(&self) -> Option<&Trace> {
         return self.events.get(self.current_index);
     }
+
+    /// return if the index is different from the current index
+    pub fn is_different_index(&self, index: usize) -> bool {
+        if index == 0 {
+            return true;
+        }
+        self.current_index != index
+    }
 }
 
 impl Default for Data {
@@ -32,7 +40,14 @@ impl Default for Data {
 /// Data structure to store Trace of the application.
 pub struct Trace {
     /// Message type.
-    pub trace_type: MessageType,
+    /// Timestamp of the message.
+    pub timestamp: u64,
+
+    /// Layer of the message.
+    pub layer: Layer,
+
+    /// Message type.
+    pub additional_infos: AdditionalInfos,
 
     /// Hexadecimal representation of the message.
     pub hexa: Vec<u8>,
@@ -40,15 +55,17 @@ pub struct Trace {
     /// Text representation of the message from the API
     pub text: Option<Vec<String>>,
 }
+
+/// Data structure to store custom messages (from the amarisoft API)
+#[derive(Debug, Clone)]
+pub enum AdditionalInfos {
+    /// RRC message
+    RRCInfos(RRCInfos),
+}
+
 #[derive(Debug, Clone)]
 /// Data structure to store the message type (from the amarisoft API)
-pub struct MessageType {
-    /// Timestamp of the message.
-    pub timestamp: u64,
-
-    /// Layer of the message.
-    pub layer: Layer,
-
+pub struct RRCInfos {
     /// Direction of the message.
     pub direction: Direction,
 

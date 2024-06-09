@@ -45,15 +45,16 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
 }
 
 /// Display a Trace type
-pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool) {
-    ui.label(format!("{:?}", &curr_trace.trace_type));
+pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &Vec<String>) {
+    ui.label(format!("{:?} at {:?}", &curr_trace.layer, &curr_trace.timestamp));
     ui.label(format!("{:?}", &curr_trace.hexa));
     if full {
         ui.separator();
         match &curr_trace.text {
             Some(vec_text) => {
                 egui::ScrollArea::vertical()
-                    .max_height(300.0)
+                    .id_source("scroll_area_raw")
+                    .max_height(250.0)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
                         for elem in vec_text {
@@ -67,12 +68,13 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool) {
         }
         #[cfg(feature = "types_lte_3gpp")]
         {
-            let text = hexe_decoding(curr_trace);
+            ui.separator();
             egui::ScrollArea::vertical()
-                .max_height(300.0)
+                .id_source("scroll_area_types")
+                .max_height(250.0)
                 .auto_shrink([false, true])
                 .show(ui, |ui| {
-                    for line in text.replace("{", "{\n").replace(",", ",\n").split("\n") {
+                    for line in _text {
                         ui.label(line);
                     }
                 });
@@ -83,15 +85,18 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool) {
 /// Decode the hexa value with types_lte_3gpp
 #[cfg(feature = "types_lte_3gpp")]
 pub fn hexe_decoding(curr_trace: &Trace) -> String {
+    use tramex_tools::interface::layer::Layer;
+
     let mut codec_data = PerCodecData::from_slice_uper(&curr_trace.hexa);
-    let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
-    if let Ok(res) = sib1 {
-        return format!("{:?}", res);
+    match curr_trace.layer {
+        Layer::RRC => {
+            // we should check the type of the message before decoding (TODO)
+            let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
+            if let Ok(res) = sib1 {
+                return format!("{:?}", res);
+            }
+            "No value".to_string()
+        }
+        _ => "Not implemented".to_string(),
     }
-    match (curr_trace.trace_type.canal.as_str(), curr_trace.trace_type.canal_msg.as_str()) {
-        ("BCCH-BCH", "Master Information Block") => {}
-        ("BCCH", "SIB1") => {}
-        _ => return format!("No value"),
-    }
-    return format!("No value");
 }

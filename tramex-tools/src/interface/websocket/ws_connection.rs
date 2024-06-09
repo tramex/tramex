@@ -2,10 +2,7 @@
 use core::fmt::{Debug, Formatter};
 use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
 
-use crate::{
-    data::{Data, MessageType, Trace},
-    errors::TramexError,
-};
+use crate::{data::Data, errors::TramexError};
 
 use crate::interface::{interface_types::InterfaceTrait, layer::Layers, log_get::LogGet, types::WebSocketLog};
 /// WsConnection struct
@@ -86,21 +83,16 @@ impl InterfaceTrait for WsConnection {
                             match decoded {
                                 Ok(decoded_data) => {
                                     for one_log in decoded_data.logs {
-                                        let canal_msg = one_log.extract_canal_msg().unwrap_or("".to_owned());
-                                        let hexa = one_log.extract_hexe();
-                                        let msg_type = MessageType {
-                                            timestamp: one_log.timestamp.to_owned(),
-                                            layer: one_log.layer,
-                                            direction: one_log.dir.unwrap_or_default(),
-                                            canal: one_log.channel.unwrap_or_default(),
-                                            canal_msg,
-                                        };
-                                        let trace = Trace {
-                                            trace_type: msg_type,
-                                            hexa: hexa.unwrap_or_default(),
-                                            text: Some(one_log.data),
-                                        };
-                                        data.events.push(trace);
+                                        match one_log.extract_data() {
+                                            Ok(trace) => {
+                                                data.events.push(trace);
+                                            }
+                                            Err(err) => {
+                                                log::error!("Error while extracting data: {:?}", err);
+                                                log::error!("Message: {:?}", event_text);
+                                                return Err(err);
+                                            }
+                                        }
                                     }
                                 }
                                 Err(err) => {

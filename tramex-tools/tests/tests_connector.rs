@@ -21,12 +21,12 @@ mod tests {
         assert!(event.trace_type.direction == Direction::DL);
         assert!(event.trace_type.canal == "BCCH");
         assert!(event.trace_type.canal_msg == "SIB");
-        assert!(event.trace_type.layer == Layer::RRC);
-        assert!(event.trace_type.timestamp == 39668668);
+        assert!(event.layer == Layer::RRC);
+        assert!(event.timestamp == 39668668);
         assert!(f.data.events.len() == 14);
         let f_event = &f.data.events[0];
-        assert!(f_event.trace_type.timestamp == 39668348);
-        assert!(f_event.trace_type.layer == Layer::RRC);
+        assert!(f_event.timestamp == 39668348);
+        assert!(f_event.layer == Layer::RRC);
         assert!(f_event.trace_type.canal == "BCCH");
         assert!(f_event.trace_type.canal_msg == "SIB");
         assert!(f_event.trace_type.direction == Direction::DL);

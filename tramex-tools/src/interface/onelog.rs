@@ -1,12 +1,13 @@
 //! This module contains the definition of the OneLog struct.
 
+use crate::data::Trace;
 use crate::errors::TramexError;
 use crate::interface::functions::extract_hexe;
 
-use crate::interface::{
-    layer::Layer,
-    types::{Direction, LogLevel, SourceLog},
-};
+use crate::interface::{layer::Layer, types::SourceLog};
+
+use super::interface_file::parser::FileParser;
+use super::interface_file::parser_rrc::RRCParser;
 
 #[derive(serde::Deserialize, Debug)]
 /// Data structure to store the log.
@@ -19,18 +20,6 @@ pub struct OneLog {
 
     /// log layer
     pub layer: Layer,
-
-    /// Log level: error, warn, info or debug.
-    pub level: LogLevel,
-
-    ///  Log direction: UL, DL, FROM or TO.
-    pub dir: Option<Direction>,
-
-    /// cell id
-    pub cell: Option<u64>,
-
-    /// channel
-    pub channel: Option<String>,
 
     /// Source of the log.
     pub src: SourceLog,
@@ -55,5 +44,41 @@ impl OneLog {
             return Some(data_line.to_owned());
         }
         None
+    }
+
+    /// Extract the data of the log.
+    pub fn extract_data(&self) -> Result<Trace, TramexError> {
+        match self.layer {
+            Layer::RRC => {
+                let infos = match self.data.first() {
+                    Some(info) => match RRCParser::parse_first_line(info) {
+                        Ok(i) => i,
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    },
+                    None => {
+                        return Err(TramexError::new(
+                            "Could not extract the first line of the log".to_owned(),
+                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                        ));
+                    }
+                };
+                let trace = Trace {
+                    timestamp: self.timestamp.to_owned(),
+                    layer: Layer::RRC,
+                    additional_infos: infos,
+                    hexa: self.extract_hexe().unwrap_or_default(),
+                    text: Some(self.data.iter().map(|x| x.to_string()).collect()), // maybe filter files
+                };
+                Ok(trace)
+            }
+            _ => {
+                return Err(TramexError::new(
+                    "Layer not implemented".to_owned(),
+                    crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                ));
+            }
+        }
     }
 }

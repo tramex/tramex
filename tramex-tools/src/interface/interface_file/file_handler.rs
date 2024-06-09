@@ -4,10 +4,13 @@ use crate::data::Data;
 use crate::data::Trace;
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
-use crate::interface::interface_file::utils_file;
+use crate::interface::interface_file::parser::parsing_error;
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use std::path::PathBuf;
+
+use super::parser::eof_error;
+use super::utils_file::parse_one_block;
 
 /// The default number of log processed by batch
 const DEFAULT_NB: usize = 6;
@@ -25,7 +28,7 @@ pub struct File {
     /// the number of log to read each batch
     nb_read: usize,
     /// The previous line number
-    ix: usize,
+    index_line: usize,
 }
 
 impl Default for File {
@@ -35,7 +38,7 @@ impl Default for File {
             file_content: "".to_string(),
             full_read: false,
             nb_read: DEFAULT_NB,
-            ix: 0,
+            index_line: 0,
         }
     }
 }
@@ -79,7 +82,7 @@ impl File {
             file_content,
             full_read: false,
             nb_read: DEFAULT_NB,
-            ix: 0,
+            index_line: 0,
         }
     }
     /// Creating a new File defining the number of log to read per batch
@@ -89,7 +92,7 @@ impl File {
             file_content,
             full_read: false,
             nb_read: nb_to_read,
-            ix: 0,
+            index_line: 0,
         }
     }
     /// To update the number of log to read per batch
@@ -98,7 +101,7 @@ impl File {
     }
     /// To process the file and parse a batch of log
     pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
-        let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
+        let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.index_line);
         if opt_err.is_some() {
             self.full_read = true;
         }
@@ -109,7 +112,7 @@ impl File {
         let mut vtraces: Vec<Trace> = vec![];
         let lines: Vec<&str> = hay.lines().collect();
         for _ in 0..nb_to_read {
-            match utils_file::parse_bloc(&lines, ix) {
+            match parse_one_block(&lines, ix) {
                 Ok(trace) => {
                     vtraces.push(trace);
                 }
@@ -117,10 +120,10 @@ impl File {
                     Some(e) => {
                         let msg = format!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
                         log::error!("{msg}");
-                        return (vtraces, Some(utils_file::parsing_error(msg)));
+                        return (vtraces, Some(parsing_error(msg)));
                     }
                     None => {
-                        return (vtraces, Some(utils_file::eof_error()));
+                        return (vtraces, Some(eof_error()));
                     }
                 },
             };
