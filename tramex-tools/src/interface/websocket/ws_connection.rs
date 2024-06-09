@@ -56,6 +56,7 @@ impl InterfaceTrait for WsConnection {
         _available: &mut bool,
     ) -> Result<(), TramexError> {
         let msg = LogGet::new(self.msg_id, layer_list, max_size);
+        log::debug!("Sending message: {:?}", msg);
         match serde_json::to_string(&msg) {
             Ok(msg_stringed) => {
                 log::debug!("{}", msg_stringed);

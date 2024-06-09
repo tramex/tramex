@@ -1,9 +1,7 @@
 //! Logical Channels panel
-use asn1_codecs::{uper::UperCodec, PerCodecData};
 use eframe::egui;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
-use types_lte_3gpp::uper::spec_rrc;
 
 use super::functions_panels::{make_label, CustomLabelColor};
 

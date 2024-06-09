@@ -1,7 +1,7 @@
 //! TrameManager
 use eframe::egui;
 use tramex_tools::connector::Connector;
-use tramex_tools::interface::layer::Layers;
+use tramex_tools::interface::layer::{LayerLogLevel, Layers};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 /// TrameManager
@@ -91,13 +91,16 @@ impl TrameManager {
 }
 
 /// Create a checkbox
-fn checkbox(ui: &mut egui::Ui, string: &mut String, text: &str) {
-    let mut checked = string == "debug";
+fn checkbox(ui: &mut egui::Ui, string: &mut LayerLogLevel, text: &str) {
+    let mut checked = match string {
+        LayerLogLevel::Debug => true,
+        LayerLogLevel::Warn => false,
+    };
     if ui.checkbox(&mut checked, text).changed() {
         if checked {
-            *string = "debug".to_owned();
+            *string = LayerLogLevel::Debug;
         } else {
-            *string = "warn".to_owned();
+            *string = LayerLogLevel::Warn;
         };
     };
 }
