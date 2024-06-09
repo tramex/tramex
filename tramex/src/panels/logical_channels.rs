@@ -7,14 +7,18 @@ use tramex_tools::errors::TramexError;
 use super::functions_panels::{make_label, CustomLabelColor};
 
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
-pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) -> egui::Response {
-    make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(match color {
-        CustomLabelColor::Red => "Broadcast channel",
-        CustomLabelColor::Blue => "Common channel",
-        CustomLabelColor::Green => "Traffic channel",
-        CustomLabelColor::Orange => "Dedicated channel",
-        CustomLabelColor::White => "This channel is currently unused",
-    })
+pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
+    make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(if show {
+        match color {
+            CustomLabelColor::Red => "Broadcast channel",
+            CustomLabelColor::Blue => "Common channel",
+            CustomLabelColor::Green => "Traffic channel",
+            CustomLabelColor::Orange => "Dedicated channel",
+            CustomLabelColor::White => "This channel is currently unused",
+        }
+    } else {
+        "This channel is currently unused"
+    });
 }
 /// Logical Channels data
 #[derive(Default)]
