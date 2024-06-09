@@ -1,5 +1,6 @@
 //! Logical Channels panel
 use eframe::egui;
+use tramex_tools::data::AdditionalInfos;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
 
@@ -78,10 +79,14 @@ impl super::PanelController for LogicalChannels {
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
         let mut new_index = None;
-        if self.current_index != data.current_index {
-            if let Some(one_log) = data.get_current_trace() {
-                self.canal = one_log.trace_type.canal.to_owned();
-                self.canal_msg = one_log.trace_type.canal_msg.to_owned();
+        if data.is_different_index(self.current_index) {
+            if let Some(one_trace) = data.get_current_trace() {
+                match &one_trace.additional_infos {
+                    AdditionalInfos::RRCInfos(infos) => {
+                        self.canal = infos.canal.to_owned();
+                        self.canal_msg = infos.canal_msg.to_owned();
+                    }
+                }
             }
             new_index = Some(data.current_index);
         }
