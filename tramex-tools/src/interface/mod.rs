@@ -8,4 +8,5 @@ pub mod onelog;
 pub mod types;
 
 pub mod interface_file;
+pub mod parser;
 pub mod websocket;

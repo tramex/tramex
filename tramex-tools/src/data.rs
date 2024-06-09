@@ -1,5 +1,5 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::interface::{interface_file::parser_rrc::RRCInfos, layer::Layer};
+use crate::interface::{layer::Layer, parser::parser_rrc::RRCInfos};
 use core::fmt::Debug;
 
 #[derive(Debug)]

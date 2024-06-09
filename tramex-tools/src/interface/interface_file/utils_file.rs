@@ -2,15 +2,14 @@
 
 use std::str::FromStr;
 
+use crate::interface::parser::FileParser; // to use the FileParser trait and implementations
 use crate::{
     data::Trace,
     errors::TramexError,
-    interface::{interface_file::parser::time_to_milliseconds, layer::Layer},
-};
-
-use super::{
-    parser::{eof_error, parsing_error},
-    parser_rrc::RRCParser,
+    interface::{
+        layer::Layer,
+        parser::{eof_error, parser_rrc::RRCParser, parsing_error, time_to_milliseconds},
+    },
 };
 
 /// Function that parses one log
@@ -46,7 +45,6 @@ pub fn parse_one_block(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Trame
                     return Err(parsing_error("Error while parsing date".to_string(), 1));
                 }
             };
-            use super::parser::FileParser;
             let res_layer = Layer::from_str(parts[1].trim_start_matches('[').trim_end_matches(']'));
             let res_parse = match res_layer {
                 Ok(Layer::RRC) => RRCParser::parse(lines_to_parse),

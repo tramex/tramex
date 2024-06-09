@@ -1,6 +1,6 @@
 //! Parser for RRC traces
+use super::parsing_error;
 use crate::data::{AdditionalInfos, Trace};
-use crate::interface::interface_file::parser::parsing_error;
 use std::str::FromStr;
 
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
     interface::{functions::extract_hexe, layer::Layer, types::Direction},
 };
 
-use super::parser::FileParser;
+use super::FileParser;
 
 #[derive(Debug, Clone)]
 /// Data structure to store the message type (from the amarisoft API)

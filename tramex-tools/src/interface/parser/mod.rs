@@ -1,4 +1,7 @@
 //! Parser for file interface
+
+pub mod parser_rrc;
+
 use crate::data::AdditionalInfos;
 use crate::data::Trace;
 

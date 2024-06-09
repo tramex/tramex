@@ -6,8 +6,8 @@ use crate::interface::functions::extract_hexe;
 
 use crate::interface::{layer::Layer, types::SourceLog};
 
-use super::interface_file::parser::FileParser;
-use super::interface_file::parser_rrc::RRCParser;
+use super::parser::parser_rrc::RRCParser;
+use super::parser::FileParser; // to use the FileParser trait and implementations
 
 #[derive(serde::Deserialize, Debug)]
 /// Data structure to store the log.
