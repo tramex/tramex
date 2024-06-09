@@ -64,6 +64,7 @@ impl super::PanelController for MessageBox {
                         .collect();
                 }
             }
+            self.current_index = data.current_index;
         }
         self.events_len = data.events.len();
         self.current_index = data.current_index;
