@@ -3,12 +3,11 @@
 mod tests {
     use connector::Connector;
     use tramex_tools::{
-        connector,
-        data::AdditionalInfos,
-        interface::{
+        connector, data::AdditionalInfos, errors::TramexError, interface::{
+            interface_types::Interface,
             layer::{Layer, Layers},
             types::Direction,
-        },
+        }
     };
 
     #[test]
@@ -17,9 +16,19 @@ mod tests {
         let filename = "tests/enb.log";
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
-        let _ = f.get_more_data(Layers::all());
+        match &mut f.interface {
+            Some(Interface::File(file)) => {
+                file.change_nb_read(15);
+            }
+            _ => {
+                unreachable!();
+            }
+        }
+        let res = f.get_more_data(Layers::all());
+        eprintln!("result {:?}", res);
+        eprintln!("count {:?}", f.data.events.len());
         assert!(f.data.events.len() == 15);
-        let one_trace = f.data.events.pop().unwrap();
+        let one_trace = f.data.events[0].clone();
         let infos = match one_trace.additional_infos {
             AdditionalInfos::RRCInfos(infos) => infos,
             _ => unreachable!(),
@@ -28,17 +37,18 @@ mod tests {
         assert!(infos.canal == "BCCH");
         assert!(infos.canal_msg == "SIB");
         assert!(one_trace.layer == Layer::RRC);
-        assert!(one_trace.timestamp == 39668668);
-        assert!(f.data.events.len() == 14);
-        let one_trace = f.data.events[0].clone();
+        eprintln!("{:?}", one_trace.timestamp);
+        assert!(one_trace.timestamp == 39668348);
+        let one_trace = f.data.events[1].clone();
         let infos = match one_trace.additional_infos {
             AdditionalInfos::RRCInfos(infos) => infos,
             _ => unreachable!(),
         };
-        assert!(one_trace.timestamp == 39668348);
+        eprintln!("{:?}", one_trace.timestamp);
+        assert!(one_trace.timestamp == 39668353);
         assert!(one_trace.layer == Layer::RRC);
         assert!(infos.canal == "BCCH");
-        assert!(infos.canal_msg == "SIB");
+        assert!(infos.canal_msg == "SIB1");
         assert!(infos.direction == Direction::DL);
     }
 
@@ -86,5 +96,71 @@ mod tests {
                 assert!(e.message.contains("Error while parsing date"));
             }
         }
+    }
+
+    #[test]
+    fn test_error_date_full_file() {
+        let filename = "tests/enb_date_err.log";
+        let content = std::fs::read_to_string(filename).unwrap();
+        let mut f = Connector::new_file_content(filename.into(), content);
+        let mut errors: Vec<TramexError> = vec![];
+        let mut last_size_data = 0;
+        let mut last_size_errors = 0;
+        loop {
+            match f.get_more_data(Layers::all()) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    errors.push(e);
+                }
+            }
+            if f.data.events.len() == last_size_data && errors.len() == last_size_errors {
+                break;
+            } else {
+                last_size_data = f.data.events.len();
+                last_size_errors = errors.len();
+                eprintln!("data: {:?}", f.data.events.len());
+                eprintln!("errors: {:?}", errors.len());
+            }
+        }
+        eprintln!("data: {:?}", f.data.events.len());
+        eprintln!("errors: {:?}", errors.len());
+        assert!(f.data.events.len() == 0);
+        assert!(errors.len() == 1);
+        assert!(errors[0].message.contains("Error while parsing date"));
+    }
+
+    #[test]
+    fn test_other_file() {
+        let filename = "tests/enb0.log";
+        let content = std::fs::read_to_string(filename).unwrap();
+        let mut f = Connector::new_file_content(filename.into(), content);
+        let mut errors: Vec<TramexError> = vec![];
+        let mut last_size_data = 0;
+        let mut last_size_errors = 0;
+        loop {
+            match f.get_more_data(Layers::all()) {
+                Ok(_) => {}
+                Err(e) => {
+                    eprintln!("{:?}", e);
+                    errors.push(e);
+                }
+            }
+            if f.data.events.len() == last_size_data && errors.len() == last_size_errors {
+                break;
+            } else {
+                last_size_data = f.data.events.len();
+                last_size_errors = errors.len();
+            }
+        }
+        for one_trace in f.data.events.iter() {
+            eprintln!("{:?}", one_trace.layer);
+        }
+        eprintln!("data: {:?}", f.data.events.len());
+        eprintln!("errors: {:?}", errors.len());
+
+        assert!(f.data.events.len() == 53);
+        assert!(errors.len() == 11716);
+        assert!(errors[0].message.contains("Error while parsing date"));
     }
 }

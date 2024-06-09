@@ -5,16 +5,31 @@ pub mod parser_rrc;
 use crate::data::AdditionalInfos;
 use crate::data::Trace;
 
+use crate::errors::ErrorCode;
 use crate::errors::TramexError;
 use chrono::NaiveTime;
 use chrono::Timelike;
 
-/// Build a parsing error
-pub fn parsing_error(message: String, line_idx: u64) -> TramexError {
-    TramexError::new(
-        format!("{} (line {})", message, line_idx),
-        crate::errors::ErrorCode::FileParsing,
-    )
+/// Parsing error
+pub struct ParsingError {
+    /// Error message
+    pub message: String,
+
+    /// Line index
+    pub line_idx: u64,
+}
+
+impl ParsingError {
+    /// Create a new parsing error
+    pub fn new(message: String, line_idx: u64) -> Self {
+        Self { message, line_idx }
+    }
+}
+
+/// Convert a parsing error to a tramex error
+pub fn parsing_error_to_tramex_error(error: ParsingError, idx: u64) -> TramexError {
+    let index = idx as u64 + error.line_idx;
+    TramexError::new(format!("{} (line {})", error.message, index as u64), ErrorCode::FileParsing)
 }
 
 /// Trait for file parser
@@ -22,12 +37,12 @@ pub trait FileParser {
     /// Function that parses the first line of a log
     /// # Errors
     /// Return an error if the parsing fails
-    fn parse_first_line(line: &str) -> Result<AdditionalInfos, TramexError>;
+    fn parse_first_line(line: &str) -> Result<AdditionalInfos, ParsingError>;
 
     /// Parse the lines of a file
     /// # Errors
     /// Return an error if the parsing fails
-    fn parse(lines: &[&str]) -> Result<Trace, TramexError>;
+    fn parse(lines: &[&str]) -> Result<Trace, ParsingError>;
 }
 
 /// Convert a time to milliseconds.
@@ -41,6 +56,9 @@ pub fn time_to_milliseconds(time: &NaiveTime) -> i64 {
 }
 
 /// Build a eof_error
-pub fn eof_error() -> TramexError {
-    TramexError::new("End of file".to_string(), crate::errors::ErrorCode::EndOfFile)
+pub fn eof_error(line_idx: u64) -> TramexError {
+    TramexError::new(
+        format!("End of file (line {})", line_idx),
+        crate::errors::ErrorCode::EndOfFile,
+    )
 }

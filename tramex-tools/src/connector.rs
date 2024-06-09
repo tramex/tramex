@@ -102,7 +102,7 @@ impl Connector {
     /// set file mode using a path
     pub fn new_file(file_path: PathBuf) -> Self {
         Self {
-            interface: Some(Interface::File(File::new_with_to_read(file_path, String::new(), 50))),
+            interface: Some(Interface::File(File::new(file_path, String::new()))),
             data: Data::default(),
             available: false,
             ..Default::default()
@@ -112,7 +112,7 @@ impl Connector {
     /// set file mode using a path and content
     pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
         Self {
-            interface: Some(Interface::File(File::new_with_to_read(file_path, file_content, 50))),
+            interface: Some(Interface::File(File::new(file_path, file_content))),
             data: Data::default(),
             available: true,
             ..Default::default()

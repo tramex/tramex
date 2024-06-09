@@ -1,12 +1,9 @@
 //! Parser for RRC traces
-use super::parsing_error;
+use super::ParsingError;
 use crate::data::{AdditionalInfos, Trace};
 use std::str::FromStr;
 
-use crate::{
-    errors::TramexError,
-    interface::{functions::extract_hexe, layer::Layer, types::Direction},
-};
+use crate::interface::{functions::extract_hexe, layer::Layer, types::Direction};
 
 use super::FileParser;
 
@@ -28,7 +25,7 @@ pub struct RRCParser;
 
 impl RRCParser {
     /// Function that parses the hexadecimal part of a log
-    fn parse_lines(lines: &[&str]) -> Result<(Vec<u8>, Vec<String>), TramexError> {
+    fn parse_lines(lines: &[&str]) -> Result<(Vec<u8>, Vec<String>), ParsingError> {
         let lines_len = lines.len();
         let mut ix = 0;
         let mut hex_str: Vec<&str> = vec![];
@@ -47,14 +44,14 @@ impl RRCParser {
             ix += 1;
         }
         if ix >= lines_len {
-            return Err(parsing_error(
+            return Err(ParsingError::new(
                 "Could not find the end of the hexadecimal".to_string(),
                 ix as u64,
             ));
         }
         let hex = match extract_hexe(&hex_str) {
             Ok(h) => h,
-            Err(e) => return Err(e),
+            Err(e) => return Err(ParsingError::new(e.message, ix as u64)),
         };
 
         let mut end = false;
@@ -68,7 +65,7 @@ impl RRCParser {
             }
         }
         if ix >= lines_len && !end {
-            return Err(parsing_error(
+            return Err(ParsingError::new(
                 "Could not parse the JSON like part, missing closing }".to_string(),
                 ix as u64,
             ));
@@ -79,20 +76,20 @@ impl RRCParser {
 }
 
 impl FileParser for RRCParser {
-    fn parse_first_line(line: &str) -> Result<AdditionalInfos, TramexError> {
+    fn parse_first_line(line: &str) -> Result<AdditionalInfos, ParsingError> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 5 {
-            return Err(parsing_error("Could not find enough (5) parameters".to_string(), 1));
+            return Err(ParsingError::new("Could not find enough (5) parameters".to_string(), 1));
         }
         let direction_result = Direction::from_str(parts[2]);
         let binding: String = parts[5..].join(" ");
         let concatenated: Vec<&str> = binding.split(':').collect();
         let direction = match direction_result {
             Ok(d) => d,
-            Err(_) => return Err(parsing_error("The direction could not be parsed".to_string(), 1)),
+            Err(_) => return Err(ParsingError::new("The direction could not be parsed".to_string(), 1)),
         };
         if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {
-            return Err(parsing_error(
+            return Err(ParsingError::new(
                 "The canal and/or canal message could not be parsed".to_string(),
                 1,
             ));
@@ -104,7 +101,7 @@ impl FileParser for RRCParser {
         }));
     }
 
-    fn parse(lines: &[&str]) -> Result<Trace, TramexError> {
+    fn parse(lines: &[&str]) -> Result<Trace, ParsingError> {
         let mtype = match Self::parse_first_line(lines[0]) {
             Ok(m) => m,
             Err(e) => {

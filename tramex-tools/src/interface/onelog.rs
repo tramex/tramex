@@ -7,7 +7,7 @@ use crate::interface::functions::extract_hexe;
 use crate::interface::{layer::Layer, types::SourceLog};
 
 use super::parser::parser_rrc::RRCParser;
-use super::parser::FileParser; // to use the FileParser trait and implementations
+use super::parser::{parsing_error_to_tramex_error, FileParser}; // to use the FileParser trait and implementations
 
 #[derive(serde::Deserialize, Debug)]
 /// Data structure to store the log.
@@ -55,8 +55,8 @@ impl OneLog {
                 let infos = match self.data.first() {
                     Some(info) => match RRCParser::parse_first_line(info) {
                         Ok(i) => i,
-                        Err(e) => {
-                            return Err(e);
+                        Err(err) => {
+                            return Err(parsing_error_to_tramex_error(err, 0));
                         }
                     },
                     None => {
