@@ -47,7 +47,10 @@ impl RRCParser {
             ix += 1;
         }
         if ix >= lines_len {
-            return Err(parsing_error("Could not find the end of the hexadecimal".to_string()));
+            return Err(parsing_error(
+                "Could not find the end of the hexadecimal".to_string(),
+                ix as u64,
+            ));
         }
         let hex = match extract_hexe(&hex_str) {
             Ok(h) => h,
@@ -67,6 +70,7 @@ impl RRCParser {
         if ix >= lines_len && !end {
             return Err(parsing_error(
                 "Could not parse the JSON like part, missing closing }".to_string(),
+                ix as u64,
             ));
         }
         let text = lines[start_block..ix].iter().map(|&s| s.to_string()).collect();
@@ -78,18 +82,19 @@ impl FileParser for RRCParser {
     fn parse_first_line(line: &str) -> Result<AdditionalInfos, TramexError> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 5 {
-            return Err(parsing_error("Could not find enough (5) parameters".to_string()));
+            return Err(parsing_error("Could not find enough (5) parameters".to_string(), 1));
         }
         let direction_result = Direction::from_str(parts[2]);
         let binding: String = parts[5..].join(" ");
         let concatenated: Vec<&str> = binding.split(':').collect();
         let direction = match direction_result {
             Ok(d) => d,
-            Err(_) => return Err(parsing_error("The direction could not be parsed".to_string())),
+            Err(_) => return Err(parsing_error("The direction could not be parsed".to_string(), 1)),
         };
         if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {
             return Err(parsing_error(
                 "The canal and/or canal message could not be parsed".to_string(),
+                1,
             ));
         }
         return Ok(AdditionalInfos::RRCInfos(RRCInfos {
@@ -99,17 +104,17 @@ impl FileParser for RRCParser {
         }));
     }
 
-    fn parse(lines: &[&str]) -> Result<Trace, Option<TramexError>> {
+    fn parse(lines: &[&str]) -> Result<Trace, TramexError> {
         let mtype = match Self::parse_first_line(lines[0]) {
             Ok(m) => m,
             Err(e) => {
-                return Err(Some(e));
+                return Err(e);
             }
         };
         let (hexa, text) = match Self::parse_lines(&lines[1..]) {
             Ok((h, t)) => (h, t),
             Err(e) => {
-                return Err(Some(e));
+                return Err(e);
             }
         };
         let trace = Trace {

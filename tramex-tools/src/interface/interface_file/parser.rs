@@ -7,8 +7,11 @@ use chrono::NaiveTime;
 use chrono::Timelike;
 
 /// Build a parsing error
-pub fn parsing_error(message: String) -> TramexError {
-    TramexError::new(message, crate::errors::ErrorCode::FileParsing)
+pub fn parsing_error(message: String, line_idx: u64) -> TramexError {
+    TramexError::new(
+        format!("{} (line {})", message, line_idx),
+        crate::errors::ErrorCode::FileParsing,
+    )
 }
 
 /// Trait for file parser
@@ -21,7 +24,7 @@ pub trait FileParser {
     /// Parse the lines of a file
     /// # Errors
     /// Return an error if the parsing fails
-    fn parse(lines: &[&str]) -> Result<Trace, Option<TramexError>>;
+    fn parse(lines: &[&str]) -> Result<Trace, TramexError>;
 }
 
 /// Convert a time to milliseconds.

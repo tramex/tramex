@@ -4,12 +4,10 @@ use crate::data::Data;
 use crate::data::Trace;
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
-use crate::interface::interface_file::parser::parsing_error;
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use std::path::PathBuf;
 
-use super::parser::eof_error;
 use super::utils_file::parse_one_block;
 
 /// The default number of log processed by batch
@@ -116,16 +114,10 @@ impl File {
                 Ok(trace) => {
                     vtraces.push(trace);
                 }
-                Err(err) => match err {
-                    Some(e) => {
-                        let msg = format!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
-                        log::error!("{msg}");
-                        return (vtraces, Some(parsing_error(msg)));
-                    }
-                    None => {
-                        return (vtraces, Some(eof_error()));
-                    }
-                },
+                Err(err) => {
+                    log::error!("{}", err.message);
+                    return (vtraces, Some(err));
+                }
             };
         }
         (vtraces, None)

@@ -16,10 +16,10 @@ use super::{
 /// Function that parses one log
 /// # Errors
 /// Return an error if the parsing fails
-pub fn parse_one_block(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Option<TramexError>> {
+pub fn parse_one_block(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, TramexError> {
     // no more lines to read
     if *ix >= lines.len() {
-        return Err(None);
+        return Err(eof_error());
     }
     let mut end_line = *ix;
     let mut should_stop = false;
@@ -43,7 +43,7 @@ pub fn parse_one_block(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Optio
             let date = match chrono::NaiveTime::parse_from_str(parts[0], "%H:%M:%S%.3f") {
                 Ok(rdate) => rdate,
                 Err(_) => {
-                    return Err(Some(parsing_error("Error while parsing date".to_string())));
+                    return Err(parsing_error("Error while parsing date".to_string(), 1));
                 }
             };
             use super::parser::FileParser;
@@ -51,7 +51,7 @@ pub fn parse_one_block(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Optio
             let res_parse = match res_layer {
                 Ok(Layer::RRC) => RRCParser::parse(lines_to_parse),
                 _ => {
-                    return Err(Some(parsing_error("Unknown message type".to_string())));
+                    return Err(parsing_error("Unknown message type".to_string(), 1));
                 }
             };
             match res_parse {
@@ -63,6 +63,6 @@ pub fn parse_one_block(lines: &Vec<&str>, ix: &mut usize) -> Result<Trace, Optio
                 Err(err) => Err(err),
             }
         }
-        None => Err(Some(eof_error())),
+        None => Err(eof_error()),
     }
 }
