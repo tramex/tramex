@@ -23,6 +23,7 @@ pub struct LogicalChannels {
     /// Current hexa
     hex: Vec<u8>,
 
+    /// channel state : which logical channels to switch on
     state: Option<LogicalChannelState>,
 }
 
@@ -191,10 +192,17 @@ pub enum PhysicalChannelsEnum {
     /// Physical Uplink Control Channel
     PUCCH,
 }
+
+/// Struct that contains the three logical channels associated to the current message
 #[derive(PartialEq)]
 struct LogicalChannelState {
+    /// Logical channel of current message
     logical: LogicalChannelsEnum,
+
+    /// Transport channel of current message
     transport: TransportChannelsEnum,
+
+    /// Physical channel of current message
     physical: PhysicalChannelsEnum,
 }
 
