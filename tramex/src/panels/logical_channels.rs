@@ -27,9 +27,6 @@ pub struct LogicalChannels {
     /// Current index
     current_index: usize,
 
-    /// Current hexa
-    hex: Vec<u8>,
-
     /// channel state : which logical channels to switch on
     state: Option<LogicalChannelState>,
 }
@@ -85,7 +82,6 @@ impl super::PanelController for LogicalChannels {
             if let Some(one_log) = data.get_current_trace() {
                 self.canal = one_log.trace_type.canal.to_owned();
                 self.canal_msg = one_log.trace_type.canal_msg.to_owned();
-                self.hex = one_log.hexa.to_owned();
             }
             new_index = Some(data.current_index);
         }
