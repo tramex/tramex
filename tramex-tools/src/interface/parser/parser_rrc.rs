@@ -25,7 +25,7 @@ pub struct RRCParser;
 
 impl RRCParser {
     /// Function that parses the hexadecimal part of a log
-    fn parse_lines(lines: &[&str]) -> Result<(Vec<u8>, Vec<String>), ParsingError> {
+    fn parse_lines(lines: &[String]) -> Result<(Vec<u8>, Vec<String>), ParsingError> {
         let lines_len = lines.len();
         let mut ix = 0;
         let mut hex_str: Vec<&str> = vec![];
@@ -40,7 +40,7 @@ impl RRCParser {
                     break;
                 }
             }
-            hex_str.push(lines[ix]);
+            hex_str.push(&lines[ix]);
             ix += 1;
         }
         if ix >= lines_len {
@@ -58,7 +58,7 @@ impl RRCParser {
         let mut brackets: i16 = 0;
         let start_block = ix;
         while (ix < lines_len) && !end {
-            brackets += count_brackets(lines[ix]);
+            brackets += count_brackets(&lines[ix]);
             ix += 1;
             if brackets == 0 {
                 end = true;
@@ -70,7 +70,7 @@ impl RRCParser {
                 ix as u64,
             ));
         }
-        let text = lines[start_block..ix].iter().map(|&s| s.to_string()).collect();
+        let text = lines[start_block..ix].iter().map(|s| s.to_string()).collect();
         Ok((hex, text))
     }
 }
@@ -86,7 +86,12 @@ impl FileParser for RRCParser {
         let concatenated: Vec<&str> = binding.split(':').collect();
         let direction = match direction_result {
             Ok(d) => d,
-            Err(_) => return Err(ParsingError::new("The direction could not be parsed".to_string(), 1)),
+            Err(_) => {
+                return Err(ParsingError::new(
+                    format!("The direction could not be parsed in the part {:?} of {}", parts[2], line),
+                    1,
+                ))
+            }
         };
         if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {
             return Err(ParsingError::new(
@@ -101,8 +106,8 @@ impl FileParser for RRCParser {
         }));
     }
 
-    fn parse(lines: &[&str]) -> Result<Trace, ParsingError> {
-        let mtype = match Self::parse_first_line(lines[0]) {
+    fn parse(lines: &[String]) -> Result<Trace, ParsingError> {
+        let mtype = match Self::parse_first_line(&lines[0]) {
             Ok(m) => m,
             Err(e) => {
                 return Err(e);

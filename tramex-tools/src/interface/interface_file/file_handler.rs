@@ -19,7 +19,7 @@ pub struct File {
     pub file_path: PathBuf,
 
     /// Content of the file.
-    pub file_content: String,
+    pub file_content: Vec<String>,
 
     /// Full read status of the file.
     pub full_read: bool,
@@ -33,7 +33,7 @@ impl Default for File {
     fn default() -> Self {
         Self {
             file_path: PathBuf::from(""),
-            file_content: "".to_string(),
+            file_content: vec![],
             full_read: false,
             nb_read: DEFAULT_NB,
             index_line: 0,
@@ -77,7 +77,7 @@ impl File {
     pub fn new(file_path: PathBuf, file_content: String) -> Self {
         Self {
             file_path,
-            file_content,
+            file_content: file_content.lines().map(|x| x.to_string()).collect(),
             full_read: false,
             nb_read: DEFAULT_NB,
             index_line: 0,
@@ -87,7 +87,7 @@ impl File {
     pub fn new_with_to_read(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
         Self {
             file_path,
-            file_content,
+            file_content: file_content.lines().map(|x| x.to_string()).collect(),
             full_read: false,
             nb_read: nb_to_read,
             index_line: 0,
@@ -100,17 +100,27 @@ impl File {
     /// To process the file and parse a batch of log
     pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
         let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.index_line);
-        if opt_err.is_some() {
-            self.full_read = true;
-        }
+        match &opt_err {
+            Some(err) => {
+                if err.get_code() == ErrorCode::EndOfFile {
+                    self.full_read = true;
+                }
+            }
+            None => {}
+        };
         (vec_trace, opt_err)
     }
     /// To process a string passed in argument, with index and batch to read
-    pub fn process_string(hay: &str, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
+    pub fn process_string(lines: &Vec<String>, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
         let mut vtraces: Vec<Trace> = vec![];
-        let lines: Vec<&str> = hay.lines().collect();
         for _ in 0..nb_to_read {
-            match parse_one_block(&lines, ix) {
+            if *ix >= lines.len() {
+                return (
+                    vtraces,
+                    Some(TramexError::new("End of file".to_string(), ErrorCode::EndOfFile)),
+                );
+            }
+            match parse_one_block(&lines[*ix..], ix) {
                 Ok(trace) => {
                     vtraces.push(trace);
                 }

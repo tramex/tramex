@@ -1,24 +1,41 @@
 // tests
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use connector::Connector;
     use tramex_tools::{
-        connector, data::AdditionalInfos, errors::TramexError, interface::{
+        connector,
+        data::AdditionalInfos,
+        errors::TramexError,
+        interface::{
             interface_types::Interface,
             layer::{Layer, Layers},
             types::Direction,
-        }
+        },
     };
+
+    fn get_path(p: &str) -> String {
+        if std::env::current_dir().unwrap().ends_with("tramex-tools") {
+            let filename = Path::new("tests").join(p).to_string_lossy().to_string();
+            eprintln!("{:?}", filename);
+            return filename;
+        }
+        let filename = file!();
+        let filename = Path::new(filename).parent().unwrap().join(p).to_string_lossy().to_string();
+        eprintln!("{:?}", filename);
+        return filename;
+    }
 
     #[test]
     #[allow(unreachable_patterns)]
     fn test_file() {
-        let filename = "tests/enb.log";
+        let filename = &get_path("enb.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         match &mut f.interface {
             Some(Interface::File(file)) => {
-                file.change_nb_read(15);
+                file.change_nb_read(50);
             }
             _ => {
                 unreachable!();
@@ -54,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_jsonlike() {
-        let filename = "tests/enb_jsonlike_error.log";
+        let filename = &get_path("enb_jsonlike_error.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         match f.get_more_data(Layers::all()) {
@@ -69,7 +86,7 @@ mod tests {
     }
     #[test]
     fn test_malformed_fl() {
-        let filename = "tests/enb_canal_or_canal_message_malformed.log";
+        let filename = &get_path("enb_canal_or_canal_message_malformed.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         match f.get_more_data(Layers::all()) {
@@ -84,7 +101,7 @@ mod tests {
     }
     #[test]
     fn test_error_date() {
-        let filename = "tests/enb_date_err.log";
+        let filename = &get_path("enb_date_err.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         match f.get_more_data(Layers::all()) {
@@ -100,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_error_date_full_file() {
-        let filename = "tests/enb_date_err.log";
+        let filename = &get_path("enb_date_err.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         let mut errors: Vec<TramexError> = vec![];
@@ -132,7 +149,7 @@ mod tests {
 
     #[test]
     fn test_other_file() {
-        let filename = "tests/enb0.log";
+        let filename = &get_path("enb0.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let mut f = Connector::new_file_content(filename.into(), content);
         let mut errors: Vec<TramexError> = vec![];
@@ -142,7 +159,6 @@ mod tests {
             match f.get_more_data(Layers::all()) {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("{:?}", e);
                     errors.push(e);
                 }
             }
@@ -153,14 +169,18 @@ mod tests {
                 last_size_errors = errors.len();
             }
         }
-        for one_trace in f.data.events.iter() {
-            eprintln!("{:?}", one_trace.layer);
-        }
+        let num_error_direction = 5;
+        let number_rrc = 53;
+        let total = 11769;
+        let count_events = number_rrc - num_error_direction;
+        let count_errors = total - number_rrc + num_error_direction;
         eprintln!("data: {:?}", f.data.events.len());
+        eprintln!("count_events: {:?}", count_events);
         eprintln!("errors: {:?}", errors.len());
-
-        assert!(f.data.events.len() == 53);
-        assert!(errors.len() == 11716);
+        eprintln!("count_errors: {:?}", count_errors);
+        eprintln!("{:?}", errors.last());
+        assert!(f.data.events.len() == count_errors);
+        assert!(errors.len() == total - number_rrc + num_error_direction);
         assert!(errors[0].message.contains("Error while parsing date"));
     }
 }

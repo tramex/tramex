@@ -28,8 +28,8 @@ impl ParsingError {
 
 /// Convert a parsing error to a tramex error
 pub fn parsing_error_to_tramex_error(error: ParsingError, idx: u64) -> TramexError {
-    let index = idx as u64 + error.line_idx;
-    TramexError::new(format!("{} (line {})", error.message, index as u64), ErrorCode::FileParsing)
+    let index = idx + error.line_idx;
+    TramexError::new(format!("{} (line {})", error.message, index), ErrorCode::FileParsing)
 }
 
 /// Trait for file parser
@@ -42,7 +42,7 @@ pub trait FileParser {
     /// Parse the lines of a file
     /// # Errors
     /// Return an error if the parsing fails
-    fn parse(lines: &[&str]) -> Result<Trace, ParsingError>;
+    fn parse(lines: &[String]) -> Result<Trace, ParsingError>;
 }
 
 /// Convert a time to milliseconds.
