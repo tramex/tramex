@@ -179,8 +179,8 @@ mod tests {
         eprintln!("errors: {:?}", errors.len());
         eprintln!("count_errors: {:?}", count_errors);
         eprintln!("{:?}", errors.last());
-        assert!(f.data.events.len() == count_errors);
-        assert!(errors.len() == total - number_rrc + num_error_direction);
-        assert!(errors[0].message.contains("Error while parsing date"));
+        assert!(f.data.events.len() == count_events);
+        assert!(errors.len() == count_errors);
+        assert!(errors.last().unwrap().message.contains("Unknown message type"));
     }
 }
