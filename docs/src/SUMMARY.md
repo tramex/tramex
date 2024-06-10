@@ -16,7 +16,7 @@
 - [Amarisoft Resources](./amarisoft-resources/index.md)
   - [Log File Format](./amarisoft-resources/log_file_format.md)
 
-# Informations
+# Information
 
 - [Knowledge base](./knowledge_base.md)
 - [Contributors](./contributors.md)
