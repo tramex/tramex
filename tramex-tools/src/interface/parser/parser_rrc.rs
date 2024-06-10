@@ -108,7 +108,7 @@ impl FileParser for RRCParser {
     }
 
     fn parse(lines: &[String]) -> Result<Trace, ParsingError> {
-        let mtype = match Self::parse_additional_infos(&lines) {
+        let mtype = match Self::parse_additional_infos(lines) {
             Ok(m) => m,
             Err(e) => {
                 return Err(e);
