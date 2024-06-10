@@ -76,7 +76,8 @@ impl RRCParser {
 }
 
 impl FileParser for RRCParser {
-    fn parse_first_line(line: &str) -> Result<AdditionalInfos, ParsingError> {
+    fn parse_additional_infos(lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        let line = &lines[0];
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 5 {
             return Err(ParsingError::new("Could not find enough (5) parameters".to_string(), 1));
@@ -107,7 +108,7 @@ impl FileParser for RRCParser {
     }
 
     fn parse(lines: &[String]) -> Result<Trace, ParsingError> {
-        let mtype = match Self::parse_first_line(&lines[0]) {
+        let mtype = match Self::parse_additional_infos(&lines) {
             Ok(m) => m,
             Err(e) => {
                 return Err(e);

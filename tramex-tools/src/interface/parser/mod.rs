@@ -38,7 +38,7 @@ pub trait FileParser {
     /// Function that parses the first line of a log
     /// # Errors
     /// Return an error if the parsing fails
-    fn parse_first_line(line: &str) -> Result<AdditionalInfos, ParsingError>;
+    fn parse_additional_infos(line: &[String]) -> Result<AdditionalInfos, ParsingError>;
 
     /// Parse the lines of a file
     /// # Errors

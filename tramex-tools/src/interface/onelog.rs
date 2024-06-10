@@ -52,18 +52,10 @@ impl OneLog {
     pub fn extract_data(&self) -> Result<Trace, TramexError> {
         match self.layer {
             Layer::RRC => {
-                let infos = match self.data.first() {
-                    Some(info) => match RRCParser::parse_first_line(info) {
-                        Ok(i) => i,
-                        Err(err) => {
-                            return Err(parsing_error_to_tramex_error(err, 0));
-                        }
-                    },
-                    None => {
-                        return Err(TramexError::new(
-                            "Could not extract the first line of the log".to_owned(),
-                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
-                        ));
+                let infos = match RRCParser::parse_additional_infos(&self.data) {
+                    Ok(i) => i,
+                    Err(err) => {
+                        return Err(parsing_error_to_tramex_error(err, 0));
                     }
                 };
                 let trace = Trace {
