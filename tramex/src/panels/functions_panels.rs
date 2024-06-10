@@ -52,7 +52,7 @@ pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabel
             ..Default::default()
         },
     );
-    ui.label(job);
+    ui.label(job)
 }
 
 /// Arrow direction
