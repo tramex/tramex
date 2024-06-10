@@ -4,10 +4,11 @@ use crate::data::Data;
 use crate::data::Trace;
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
-use crate::interface::interface_file::utils_file;
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use std::path::PathBuf;
+
+use super::utils_file::parse_one_block;
 
 /// The default number of log processed by batch
 const DEFAULT_NB: usize = 6;
@@ -18,24 +19,24 @@ pub struct File {
     pub file_path: PathBuf,
 
     /// Content of the file.
-    pub file_content: String,
+    pub file_content: Vec<String>,
 
     /// Full read status of the file.
     pub full_read: bool,
     /// the number of log to read each batch
     nb_read: usize,
     /// The previous line number
-    ix: usize,
+    index_line: usize,
 }
 
 impl Default for File {
     fn default() -> Self {
         Self {
             file_path: PathBuf::from(""),
-            file_content: "".to_string(),
+            file_content: vec![],
             full_read: false,
             nb_read: DEFAULT_NB,
-            ix: 0,
+            index_line: 0,
         }
     }
 }
@@ -51,16 +52,13 @@ impl InterfaceTrait for File {
         if self.full_read {
             return Ok(());
         }
-        let (m_vec, opt_err) = &mut self.process();
-        data.events.append(m_vec);
+        let (mut traces, err_processed) = self.process();
+        data.events.append(&mut traces);
         *available = true;
-        match opt_err {
-            Some(err) => {
-                if !(matches!(err.code, ErrorCode::EndOfFile)) {
-                    return Err(err.clone());
-                }
+        if let Some(err) = err_processed {
+            if !(matches!(err.code, ErrorCode::EndOfFile)) {
+                return Err(err);
             }
-            None => {}
         }
         Ok(())
     }
@@ -79,20 +77,20 @@ impl File {
     pub fn new(file_path: PathBuf, file_content: String) -> Self {
         Self {
             file_path,
-            file_content,
+            file_content: file_content.lines().map(|x| x.to_string()).collect(),
             full_read: false,
             nb_read: DEFAULT_NB,
-            ix: 0,
+            index_line: 0,
         }
     }
     /// Creating a new File defining the number of log to read per batch
     pub fn new_with_to_read(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
         Self {
             file_path,
-            file_content,
+            file_content: file_content.lines().map(|x| x.to_string()).collect(),
             full_read: false,
             nb_read: nb_to_read,
-            ix: 0,
+            index_line: 0,
         }
     }
     /// To update the number of log to read per batch
@@ -101,31 +99,35 @@ impl File {
     }
     /// To process the file and parse a batch of log
     pub fn process(&mut self) -> (Vec<Trace>, Option<TramexError>) {
-        let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.ix);
-        if opt_err.is_some() {
-            self.full_read = true;
-        }
+        let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.index_line);
+        match &opt_err {
+            Some(err) => {
+                if err.get_code() == ErrorCode::EndOfFile {
+                    self.full_read = true;
+                }
+            }
+            None => {}
+        };
         (vec_trace, opt_err)
     }
     /// To process a string passed in argument, with index and batch to read
-    pub fn process_string(hay: &str, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
+    pub fn process_string(lines: &Vec<String>, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Option<TramexError>) {
         let mut vtraces: Vec<Trace> = vec![];
-        let lines: Vec<&str> = hay.lines().collect();
         for _ in 0..nb_to_read {
-            match utils_file::parse_bloc(&lines, ix) {
+            if *ix >= lines.len() {
+                return (
+                    vtraces,
+                    Some(TramexError::new("End of file".to_string(), ErrorCode::EndOfFile)),
+                );
+            }
+            match parse_one_block(&lines[*ix..], ix) {
                 Ok(trace) => {
                     vtraces.push(trace);
                 }
-                Err(err) => match err {
-                    Some(e) => {
-                        let msg = format!("Error {:} at line {:} : \n {:}", e.message, *ix, lines[*ix]);
-                        log::error!("{msg}");
-                        return (vtraces, Some(utils_file::parsing_error(msg)));
-                    }
-                    None => {
-                        return (vtraces, Some(utils_file::eof_error()));
-                    }
-                },
+                Err(err) => {
+                    log::error!("{}", err.message);
+                    return (vtraces, Some(err));
+                }
             };
         }
         (vtraces, None)

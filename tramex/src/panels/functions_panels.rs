@@ -3,6 +3,7 @@
 use egui::{Color32, TextFormat};
 
 /// Custom label color
+#[derive(Clone)]
 pub enum CustomLabelColor {
     /// Red color
     Red,
@@ -26,7 +27,7 @@ pub fn make_label_equal(ui: &mut egui::Ui, label: &str, state: &str, color: Cust
 }
 
 /// Create a label with a background color
-pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
+pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) -> egui::Response {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
     let (default_color, _strong_color) = (Color32::BLACK, Color32::BLACK);

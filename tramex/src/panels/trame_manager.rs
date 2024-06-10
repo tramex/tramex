@@ -1,6 +1,7 @@
 //! TrameManager
 use eframe::egui;
 use tramex_tools::connector::Connector;
+use tramex_tools::interface::interface_types::Interface;
 use tramex_tools::interface::layer::{LayerLogLevel, Layers};
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -61,24 +62,38 @@ impl TrameManager {
 
     /// Show the controls
     pub fn show_controls(&mut self, ui: &mut egui::Ui, connector: &mut Connector) {
-        if ui.button("More").clicked() {
-            log::debug!("More");
-            self.should_get_more_log = true;
-        }
-        let text = if connector.data.events.is_empty() { "Start" } else { "Next" };
-        if ui.button(text).clicked() {
-            log::debug!("Next {}", text);
-            if connector.data.events.len() > connector.data.current_index + 1 {
-                connector.data.current_index += 1;
+        let is_full_read = match connector.interface {
+            Some(Interface::File(ref file)) => !file.full_read,
+            _ => true,
+        };
+        ui.add_enabled_ui(is_full_read, |ui| {
+            if ui.button("More").clicked() {
+                log::debug!("More");
+                self.should_get_more_log = true;
+            }
+        });
+        let is_enabled =
+            if !connector.data.events.is_empty() && connector.data.events.len() - 1 == connector.data.current_index {
+                is_full_read
             } else {
-                self.should_get_more_log = true;
+                true
+            };
+        ui.add_enabled_ui(is_enabled, |ui| {
+            let text = if connector.data.events.is_empty() { "Start" } else { "Next" };
+            if ui.button(text).clicked() {
+                log::debug!("Next {}", text);
+                if connector.data.events.len() > connector.data.current_index + 1 {
+                    connector.data.current_index += 1;
+                } else {
+                    self.should_get_more_log = true;
+                }
+                // preloading
+                if !connector.data.events.is_empty() && connector.data.current_index == (connector.data.events.len() - 1) {
+                    log::debug!("Preloading");
+                    self.should_get_more_log = true;
+                }
             }
-            // preloading
-            if !connector.data.events.is_empty() && connector.data.current_index == (connector.data.events.len() - 1) {
-                log::debug!("Preloading");
-                self.should_get_more_log = true;
-            }
-        }
+        });
         ui.add_enabled_ui(connector.data.current_index > 0, |ui| {
             if ui.button("Previous").clicked() {
                 log::debug!("Previous");

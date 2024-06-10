@@ -85,7 +85,6 @@ impl FileHandler {
     /// Clear the file handler
     pub fn clear(&mut self) {
         self.file_upload = None;
-        self.file_list = None;
     }
 
     /// Get the result
@@ -276,7 +275,12 @@ impl FileHandler {
                         self.clear();
                     }
                 }
+            } else {
+                ui.label("Loading files list...");
+                ui.spinner();
             }
+        } else {
+            ui.label("No files list");
         }
         if let Some(filepath) = &file_path {
             self.load_from_url(filepath.to_string());

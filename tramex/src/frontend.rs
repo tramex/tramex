@@ -226,10 +226,11 @@ impl FrontEnd {
                         self.trame_manager.show_options(ui, &mut self.connector);
                         if self.trame_manager.should_get_more_log {
                             self.trame_manager.should_get_more_log = false;
-                            return self.connector.get_more_data(self.trame_manager.layers_list.clone());
+                            if let Err(err) = self.connector.get_more_data(self.trame_manager.layers_list.clone()) {
+                                error = Some(err);
+                            }
                         }
                     }
-                    Ok(())
                 });
         }
         if let Some(e) = error {
