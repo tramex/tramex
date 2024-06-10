@@ -62,20 +62,22 @@ impl TrameManager {
 
     /// Show the controls
     pub fn show_controls(&mut self, ui: &mut egui::Ui, connector: &mut Connector) {
-        if ui.button("More").clicked() {
-            log::debug!("More");
-            self.should_get_more_log = true;
-        }
-        let is_enabled = match connector.interface {
-            Some(Interface::File(ref file)) => {
-                if !connector.data.events.is_empty() && connector.data.events.len() - 1 == connector.data.current_index {
-                    !file.full_read
-                } else {
-                    true
-                }
-            }
+        let is_full_read = match connector.interface {
+            Some(Interface::File(ref file)) => !file.full_read,
             _ => true,
         };
+        ui.add_enabled_ui(is_full_read, |ui| {
+            if ui.button("More").clicked() {
+                log::debug!("More");
+                self.should_get_more_log = true;
+            }
+        });
+        let is_enabled =
+            if !connector.data.events.is_empty() && connector.data.events.len() - 1 == connector.data.current_index {
+                is_full_read
+            } else {
+                true
+            };
         ui.add_enabled_ui(is_enabled, |ui| {
             let text = if connector.data.events.is_empty() { "Start" } else { "Next" };
             if ui.button(text).clicked() {
