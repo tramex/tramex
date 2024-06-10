@@ -131,6 +131,7 @@ impl FileParser for RRCParser {
 }
 
 /// Counting Brackets
+#[inline]
 pub fn count_brackets(hay: &str) -> i16 {
     let mut count: i16 = 0;
     for ch in hay.chars() {

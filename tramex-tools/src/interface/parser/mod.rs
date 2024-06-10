@@ -27,6 +27,7 @@ impl ParsingError {
 }
 
 /// Convert a parsing error to a tramex error
+#[inline]
 pub fn parsing_error_to_tramex_error(error: ParsingError, idx: u64) -> TramexError {
     let index = idx + error.line_idx;
     TramexError::new(format!("{} (line {})", error.message, index), ErrorCode::FileParsing)
@@ -46,6 +47,7 @@ pub trait FileParser {
 }
 
 /// Convert a time to milliseconds.
+#[inline]
 pub fn time_to_milliseconds(time: &NaiveTime) -> i64 {
     let hours_in_ms = time.hour() as i64 * 3_600_000;
     let minutes_in_ms = time.minute() as i64 * 60_000;
@@ -56,6 +58,7 @@ pub fn time_to_milliseconds(time: &NaiveTime) -> i64 {
 }
 
 /// Build a eof_error
+#[inline]
 pub fn eof_error(line_idx: u64) -> TramexError {
     TramexError::new(
         format!("End of file (line {})", line_idx),
