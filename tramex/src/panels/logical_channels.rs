@@ -1,19 +1,24 @@
 //! Logical Channels panel
 use eframe::egui;
+use tramex_tools::data::AdditionalInfos;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
 
 use super::functions_panels::{make_label, CustomLabelColor};
 
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
-pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) -> egui::Response {
-    make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(match color {
-        CustomLabelColor::Red => "Broadcast channel",
-        CustomLabelColor::Blue => "Common channel",
-        CustomLabelColor::Green => "Traffic channel",
-        CustomLabelColor::Orange => "Dedicated channel",
-        CustomLabelColor::White => "This channel is currently unused",
-    })
+pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
+    make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(if show {
+        match color {
+            CustomLabelColor::Red => "Broadcast channel",
+            CustomLabelColor::Blue => "Common channel",
+            CustomLabelColor::Green => "Traffic channel",
+            CustomLabelColor::Orange => "Dedicated channel",
+            CustomLabelColor::White => "This channel is currently unused",
+        }
+    } else {
+        "This channel is currently unused"
+    });
 }
 /// Logical Channels data
 #[derive(Default)]
@@ -77,17 +82,17 @@ impl super::PanelController for LogicalChannels {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
-        let mut new_index = None;
-        if self.current_index != data.current_index {
-            if let Some(one_log) = data.get_current_trace() {
-                self.canal = one_log.trace_type.canal.to_owned();
-                self.canal_msg = one_log.trace_type.canal_msg.to_owned();
+        if data.is_different_index(self.current_index) {
+            if let Some(one_trace) = data.get_current_trace() {
+                match &one_trace.additional_infos {
+                    AdditionalInfos::RRCInfos(infos) => {
+                        self.canal = infos.canal.to_owned();
+                        self.canal_msg = infos.canal_msg.to_owned();
+                    }
+                }
             }
-            new_index = Some(data.current_index);
-        }
-        if let Some(idx) = new_index {
+            self.current_index = data.current_index;
             self.handle_logic();
-            self.current_index = idx;
         }
         egui::Window::new(self.window_title())
             .default_width(320.0)

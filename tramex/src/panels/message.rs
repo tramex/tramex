@@ -20,6 +20,9 @@ pub struct MessageBox {
 
     /// show full message
     show_full: bool,
+
+    /// save text
+    save_text: Vec<String>,
 }
 
 impl MessageBox {
@@ -39,8 +42,29 @@ impl super::PanelController for MessageBox {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
-        if let Some(trace) = data.get_current_trace() {
-            self.current_trace = Some(trace.clone());
+        if data.is_different_index(self.current_index) {
+            if let Some(trace) = data.get_current_trace() {
+                self.current_trace = Some(trace.clone());
+                #[cfg(feature = "types_lte_3gpp")]
+                {
+                    let mut count = 0;
+                    use crate::hexe_decoding;
+                    self.save_text = hexe_decoding(trace)
+                        .replace('{', "{\n")
+                        .replace(',', ",\n")
+                        .split('\n')
+                        .map(|x| {
+                            if x.contains('{') {
+                                count += 1;
+                            } else if x.contains('}') {
+                                count -= 1;
+                            }
+                            format!("{} {}", " ".repeat(count * 4), x)
+                        })
+                        .collect();
+                }
+            }
+            self.current_index = data.current_index;
         }
         self.events_len = data.events.len();
         self.current_index = data.current_index;
@@ -66,7 +90,7 @@ impl super::PanelView for MessageBox {
 
         if let Some(one_trace) = &self.current_trace {
             ui.label(format!("Current msg index: {}", self.current_index + 1));
-            display_log(ui, one_trace, self.show_full);
+            display_log(ui, one_trace, self.show_full, &self.save_text);
         }
     }
 }

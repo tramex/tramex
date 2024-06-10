@@ -85,14 +85,20 @@ impl TramexApp {
                 .resizable([true, false])
                 .show(ctx, |ui| {
                     let mut to_clean = vec![];
-                    egui::Grid::new("error_ui").min_col_width(60.0).show(ui, |ui| {
-                        for (idx, one_error) in self.error_panel.iter().enumerate() {
-                            if show_error(ui, one_error) {
-                                to_clean.push(idx);
-                            }
-                            ui.end_row();
-                        }
-                    });
+                    egui::ScrollArea::vertical()
+                        .id_source("scroll_area_errors")
+                        .max_height(400.0)
+                        .auto_shrink([false, true])
+                        .show(ui, |ui| {
+                            egui::Grid::new("error_ui").min_col_width(60.0).show(ui, |ui| {
+                                for (idx, one_error) in self.error_panel.iter().enumerate() {
+                                    if show_error(ui, one_error) {
+                                        to_clean.push(idx);
+                                    }
+                                    ui.end_row();
+                                }
+                            });
+                        });
                     for idx in to_clean.iter().rev() {
                         self.error_panel.remove(*idx);
                     }
