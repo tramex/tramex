@@ -1,0 +1,2873 @@
+10:37:38.884 [RRC] UL 0001 01 CCCH: RRC connection request
+        {
+          message c1: rrcConnectionRequest: {
+            criticalExtensions rrcConnectionRequest-r8: {
+              ue-Identity randomValue: 'C48D3048AB'H,
+              establishmentCause mo-Signalling,
+              spare '0'B
+            }
+          }
+        }
+
+10:37:38.884 [RRC] DL 0001 01 CCCH: RRC connection setup
+        {
+          message c1: rrcConnectionSetup: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionSetup-r8: {
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                mac-MainConfig explicitValue: {
+                  ul-SCH-Config {
+                    maxHARQ-Tx n5,
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320,
+                    ttiBundling FALSE
+                  },
+                  drx-Config release: NULL,
+                  timeAlignmentTimerDedicated infinity,
+                  phr-Config setup: {
+                    periodicPHR-Timer sf500,
+                    prohibitPHR-Timer sf200,
+                    dl-PathlossChange dB3
+                  }
+                },
+                physicalConfigDedicated {
+                  pdsch-ConfigDedicated {
+                    p-a dB0
+                  },
+                  pucch-ConfigDedicated {
+                    ackNackRepetition release: NULL
+                  },
+                  pusch-ConfigDedicated {
+                    betaOffset-ACK-Index 9,
+                    betaOffset-RI-Index 6,
+                    betaOffset-CQI-Index 6
+                  },
+                  uplinkPowerControlDedicated {
+                    p0-UE-PUSCH 0,
+                    deltaMCS-Enabled en0,
+                    accumulationEnabled TRUE,
+                    p0-UE-PUCCH 0,
+                    pSRS-Offset 3
+                  },
+                  cqi-ReportConfig {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic setup: {
+                      cqi-PUCCH-ResourceIndex 0,
+                      cqi-pmi-ConfigIndex 38,
+                      cqi-FormatIndicatorPeriodic widebandCQI: NULL,
+                      simultaneousAckNackAndCQI FALSE
+                    }
+                  },
+                  soundingRS-UL-ConfigDedicated setup: {
+                    srs-Bandwidth bw1,
+                    srs-HoppingBandwidth hbw0,
+                    freqDomainPosition 0,
+                    duration TRUE,
+                    srs-ConfigIndex 37,
+                    transmissionComb 0,
+                    cyclicShift cs5
+                  },
+                  schedulingRequestConfig setup: {
+                    sr-PUCCH-ResourceIndex 0,
+                    sr-ConfigIndex 15,
+                    dsr-TransMax n64
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:37:38.925 [RRC] UL 0001 01 DCCH: RRC connection setup complete
+        {
+          message c1: rrcConnectionSetupComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionSetupComplete-r8: {
+              selectedPLMN-Identity 1,
+              registeredMME {
+                mmegi '8001'H,
+                mmec '01'H
+              },
+              dedicatedInfoNAS '1798AD2A4C030741320BF609F107800101F5439F4804F070C04000270212D031D127208080211001000010810600000000830600000000000D00000300000A000010005209F10700015C0A003103E5E0341309F107000111035758865D0100E0C1'H,
+              nonCriticalExtension {
+                nonCriticalExtension {
+                  gummei-Type-r10 native
+                }
+              }
+            }
+          }
+        }
+
+10:37:38.926 [RRC] DL 0001 01 DCCH: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: dlInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '075501'H
+            }
+          }
+        }
+
+10:37:38.957 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '174FB27323040756089910070000303291'H
+            }
+          }
+        }
+
+10:37:38.958 [RRC] DL 0001 01 DCCH: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: dlInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '075204512BA0485D5050B9CC3757EA0F2D40EE10C3439A820CF59001D0B63D60B9FB6F8E'H
+            }
+          }
+        }
+
+10:37:39.096 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '17E917718A05075C15300E1518288896C6A44EC317DBDCC55D'H
+            }
+          }
+        }
+
+10:37:39.098 [RRC] DL 0001 01 DCCH: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: dlInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '0752055E1A51F3B6A913533BE4F7B496BA863B10A13E311104DA90014EB3D2FC853B72EE'H
+            }
+          }
+        }
+
+10:37:39.356 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '1713151D3806075308B3A39ADB8B8B4985'H
+            }
+          }
+        }
+
+10:37:39.357 [RRC] DL 0001 01 DCCH: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: dlInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '37F43775CA00075D020505F070C04070C14F0867B9A4901AB2D29B'H
+            }
+          }
+        }
+
+10:37:39.396 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '47F7819CC200075E23093375220166987201F1'H
+            }
+          }
+        }
+
+10:37:39.398 [RRC] DL 0001 01 DCCH: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: dlInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '270C862382010212D9'H
+            }
+          }
+        }
+
+10:37:39.437 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '2750E19DD1010212DA280403696D73'H
+            }
+          }
+        }
+
+10:37:39.438 [RRC] DL 0001 01 DCCH: Security mode command
+        {
+          message c1: securityModeCommand: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: securityModeCommand-r8: {
+              securityConfigSMC {
+                securityAlgorithmConfig {
+                  cipheringAlgorithm eea0,
+                  integrityProtAlgorithm eia2
+                }
+              }
+            }
+          }
+        }
+
+10:37:39.477 [RRC] UL 0001 01 DCCH: Security mode complete
+        {
+          message c1: securityModeComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions securityModeComplete-r8: {
+            }
+          }
+        }
+
+10:37:39.477 [RRC] DL 0001 01 DCCH: UE capability enquiry
+        {
+          message c1: ueCapabilityEnquiry: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: ueCapabilityEnquiry-r8: {
+              ue-CapabilityRequest {
+                eutra
+              }
+            }
+          }
+        }
+10:37:39.505 [RRC] UL 0001 01 DCCH: UE capability information
+        {
+          message c1: ueCapabilityInformation: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: ueCapabilityInformation-r8: {
+              ue-CapabilityRAT-ContainerList {
+                {
+                  rat-Type eutra,
+                  ueCapabilityRAT-Container {
+                    accessStratumRelease rel10,
+                    ue-Category 4,
+                    pdcp-Parameters {
+                      supportedROHC-Profiles {
+                        profile0x0001-r15 TRUE,
+                        profile0x0002-r15 TRUE,
+                        profile0x0003-r15 FALSE,
+                        profile0x0004-r15 FALSE,
+                        profile0x0006-r15 FALSE,
+                        profile0x0101-r15 FALSE,
+                        profile0x0102-r15 FALSE,
+                        profile0x0103-r15 FALSE,
+                        profile0x0104-r15 FALSE
+                      }
+                    },
+                    phyLayerParameters {
+                      ue-TxAntennaSelectionSupported FALSE,
+                      ue-SpecificRefSigsSupported FALSE
+                    },
+                    rf-Parameters {
+                      supportedBandListEUTRA {
+                        {
+                          bandEUTRA 1,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 2,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 3,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 4,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 5,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 7,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 8,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 17,
+                          halfDuplex FALSE
+                        },
+                        {
+                          bandEUTRA 20,
+                          halfDuplex FALSE
+                        }
+                      }
+                    },
+                    measParameters {
+                      bandListEUTRA {
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        },
+                        {
+                          interFreqBandList {
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps FALSE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            },
+                            {
+                              interFreqNeedForGaps TRUE
+                            }
+                          },
+                          interRAT-BandList {
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            },
+                            {
+                              interRAT-NeedForGaps TRUE
+                            }
+                          }
+                        }
+                      }
+                    },
+                    featureGroupIndicators  '7FCFFEBA'H /*
+                       2: PUCCH 2a/2b, abs TPC, RB alloc type 1 for PDSCH, Periodic CQI/PMI/RI reporting on PUCCH: Modes 2-0 and 2-1
+                       3: 5bit RLC UM, 7 bit PDCP SN
+                       4: Short DRX cycle
+                       5: Long DRX cycle, DRX Mac CE
+                       6: Prioritized bit rate
+                       7: RLC UM
+                       8: EUTRA to UTRA handover
+                       9: EUTRA to GERAN handover
+                      10: EUTRA to GERAN idle by CCO, connected by NACC
+                      13: Inter-frequency handover
+                      14: Event measurement reporting A4 and A5
+                      15: Inter-RAT Event B1
+                      16: Periodical measurement, reportStrongestCells
+                      17: Intra-frequency ANR features
+                      18: Inter-frequency ANR features
+                      19: Inter-RAT ANR features
+                      20: SRB1 and SRB2 for DCCH + 8x DRB
+                      21: freq hopping with N_sb > 1
+                      22: Measurement: event B2 UTRAN
+                      23: GERAN measurements, event B2
+                      25: Inter-frequency measurements and reporting in E-UTRA connected mode
+                      27: EUTRA RRC_CONNECTED to UTRAFDD or UTRA TDD CELL_DCH CS handover
+                      28: TTI bundling
+                      29: Semi-Persistent Scheduling
+                      31: MFBI
+                    */,
+                    interRAT-Parameters {
+                      utraFDD {
+                        supportedBandListUTRA-FDD {
+                          bandI,
+                          bandII,
+                          bandV,
+                          bandVIII
+                        }
+                      },
+                      geran {
+                        supportedBandListGERAN {
+                          gsm850,
+                          gsm900E,
+                          gsm1800,
+                          gsm1900
+                        },
+                        interRAT-PS-HO-ToGERAN FALSE
+                      }
+                    },
+                    nonCriticalExtension {
+                      phyLayerParameters-v920 {
+                      },
+                      interRAT-ParametersGERAN-v920 {
+                        e-RedirectionGERAN-r9 supported
+                      },
+                      interRAT-ParametersUTRA-v920 {
+                        e-RedirectionUTRA-r9 supported
+                      },
+                      csg-ProximityIndicationParameters-r9 {
+                        utran-ProximityIndication-r9 supported
+                      },
+                      neighCellSI-AcquisitionParameters-r9 {
+                      },
+                      son-Parameters-r9 {
+                        rach-Report-r9 supported
+                      },
+                      nonCriticalExtension {
+                        lateNonCriticalExtension {
+                          featureGroupIndRel9Add-r9 'C0000000'H
+                        },
+                        nonCriticalExtension {
+                          ue-Category-v1020 6,
+                          rf-Parameters-v1020 {
+                            supportedBandCombination-r10 {
+                              {
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 20,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 8,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 7,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 5,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 c,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 5,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 7,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 20,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 7,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 8,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 7,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 c,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 7,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 8,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 20,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 7,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                {
+                                  bandEUTRA-r10 20,
+                                  bandParametersUL-r10 {
+                                    {
+                                      ca-BandwidthClassUL-r10 a
+                                    }
+                                  },
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                },
+                                {
+                                  bandEUTRA-r10 3,
+                                  bandParametersDL-r10 {
+                                    {
+                                      ca-BandwidthClassDL-r10 a,
+                                      supportedMIMO-CapabilityDL-r10 twoLayers
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          measParameters-v1020 {
+                            bandCombinationListEUTRA-r10 {
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              },
+                              {
+                                interFreqBandList {
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  },
+                                  {
+                                    interFreqNeedForGaps TRUE
+                                  }
+                                },
+                                interRAT-BandList {
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  },
+                                  {
+                                    interRAT-NeedForGaps TRUE
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          featureGroupIndRel10-r10 '40240000'H,
+                          ue-BasedNetwPerfMeasParameters-r10 {
+                            loggedMeasurementsIdle-r10 supported
+                          },
+                          nonCriticalExtension {
+                            rf-Parameters-v1060 {
+                              supportedBandCombinationExt-r10 {
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                },
+                                {
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'E0000000'H
+                                },
+                                {
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'E0000000'H
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                },
+                                {
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                },
+                                {
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                },
+                                {
+                                  supportedBandwidthCombinationSet-r10 'C0000000'H
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:37:39.505 [RRC] DL 0001 01 DCCH: RRC connection reconfiguration
+        {
+          message c1: rrcConnectionReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReconfiguration-r8: {
+              dedicatedInfoNASList {
+                '27009D93CA020742023E060009F107000100555212C101051703696D73066D6E63303730066D636339303104677072730D032001046830000001C0A8040227288080210A0300000A810608080808000D040808080800031020014860486000000000000000008888500BF609F10780010185D82BC21309F10700012305F485D82BC23408031F19F1031F11F2640101'H
+              },
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 2,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                drb-ToAddModList {
+                  {
+                    eps-BearerIdentity 5,
+                    drb-Identity 1,
+                    pdcp-Config {
+                      discardTimer infinity,
+                      rlc-AM {
+                        statusReportRequired TRUE
+                      },
+                      headerCompression notUsed: NULL
+                    },
+                    rlc-Config am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms80,
+                        pollPDU p64,
+                        pollByte kB125,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms35,
+                        t-StatusProhibit ms10
+                      }
+                    },
+                    logicalChannelIdentity 3,
+                    logicalChannelConfig {
+                      ul-SpecificParameters {
+                        priority 6,
+                        prioritisedBitRate kBps8,
+                        bucketSizeDuration ms100,
+                        logicalChannelGroup 1
+                      }
+                    }
+                  }
+                },
+                physicalConfigDedicated {
+                  cqi-ReportConfig-r10 {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic-r10 setup: {
+                      cqi-PUCCH-ResourceIndex-r10 0,
+                      cqi-pmi-ConfigIndex 38,
+                      cqi-FormatIndicatorPeriodic-r10 widebandCQI-r10: {
+                      },
+                      simultaneousAckNackAndCQI TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:37:39.536 [RRC] UL 0001 01 DCCH: RRC connection reconfiguration complete
+        {
+          message c1: rrcConnectionReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReconfigurationComplete-r8: {
+            }
+          }
+        }
+
+10:37:39.557 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '27903B55A302074300035200C2'H
+            }
+          }
+        }
+
+10:37:39.557 [RRC] DL 0001 01 DCCH: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: dlInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '27D9E9A13A030761431081C176589E9EBFCD7490B34CBFBFE56B450981C176589E9EBFCD7446004712212201739300490100'H
+            }
+          }
+        }
+
+10:38:09.993 [RRC] UL 0002 01 CCCH: RRC connection reestablishment request
+        {
+          message c1: rrcConnectionReestablishmentRequest: {
+            criticalExtensions rrcConnectionReestablishmentRequest-r8: {
+              ue-Identity {
+                c-RNTI '003D'H,
+                physCellId 1,
+                shortMAC-I '118F'H
+              },
+              reestablishmentCause otherFailure,
+              spare '00'B
+            }
+          }
+        }
+
+10:38:09.993 [RRC] DL 0002 01 CCCH: RRC connection reestablishment
+        {
+          message c1: rrcConnectionReestablishment: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReestablishment-r8: {
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                mac-MainConfig explicitValue: {
+                  ul-SCH-Config {
+                    maxHARQ-Tx n5,
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320,
+                    ttiBundling FALSE
+                  },
+                  drx-Config release: NULL,
+                  timeAlignmentTimerDedicated infinity,
+                  phr-Config setup: {
+                    periodicPHR-Timer sf500,
+                    prohibitPHR-Timer sf200,
+                    dl-PathlossChange dB3
+                  }
+                },
+                physicalConfigDedicated {
+                  pdsch-ConfigDedicated {
+                    p-a dB0
+                  },
+                  pucch-ConfigDedicated {
+                    ackNackRepetition release: NULL
+                  },
+                  pusch-ConfigDedicated {
+                    betaOffset-ACK-Index 9,
+                    betaOffset-RI-Index 6,
+                    betaOffset-CQI-Index 6
+                  },
+                  uplinkPowerControlDedicated {
+                    p0-UE-PUSCH 0,
+                    deltaMCS-Enabled en0,
+                    accumulationEnabled TRUE,
+                    p0-UE-PUCCH 0,
+                    pSRS-Offset 3
+                  },
+                  cqi-ReportConfig {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic setup: {
+                      cqi-PUCCH-ResourceIndex 0,
+                      cqi-pmi-ConfigIndex 37,
+                      cqi-FormatIndicatorPeriodic widebandCQI: NULL,
+                      simultaneousAckNackAndCQI FALSE
+                    }
+                  },
+                  soundingRS-UL-ConfigDedicated setup: {
+                    srs-Bandwidth bw1,
+                    srs-HoppingBandwidth hbw0,
+                    freqDomainPosition 0,
+                    duration TRUE,
+                    srs-ConfigIndex 42,
+                    transmissionComb 0,
+                    cyclicShift cs5
+                  },
+                  schedulingRequestConfig setup: {
+                    sr-PUCCH-ResourceIndex 0,
+                    sr-ConfigIndex 16,
+                    dsr-TransMax n64
+                  }
+                }
+              },
+              nextHopChainingCount 0
+            }
+          }
+        }
+
+10:38:10.017 [RRC] UL 0002 01 DCCH: RRC connection reestablishment complete
+        {
+          message c1: rrcConnectionReestablishmentComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReestablishmentComplete-r8: {
+              nonCriticalExtension {
+                rlf-InfoAvailable-r9 true
+              }
+            }
+          }
+        }
+
+10:38:10.017 [RRC] -  0002 01 Changing UE_ID to 0x1
+10:38:10.018 [RRC] DL 0001 01 DCCH: RRC connection reconfiguration
+        {
+          message c1: rrcConnectionReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReconfiguration-r8: {
+              radioResourceConfigDedicated {
+                physicalConfigDedicated {
+                  cqi-ReportConfig-r10 {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic-r10 setup: {
+                      cqi-PUCCH-ResourceIndex-r10 0,
+                      cqi-pmi-ConfigIndex 37,
+                      cqi-FormatIndicatorPeriodic-r10 widebandCQI-r10: {
+                      },
+                      simultaneousAckNackAndCQI TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:38:10.037 [RRC] UL 0001 01 DCCH: RRC connection reconfiguration complete
+        {
+          message c1: rrcConnectionReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReconfigurationComplete-r8: {
+            }
+          }
+        }
+
+10:38:26.793 [RRC] UL 0003 01 CCCH: RRC connection reestablishment request
+        {
+          message c1: rrcConnectionReestablishmentRequest: {
+            criticalExtensions rrcConnectionReestablishmentRequest-r8: {
+              ue-Identity {
+                c-RNTI '003E'H,
+                physCellId 1,
+                shortMAC-I 'DA64'H
+              },
+              reestablishmentCause otherFailure,
+              spare '00'B
+            }
+          }
+        }
+
+10:38:26.793 [RRC] DL 0003 01 CCCH: RRC connection reestablishment
+        {
+          message c1: rrcConnectionReestablishment: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReestablishment-r8: {
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                mac-MainConfig explicitValue: {
+                  ul-SCH-Config {
+                    maxHARQ-Tx n5,
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320,
+                    ttiBundling FALSE
+                  },
+                  drx-Config release: NULL,
+                  timeAlignmentTimerDedicated infinity,
+                  phr-Config setup: {
+                    periodicPHR-Timer sf500,
+                    prohibitPHR-Timer sf200,
+                    dl-PathlossChange dB3
+                  }
+                },
+                physicalConfigDedicated {
+                  pdsch-ConfigDedicated {
+                    p-a dB0
+                  },
+                  pucch-ConfigDedicated {
+                    ackNackRepetition release: NULL
+                  },
+                  pusch-ConfigDedicated {
+                    betaOffset-ACK-Index 9,
+                    betaOffset-RI-Index 6,
+                    betaOffset-CQI-Index 6
+                  },
+                  uplinkPowerControlDedicated {
+                    p0-UE-PUSCH 0,
+                    deltaMCS-Enabled en0,
+                    accumulationEnabled TRUE,
+                    p0-UE-PUCCH 0,
+                    pSRS-Offset 3
+                  },
+                  cqi-ReportConfig {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic setup: {
+                      cqi-PUCCH-ResourceIndex 0,
+                      cqi-pmi-ConfigIndex 38,
+                      cqi-FormatIndicatorPeriodic widebandCQI: NULL,
+                      simultaneousAckNackAndCQI FALSE
+                    }
+                  },
+                  soundingRS-UL-ConfigDedicated setup: {
+                    srs-Bandwidth bw1,
+                    srs-HoppingBandwidth hbw0,
+                    freqDomainPosition 0,
+                    duration TRUE,
+                    srs-ConfigIndex 37,
+                    transmissionComb 0,
+                    cyclicShift cs5
+                  },
+                  schedulingRequestConfig setup: {
+                    sr-PUCCH-ResourceIndex 0,
+                    sr-ConfigIndex 15,
+                    dsr-TransMax n64
+                  }
+                }
+              },
+              nextHopChainingCount 0
+            }
+          }
+        }
+
+10:38:26.816 [RRC] UL 0003 01 DCCH: RRC connection reestablishment complete
+        {
+          message c1: rrcConnectionReestablishmentComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReestablishmentComplete-r8: {
+              nonCriticalExtension {
+                rlf-InfoAvailable-r9 true
+              }
+            }
+          }
+        }
+
+10:38:26.816 [RRC] -  0003 01 Changing UE_ID to 0x1
+10:38:26.817 [RRC] DL 0001 01 DCCH: RRC connection reconfiguration
+        {
+          message c1: rrcConnectionReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReconfiguration-r8: {
+              radioResourceConfigDedicated {
+                physicalConfigDedicated {
+                  cqi-ReportConfig-r10 {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic-r10 setup: {
+                      cqi-PUCCH-ResourceIndex-r10 0,
+                      cqi-pmi-ConfigIndex 38,
+                      cqi-FormatIndicatorPeriodic-r10 widebandCQI-r10: {
+                      },
+                      simultaneousAckNackAndCQI TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:38:26.836 [RRC] UL 0001 01 DCCH: RRC connection reconfiguration complete
+        {
+          message c1: rrcConnectionReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReconfigurationComplete-r8: {
+            }
+          }
+        }
+10:38:33.354 [RRC] UL 0004 01 CCCH: RRC connection reestablishment request
+        {
+          message c1: rrcConnectionReestablishmentRequest: {
+            criticalExtensions rrcConnectionReestablishmentRequest-r8: {
+              ue-Identity {
+                c-RNTI '003F'H,
+                physCellId 1,
+                shortMAC-I 'CEE2'H
+              },
+              reestablishmentCause otherFailure,
+              spare '00'B
+            }
+          }
+        }
+
+10:38:33.354 [RRC] DL 0004 01 CCCH: RRC connection reestablishment
+        {
+          message c1: rrcConnectionReestablishment: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReestablishment-r8: {
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                mac-MainConfig explicitValue: {
+                  ul-SCH-Config {
+                    maxHARQ-Tx n5,
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320,
+                    ttiBundling FALSE
+                  },
+                  drx-Config release: NULL,
+                  timeAlignmentTimerDedicated infinity,
+                  phr-Config setup: {
+                    periodicPHR-Timer sf500,
+                    prohibitPHR-Timer sf200,
+                    dl-PathlossChange dB3
+                  }
+                },
+                physicalConfigDedicated {
+                  pdsch-ConfigDedicated {
+                    p-a dB0
+                  },
+                  pucch-ConfigDedicated {
+                    ackNackRepetition release: NULL
+                  },
+                  pusch-ConfigDedicated {
+                    betaOffset-ACK-Index 9,
+                    betaOffset-RI-Index 6,
+                    betaOffset-CQI-Index 6
+                  },
+                  uplinkPowerControlDedicated {
+                    p0-UE-PUSCH 0,
+                    deltaMCS-Enabled en0,
+                    accumulationEnabled TRUE,
+                    p0-UE-PUCCH 0,
+                    pSRS-Offset 3
+                  },
+                  cqi-ReportConfig {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic setup: {
+                      cqi-PUCCH-ResourceIndex 0,
+                      cqi-pmi-ConfigIndex 37,
+                      cqi-FormatIndicatorPeriodic widebandCQI: NULL,
+                      simultaneousAckNackAndCQI FALSE
+                    }
+                  },
+                  soundingRS-UL-ConfigDedicated setup: {
+                    srs-Bandwidth bw1,
+                    srs-HoppingBandwidth hbw0,
+                    freqDomainPosition 0,
+                    duration TRUE,
+                    srs-ConfigIndex 42,
+                    transmissionComb 0,
+                    cyclicShift cs6
+                  },
+                  schedulingRequestConfig setup: {
+                    sr-PUCCH-ResourceIndex 0,
+                    sr-ConfigIndex 16,
+                    dsr-TransMax n64
+                  }
+                }
+              },
+              nextHopChainingCount 0
+            }
+          }
+        }
+
+10:38:33.378 [RRC] UL 0004 01 DCCH: RRC connection reestablishment complete
+        {
+          message c1: rrcConnectionReestablishmentComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReestablishmentComplete-r8: {
+              nonCriticalExtension {
+                rlf-InfoAvailable-r9 true
+              }
+            }
+          }
+        }
+10:38:33.378 [RRC] -  0004 01 Changing UE_ID to 0x1
+10:38:33.378 [RRC] DL 0001 01 DCCH: RRC connection reconfiguration
+        {
+          message c1: rrcConnectionReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReconfiguration-r8: {
+              radioResourceConfigDedicated {
+                physicalConfigDedicated {
+                  cqi-ReportConfig-r10 {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic-r10 setup: {
+                      cqi-PUCCH-ResourceIndex-r10 0,
+                      cqi-pmi-ConfigIndex 37,
+                      cqi-FormatIndicatorPeriodic-r10 widebandCQI-r10: {
+                      },
+                      simultaneousAckNackAndCQI TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:38:33.398 [RRC] UL 0001 01 DCCH: RRC connection reconfiguration complete
+        {
+          message c1: rrcConnectionReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReconfigurationComplete-r8: {
+            }
+          }
+        }
+
+10:38:34.114 [RRC] UL 0005 01 CCCH: RRC connection reestablishment request
+        {
+          message c1: rrcConnectionReestablishmentRequest: {
+            criticalExtensions rrcConnectionReestablishmentRequest-r8: {
+              ue-Identity {
+                c-RNTI '0040'H,
+                physCellId 1,
+                shortMAC-I 'C9DB'H
+              },
+              reestablishmentCause otherFailure,
+              spare '00'B
+            }
+          }
+        }
+
+10:38:34.114 [RRC] DL 0005 01 CCCH: RRC connection reestablishment
+        {
+          message c1: rrcConnectionReestablishment: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReestablishment-r8: {
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                mac-MainConfig explicitValue: {
+                  ul-SCH-Config {
+                    maxHARQ-Tx n5,
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320,
+                    ttiBundling FALSE
+                  },
+                  drx-Config release: NULL,
+                  timeAlignmentTimerDedicated infinity,
+                  phr-Config setup: {
+                    periodicPHR-Timer sf500,
+                    prohibitPHR-Timer sf200,
+                    dl-PathlossChange dB3
+                  }
+                },
+                physicalConfigDedicated {
+                  pdsch-ConfigDedicated {
+                    p-a dB0
+                  },
+                  pucch-ConfigDedicated {
+                    ackNackRepetition release: NULL
+                  },
+                  pusch-ConfigDedicated {
+                    betaOffset-ACK-Index 9,
+                    betaOffset-RI-Index 6,
+                    betaOffset-CQI-Index 6
+                  },
+                  uplinkPowerControlDedicated {
+                    p0-UE-PUSCH 0,
+                    deltaMCS-Enabled en0,
+                    accumulationEnabled TRUE,
+                    p0-UE-PUCCH 0,
+                    pSRS-Offset 3
+                  },
+                  cqi-ReportConfig {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic setup: {
+                      cqi-PUCCH-ResourceIndex 0,
+                      cqi-pmi-ConfigIndex 38,
+                      cqi-FormatIndicatorPeriodic widebandCQI: NULL,
+                      simultaneousAckNackAndCQI FALSE
+                    }
+                  },
+                  soundingRS-UL-ConfigDedicated setup: {
+                    srs-Bandwidth bw1,
+                    srs-HoppingBandwidth hbw0,
+                    freqDomainPosition 0,
+                    duration TRUE,
+                    srs-ConfigIndex 37,
+                    transmissionComb 0,
+                    cyclicShift cs7
+                  },
+                  schedulingRequestConfig setup: {
+                    sr-PUCCH-ResourceIndex 0,
+                    sr-ConfigIndex 15,
+                    dsr-TransMax n64
+                  }
+                }
+              },
+              nextHopChainingCount 0
+            }
+          }
+        }
+
+10:38:34.157 [RRC] UL 0005 01 DCCH: RRC connection reestablishment complete
+        {
+          message c1: rrcConnectionReestablishmentComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReestablishmentComplete-r8: {
+              nonCriticalExtension {
+                rlf-InfoAvailable-r9 true
+              }
+            }
+          }
+        }
+
+10:38:34.157 [RRC] -  0005 01 Changing UE_ID to 0x1
+10:38:34.157 [RRC] DL 0001 01 DCCH: RRC connection reconfiguration
+        {
+          message c1: rrcConnectionReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReconfiguration-r8: {
+              radioResourceConfigDedicated {
+                physicalConfigDedicated {
+                  cqi-ReportConfig-r10 {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic-r10 setup: {
+                      cqi-PUCCH-ResourceIndex-r10 0,
+                      cqi-pmi-ConfigIndex 38,
+                      cqi-FormatIndicatorPeriodic-r10 widebandCQI-r10: {
+                      },
+                      simultaneousAckNackAndCQI TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:38:34.177 [RRC] UL 0001 01 DCCH: RRC connection reconfiguration complete
+        {
+          message c1: rrcConnectionReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReconfigurationComplete-r8: {
+            }
+          }
+        }
+
+10:38:49.085 [RRC] UL 0006 01 CCCH: RRC connection reestablishment request
+        {
+          message c1: rrcConnectionReestablishmentRequest: {
+            criticalExtensions rrcConnectionReestablishmentRequest-r8: {
+              ue-Identity {
+                c-RNTI '0041'H,
+                physCellId 1,
+                shortMAC-I 'C7A2'H
+              },
+              reestablishmentCause otherFailure,
+              spare '00'B
+            }
+          }
+        }
+
+10:38:49.085 [RRC] DL 0006 01 CCCH: RRC connection reestablishment
+        {
+          message c1: rrcConnectionReestablishment: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReestablishment-r8: {
+              radioResourceConfigDedicated {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1,
+                    rlc-Config explicitValue: am: {
+                      ul-AM-RLC {
+                        t-PollRetransmit ms60,
+                        pollPDU pInfinity,
+                        pollByte kBinfinity,
+                        maxRetxThreshold t32
+                      },
+                      dl-AM-RLC {
+                        t-Reordering ms45,
+                        t-StatusProhibit ms0
+                      }
+                    },
+                    logicalChannelConfig defaultValue: NULL
+                  }
+                },
+                mac-MainConfig explicitValue: {
+                  ul-SCH-Config {
+                    maxHARQ-Tx n5,
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320,
+                    ttiBundling FALSE
+                  },
+                  drx-Config release: NULL,
+                  timeAlignmentTimerDedicated infinity,
+                  phr-Config setup: {
+                    periodicPHR-Timer sf500,
+                    prohibitPHR-Timer sf200,
+                    dl-PathlossChange dB3
+                  }
+                },
+                physicalConfigDedicated {
+                  pdsch-ConfigDedicated {
+                    p-a dB0
+                  },
+                  pucch-ConfigDedicated {
+                    ackNackRepetition release: NULL
+                  },
+                  pusch-ConfigDedicated {
+                    betaOffset-ACK-Index 9,
+                    betaOffset-RI-Index 6,
+                    betaOffset-CQI-Index 6
+                  },
+                  uplinkPowerControlDedicated {
+                    p0-UE-PUSCH 0,
+                    deltaMCS-Enabled en0,
+                    accumulationEnabled TRUE,
+                    p0-UE-PUCCH 0,
+                    pSRS-Offset 3
+                  },
+                  cqi-ReportConfig {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic setup: {
+                      cqi-PUCCH-ResourceIndex 0,
+                      cqi-pmi-ConfigIndex 37,
+                      cqi-FormatIndicatorPeriodic widebandCQI: NULL,
+                      simultaneousAckNackAndCQI FALSE
+                    }
+                  },
+                  soundingRS-UL-ConfigDedicated setup: {
+                    srs-Bandwidth bw1,
+                    srs-HoppingBandwidth hbw0,
+                    freqDomainPosition 0,
+                    duration TRUE,
+                    srs-ConfigIndex 42,
+                    transmissionComb 0,
+                    cyclicShift cs5
+                  },
+                  schedulingRequestConfig setup: {
+                    sr-PUCCH-ResourceIndex 0,
+                    sr-ConfigIndex 16,
+                    dsr-TransMax n64
+                  }
+                }
+              },
+              nextHopChainingCount 0
+            }
+          }
+        }
+
+10:38:49.119 [RRC] UL 0006 01 DCCH: RRC connection reestablishment complete
+        {
+          message c1: rrcConnectionReestablishmentComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReestablishmentComplete-r8: {
+              nonCriticalExtension {
+                rlf-InfoAvailable-r9 true
+              }
+            }
+          }
+        }
+
+10:38:49.119 [RRC] -  0006 01 Changing UE_ID to 0x1
+10:38:49.119 [RRC] DL 0001 01 DCCH: RRC connection reconfiguration
+        {
+          message c1: rrcConnectionReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionReconfiguration-r8: {
+              radioResourceConfigDedicated {
+                physicalConfigDedicated {
+                  cqi-ReportConfig-r10 {
+                    nomPDSCH-RS-EPRE-Offset 0,
+                    cqi-ReportPeriodic-r10 setup: {
+                      cqi-PUCCH-ResourceIndex-r10 0,
+                      cqi-pmi-ConfigIndex 37,
+                      cqi-FormatIndicatorPeriodic-r10 widebandCQI-r10: {
+                      },
+                      simultaneousAckNackAndCQI TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+10:38:49.139 [RRC] UL 0001 01 DCCH: RRC connection reconfiguration complete
+        {
+          message c1: rrcConnectionReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcConnectionReconfigurationComplete-r8: {
+            }
+          }
+        }
+10:38:52.579 [RRC] UL 0001 01 DCCH: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions c1: ulInformationTransfer-r8: {
+              dedicatedInfoType dedicatedInfoNAS: '27268F09430307455B0BF609F10780010185D82BC2'H
+            }
+          }
+        }
+
+10:38:52.580 [RRC] DL 0001 01 DCCH: RRC connection release
+        {
+          message c1: rrcConnectionRelease: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions c1: rrcConnectionRelease-r8: {
+              releaseCause other
+            }
+          }
+        }

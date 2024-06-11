@@ -1,6 +1,6 @@
 //! Frontend module
 use crate::panels::{
-    file_upload::FileHandler, logical_channels::LogicalChannels, message::MessageBox, trame_manager::TrameManager,
+    file_upload::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, trame_manager::TrameManager,
     PanelController,
 };
 use crate::set_open;
