@@ -3,7 +3,7 @@ use egui::{text::LayoutJob, Color32, TextFormat, Ui};
 use std::collections::BTreeSet;
 use tramex_tools::data::Trace;
 #[cfg(feature = "types_lte_3gpp")]
-use types_lte_3gpp::asn1_codecs::{uper::UperCodec, PerCodecData};
+use asn1_codecs::{uper::UperCodec, PerCodecData};
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::uper::spec_rrc;
 

@@ -22,7 +22,7 @@ categories = ["visualization", "network-programming"]
 [features]
 default = ["websocket"]
 debug = ["tramex-tools/debug"]
-types_lte_3gpp = ["dep:types_lte_3gpp"]
+types_lte_3gpp = ["dep:types_lte_3gpp", "dep:asn1-codecs"]
 
 websocket = ["tramex-tools/websocket"]
 
@@ -48,6 +48,7 @@ poll-promise = { version = "0.3.0", features = ["web"] }
 tramex-tools = { path = "../tramex-tools" }
 ehttp = { version = "0.5.0" }
 types_lte_3gpp = { version = "1.0.4", features = ["rrc"], optional = true }
+asn1-codecs = { version = "0.6.1", optional = true }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
