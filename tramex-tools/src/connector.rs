@@ -45,14 +45,14 @@ impl Connector {
 
     /// Clear data of connector
     pub fn clear_data(&mut self) {
-        self.data = Data::default();
+        self.data.clear();
         self.available = false;
     }
 
     /// Clear connector interface
     pub fn clear_interface(&mut self) {
         self.interface = None;
-        self.available = false;
+        self.clear_data();
     }
 
     /// Connect to a websocket

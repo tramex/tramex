@@ -24,6 +24,12 @@ impl Data {
         }
         self.current_index != index
     }
+
+    /// clear the data
+    pub fn clear(&mut self) {
+        self.events.clear();
+        self.current_index = 0;
+    }
 }
 
 impl Default for Data {
