@@ -26,9 +26,6 @@ pub struct Connector {
 
     /// Asking size max
     pub asking_size_max: u64,
-
-    /// Url
-    pub url: String,
 }
 
 impl Connector {
@@ -39,20 +36,19 @@ impl Connector {
             data: Data::default(),
             available: false,
             asking_size_max: 1024,
-            url: "ws://127.0.0.1:9001".to_owned(),
         }
     }
 
     /// Clear data of connector
     pub fn clear_data(&mut self) {
-        self.data = Data::default();
+        self.data.clear();
         self.available = false;
     }
 
     /// Clear connector interface
     pub fn clear_interface(&mut self) {
         self.interface = None;
-        self.available = false;
+        self.clear_data();
     }
 
     /// Connect to a websocket
@@ -127,7 +123,7 @@ impl Connector {
         match &mut self.interface {
             Some(inter) => inter.get_more_data(_layers_list, self.asking_size_max, &mut self.data, &mut self.available),
             None => {
-                log::debug!("Error: Interface not set");
+                log::debug!("Error: get_more_data() Interface not set");
                 Ok(())
             }
         }
@@ -140,7 +136,7 @@ impl Connector {
         match &mut self.interface {
             Some(inter) => inter.try_recv(&mut self.data, &mut self.available),
             None => {
-                log::debug!("Error: Interface not set");
+                log::debug!("Error: try_recv() Interface not set");
                 Ok(())
             }
         }

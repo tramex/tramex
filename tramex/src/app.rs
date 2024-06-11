@@ -1,7 +1,6 @@
 //! The main application state and logic.
 
 use eframe::egui::{self};
-use egui::special_emojis::{OS_APPLE, OS_LINUX, OS_WINDOWS};
 use tramex_tools::errors::TramexError;
 
 use crate::frontend::FrontEnd;
@@ -141,18 +140,15 @@ impl TramexApp {
                     }
                     ui.separator();
                     ui.add_space(12.0);
-                    ui.label(format!(
-                        "egui is an immediate mode GUI library written in Rust. egui runs both on the web and natively on {}{}{}. \
-                        On the web it is compiled to WebAssembly and rendered with WebGL.{}",
-                        OS_APPLE,
-                        OS_LINUX,
-                        OS_WINDOWS,
-                        if cfg!(target_arch = "wasm32") {
-                            " Everything you see is rendered as textured triangles. There is no DOM, HTML, JS or CSS. Just Rust."
-                        } else {
-                            ""
-                        }
-                    ));
+                    ui.vertical_centered(|ui| {
+                        ui.label("Learn more about tramex here: ");
+                        make_hyperlink(
+                            ui,
+                            "https://tramex.github.io/tramex/docs/",
+                            "https://tramex.github.io/tramex/docs/",
+                            true,
+                        );
+                    });
                 });
             });
     }
@@ -164,7 +160,7 @@ impl TramexApp {
             .resizable([true, true])
             .show(ctx, |ui| {
                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    self.frontend.ui_about(ui);
+                    self.frontend.ui_options(ui);
                 });
             });
     }

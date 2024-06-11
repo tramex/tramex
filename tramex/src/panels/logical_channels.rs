@@ -51,16 +51,46 @@ impl LogicalChannels {
                     physical: PhysicalChannelsEnum::PBCH,
                 });
             }
-            ("BCCH", "SIB1") => {
+            ("BCCH", "SIB1") | ("BCCH", "SIB") => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::BCCH,
                     transport: TransportChannelsEnum::DL_SCH,
                     physical: PhysicalChannelsEnum::PDSCH,
                 });
             }
-            ("BCCH", "SIB") => {
+            ("CCCH", "RRC connection request") | ("CCCH", "RRC connection reestablishment request") => {
                 self.state = Some(ChannelState {
-                    logical: LogicalChannelsEnum::BCCH,
+                    logical: LogicalChannelsEnum::UL_CCCH,
+                    transport: TransportChannelsEnum::RACH,
+                    physical: PhysicalChannelsEnum::PRACH,
+                });
+            }
+            ("CCCH", "RRC connection setup") | ("CCCH", "RRC connection reestablishment") => {
+                self.state = Some(ChannelState {
+                    logical: LogicalChannelsEnum::DL_CCCH,
+                    transport: TransportChannelsEnum::DL_SCH,
+                    physical: PhysicalChannelsEnum::PDSCH,
+                });
+            }
+            ("DCCH", "RRC connection setup complete")
+            | ("DCCH", "UL information transfer")
+            | ("DCCH", "Security mode complete")
+            | ("DCCH", "UE capability information")
+            | ("DCCH", "RRC connection reconfiguration complete")
+            | ("DCCH", "RRC connection reestablishment complete") => {
+                self.state = Some(ChannelState {
+                    logical: LogicalChannelsEnum::UL_DCCH,
+                    transport: TransportChannelsEnum::UL_SCH,
+                    physical: PhysicalChannelsEnum::PUSCH,
+                });
+            }
+            ("DCCH", "DL information transfer")
+            | ("DCCH", "Security mode command")
+            | ("DCCH", "UE capability enquiry")
+            | ("DCCH", "RRC connection reconfiguration")
+            | ("DCCH", "RRC connection release") => {
+                self.state = Some(ChannelState {
+                    logical: LogicalChannelsEnum::DL_DCCH,
                     transport: TransportChannelsEnum::DL_SCH,
                     physical: PhysicalChannelsEnum::PDSCH,
                 });

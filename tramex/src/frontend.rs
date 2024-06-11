@@ -1,4 +1,8 @@
 //! Frontend module
+#[cfg(feature = "websocket")]
+use crate::panels::handler_ws::WsHandler;
+use crate::panels::Handler;
+
 use crate::panels::{
     file_upload::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
     trame_manager::TrameManager, PanelController,
@@ -40,7 +44,7 @@ pub struct FrontEnd {
 
     #[serde(skip)]
     /// File upload
-    file_upload: Option<FileHandler>,
+    handler: Option<Box<dyn Handler>>,
 
     /// Trame manager
     trame_manager: TrameManager,
@@ -60,7 +64,7 @@ impl Default for FrontEnd {
             windows: Vec::new(),
             open_menu_connector: true,
             radio_choice: Choice::default(),
-            file_upload: None,
+            handler: None,
             trame_manager: TrameManager::new(),
             url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
         }
@@ -91,9 +95,15 @@ impl FrontEnd {
     }
 
     /// Show tiny ui in about panel
-    pub fn ui_about(&mut self, ui: &mut egui::Ui) {
-        ui.label("Index of files URL:");
-        ui.add(egui::TextEdit::singleline(&mut self.url_files));
+    pub fn ui_options(&mut self, ui: &mut egui::Ui) {
+        match &mut self.handler {
+            Some(handler) => {
+                handler.ui_options(ui);
+                ui.label("Index of files URL:");
+                ui.add(egui::TextEdit::singleline(&mut self.url_files));
+            }
+            None => {}
+        }
     }
 
     /// Menu bar
@@ -112,50 +122,6 @@ impl FrontEnd {
                 });
             });
         }
-    }
-
-    /// Show the URL
-    #[cfg(feature = "websocket")]
-    pub fn show_url(&mut self, ui: &mut Ui, new_ctx: egui::Context) -> Result<(), TramexError> {
-        let connector = &mut self.connector;
-
-        let current_url = connector.url.clone();
-
-        if let Some(Interface::Ws(interface_ws)) = &mut connector.interface {
-            ui.label("URL:");
-            ui.label(&current_url);
-            if ui.button("Close").clicked() {
-                // close connection
-                match interface_ws.close_impl() {
-                    Ok(_) => {
-                        connector.clear_interface();
-                    }
-                    Err(err) => {
-                        return Err(err);
-                    }
-                }
-            }
-        }
-
-        match &connector.interface {
-            Some(Interface::Ws(interface_ws)) => {
-                if interface_ws.connecting {
-                    ui.label("Connecting...");
-                    ui.spinner();
-                }
-            }
-            _ => {
-                if (ui.text_edit_singleline(&mut connector.url).lost_focus()
-                    && ui.input(|i| i.key_pressed(egui::Key::Enter)))
-                    || ui.button("Connect").clicked()
-                {
-                    let wakeup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
-                    let local_url = connector.url.clone();
-                    connector.connect(&local_url, wakeup_fn)?
-                }
-            }
-        }
-        Ok(())
     }
 
     /// Show the UI connector
@@ -180,42 +146,22 @@ impl FrontEnd {
                         ui.vertical(|ui| match &self.radio_choice {
                             #[cfg(feature = "websocket")]
                             Choice::WebSocket => {
-                                if let Err(err) = self.show_url(ui, ctx.clone()) {
-                                    error = Some(err);
+                                if save != self.radio_choice || self.handler.is_none() {
+                                    self.handler = Some(Box::new(WsHandler::new()));
+                                }
+                                if let Some(handler) = &mut self.handler {
+                                    if let Err(err) = handler.ui(ui, &mut self.connector, ctx.clone()) {
+                                        error = Some(err);
+                                    }
                                 }
                             }
                             Choice::File => {
-                                if save != self.radio_choice || self.file_upload.is_none() {
-                                    self.file_upload = Some(FileHandler::new(&self.url_files));
+                                if save != self.radio_choice || self.handler.is_none() {
+                                    self.handler = Some(Box::new(FileHandler::new(&self.url_files)));
                                 }
-                                if let Some(file_handle) = &mut self.file_upload {
-                                    let is_file_path = file_handle.get_picket_path().is_some();
-                                    ui.add_enabled_ui(!is_file_path, |ui| match file_handle.ui(ui) {
-                                        Ok(bo) => {
-                                            if bo && self.connector.interface.is_none() {
-                                                match file_handle.get_result() {
-                                                    Ok(curr_file) => {
-                                                        self.connector.set_file(curr_file);
-                                                        file_handle.clear();
-                                                    }
-                                                    Err(err) => {
-                                                        log::error!("Error in get_result() {:?}", err);
-                                                        error = Some(err);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Err(err) => {
-                                            log::error!("Error in file_handle {:?}", err);
-                                            error = Some(err);
-                                            file_handle.reset();
-                                            self.connector.clear_data();
-                                        }
-                                    });
-                                    if is_file_path && ui.button("Close").on_hover_text("Close file").clicked() {
-                                        file_handle.reset();
-                                        self.connector.clear_data();
-                                        self.connector.clear_interface();
+                                if let Some(file_handle) = &mut self.handler {
+                                    if let Err(err) = file_handle.ui(ui, &mut self.connector, ctx.clone()) {
+                                        error = Some(err);
                                     }
                                 }
                             }
@@ -241,9 +187,11 @@ impl FrontEnd {
 
     /// Show the UI
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
-        let mut error_to_return = None;
-        if let Err(err) = self.connector.try_recv() {
-            error_to_return = Some(err);
+        let mut error_to_return: Option<TramexError> = None;
+        if self.connector.interface.is_some() {
+            if let Err(err) = self.connector.try_recv() {
+                error_to_return = Some(err);
+            }
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.connector.available {
