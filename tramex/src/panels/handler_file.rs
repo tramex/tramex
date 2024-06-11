@@ -5,6 +5,8 @@ use eframe::egui;
 use poll_promise::Promise;
 use tramex_tools::{errors::TramexError, interface::interface_file::file_handler::File};
 
+use super::Handler;
+
 #[derive(Debug, serde::Deserialize)]
 /// Item to show in the file list
 struct Item {
@@ -27,6 +29,9 @@ pub struct FileHandler {
     #[serde(skip)]
     /// File list
     file_list: Option<Promise<Result<Vec<Item>, TramexError>>>,
+
+    /// URL files
+    url_files: String,
 }
 
 impl FileHandler {
@@ -73,6 +78,7 @@ impl FileHandler {
             picked_path: None,
             file_upload: None,
             file_list,
+            url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
         }
     }
 
@@ -233,74 +239,74 @@ impl FileHandler {
     /// Render the file upload
     /// # Errors
     /// Return an error if the file contains errors
-    pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
+    pub fn internal_ui(&mut self, ui: &mut egui::Ui) -> Result<(), TramexError> {
         let mut error_to_return = None;
-        if ui.button("Open file…").clicked() {
-            self.load_file_upload();
-        }
-
-        match self.check_file_load() {
-            Ok(_) => {}
-            Err(e) => {
-                error_to_return = Some(e);
+        ui.add_enabled_ui(self.get_picket_path().is_none(), |ui| {
+            if ui.button("Open file…").clicked() {
+                self.load_file_upload();
             }
-        }
-        let mut file_path = None;
-        if let Some(result) = &self.file_list {
-            if let Some(ready) = result.ready() {
-                match &ready {
-                    Ok(items) => {
-                        ui.vertical(|ui| {
-                            ui.collapsing("Files list:", |ui| {
-                                ui.add_space(1.0);
-                                for item in items {
-                                    ui.collapsing(&item.name, |ui| {
-                                        for sub_item in &item.list {
-                                            let path = match Path::new(sub_item).file_name() {
-                                                Some(f) => f.to_str().unwrap_or(sub_item),
-                                                None => sub_item,
-                                            };
-                                            if ui.button(path).clicked() {
-                                                log::info!("File selected: {}", sub_item);
-                                                file_path = Some(sub_item.to_string());
+
+            match self.check_file_load() {
+                Ok(_) => {}
+                Err(e) => {
+                    error_to_return = Some(e);
+                }
+            }
+            let mut file_path = None;
+            if let Some(result) = &self.file_list {
+                if let Some(ready) = result.ready() {
+                    match &ready {
+                        Ok(items) => {
+                            ui.vertical(|ui| {
+                                ui.collapsing("Files list:", |ui| {
+                                    ui.add_space(1.0);
+                                    for item in items {
+                                        ui.collapsing(&item.name, |ui| {
+                                            for sub_item in &item.list {
+                                                let path = match Path::new(sub_item).file_name() {
+                                                    Some(f) => f.to_str().unwrap_or(sub_item),
+                                                    None => sub_item,
+                                                };
+                                                if ui.button(path).clicked() {
+                                                    log::info!("File selected: {}", sub_item);
+                                                    file_path = Some(sub_item.to_string());
+                                                }
                                             }
-                                        }
-                                    });
-                                }
+                                        });
+                                    }
+                                });
                             });
-                        });
+                        }
+                        Err(e) => {
+                            error_to_return = Some(e.to_owned());
+                            self.clear();
+                        }
                     }
-                    Err(e) => {
-                        error_to_return = Some(e.to_owned());
-                        self.clear();
-                    }
+                } else {
+                    ui.label("Loading files list...");
+                    ui.spinner();
                 }
             } else {
-                ui.label("Loading files list...");
-                ui.spinner();
+                ui.label("No files list");
             }
-        } else {
-            ui.label("No files list");
-        }
-        if let Some(filepath) = &file_path {
-            self.load_from_url(filepath.to_string());
-        }
+            if let Some(filepath) = &file_path {
+                self.load_from_url(filepath.to_string());
+            }
 
+            if let Some(picked_path) = &self.picked_path {
+                ui.horizontal(|ui| {
+                    ui.label("Picked file:");
+                    ui.monospace(picked_path);
+                });
+            } else if self.file_upload.is_some() {
+                ui.add(egui::Spinner::new());
+            }
+            ui.add_space(12.0);
+        });
         if let Some(err) = error_to_return {
             return Err(err);
-        }
-
-        if let Some(picked_path) = &self.picked_path {
-            ui.horizontal(|ui| {
-                ui.label("Picked file:");
-                ui.monospace(picked_path);
-            });
-            return Ok(true);
-        } else if self.file_upload.is_some() {
-            ui.add(egui::Spinner::new());
-        }
-        ui.add_space(12.0);
-        Ok(false)
+        };
+        Ok(())
     }
 
     /// Check file load
@@ -326,6 +332,38 @@ impl FileHandler {
                     }
                 }
             }
+        }
+        Ok(())
+    }
+}
+
+impl Handler for FileHandler {
+    fn ui_options(&mut self, ui: &mut egui::Ui) {
+        ui.label("File Options");
+    }
+
+    fn ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        conn: &mut tramex_tools::connector::Connector,
+        _new_ctx: egui::Context,
+    ) -> Result<(), TramexError> {
+        self.internal_ui(ui)?; // may return error
+        if self.picked_path.is_some() && conn.interface.is_none() {
+            match self.get_result() {
+                Ok(curr_file) => {
+                    conn.set_file(curr_file);
+                    self.clear();
+                }
+                Err(err) => {
+                    log::error!("Error in get_result() {:?}", err);
+                    return Err(err);
+                }
+            };
+        };
+        if self.get_picket_path().is_some() && ui.button("Close").on_hover_text("Close file").clicked() {
+            self.reset();
+            conn.clear_interface();
         }
         Ok(())
     }

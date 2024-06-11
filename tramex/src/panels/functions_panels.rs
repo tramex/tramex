@@ -79,7 +79,7 @@ pub enum ArrowDirection {
 }
 
 /// Arrow color
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ArrowColor {
     /// Green arrow
     Green,
