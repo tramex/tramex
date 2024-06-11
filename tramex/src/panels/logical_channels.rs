@@ -71,6 +71,7 @@ impl LogicalChannels {
         }
     }
 
+    /// Create a label with hover effect for logical channels
     fn make_label_hover_logical(&self, ui: &mut egui::Ui, logical_channel: LogicalChannelsEnum) {
         let is_active = match &self.state {
             Some(state) => state.logical == logical_channel,
@@ -79,6 +80,7 @@ impl LogicalChannels {
         make_label_hover(ui, &logical_channel.to_string(), is_active, logical_channel.get_color());
     }
 
+    /// Create a label with hover effect for transport channels
     fn make_label_hover_transport(&self, ui: &mut egui::Ui, transport_channel: TransportChannelsEnum) {
         let is_active = if let Some(state) = &self.state {
             state.transport == transport_channel
@@ -88,6 +90,7 @@ impl LogicalChannels {
         make_label_hover(ui, &transport_channel.to_string(), is_active, transport_channel.get_color());
     }
 
+    /// Create a label with hover effect for physical channels
     fn make_label_hover_physical(&self, ui: &mut egui::Ui, physical_channel: PhysicalChannelsEnum) {
         let is_active = if let Some(state) = &self.state {
             state.physical == physical_channel
