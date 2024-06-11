@@ -1,13 +1,13 @@
 //! Panel to display the RRC status
-use tramex_tools::data::Data;
-use tramex_tools::errors::TramexError;
-use tramex_tools::interface::types::Direction;
-use tramex_tools::data::AdditionalInfos;
 use super::functions_panels::make_arrow;
 use super::functions_panels::make_label;
 use super::functions_panels::ArrowColor;
 use super::functions_panels::ArrowDirection;
 use super::functions_panels::CustomLabelColor;
+use tramex_tools::data::AdditionalInfos;
+use tramex_tools::data::Data;
+use tramex_tools::errors::TramexError;
+use tramex_tools::interface::types::Direction;
 
 fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
     make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(if show {
@@ -30,7 +30,7 @@ pub struct LinkPanel {
     canal_msg: Option<String>,
     direction: Option<Direction>,
     current_index: usize,
-    font_id: egui::FontId
+    font_id: egui::FontId,
 }
 
 impl LinkPanel {
@@ -46,44 +46,40 @@ impl LinkPanel {
     }
 
     /// Display the control of the link
-pub fn ui_control(&self, ui: &mut egui::Ui) {
-    ui.vertical_centered_justified(|ui| {
-        let canal_msg = self.canal_msg.as_deref().unwrap_or("");
-        let show_red = canal_msg == "RRC connection setup";
-        let show_white = canal_msg == "RRC connection release";
+    pub fn ui_control(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered_justified(|ui| {
+            let canal_msg = self.canal_msg.as_deref().unwrap_or("");
+            let show_red = canal_msg == "RRC connection setup";
+            let show_white = canal_msg == "RRC connection release";
 
-        let label_color = if show_red {
-            egui::Color32::RED
-        } else if show_white {
-            egui::Color32::WHITE
-        } else {
-            ui.style().visuals.text_color()
-        };
+            let label_color = if show_red {
+                egui::Color32::RED
+            } else if show_white {
+                egui::Color32::WHITE
+            } else {
+                ui.style().visuals.text_color()
+            };
 
-        match self.direction {
-            Some(Direction::UL) => {
-                ui.colored_label(label_color, "CONNECTED");
-            }
-            Some(Direction::DL) => {
-                ui.colored_label(label_color, "CONNECTED");
-                if show_white {
-                    make_label_hover(ui, "CONNECTED", show_white, CustomLabelColor::White);
+            match self.direction {
+                Some(Direction::UL) => {
+                    ui.colored_label(label_color, "CONNECTED");
+                }
+                Some(Direction::DL) => {
+                    ui.colored_label(label_color, "CONNECTED");
+                    if show_white {
+                        make_label_hover(ui, "CONNECTED", show_white, CustomLabelColor::White);
+                    }
+                }
+                _ => {
+                    ui.label("CONNECTED");
                 }
             }
-            _ => {
-                ui.label("CONNECTED");
-            }
-        }
-    });
-}
+        });
+    }
 
-
-            
     /// Display the connection state of the LTE
     pub fn ui_con(&self, ui: &mut egui::Ui) {
         ui.vertical_centered_justified(|ui| {
-            
-
             let available_width = ui.available_width();
             let max_label_width = 4.0 * 18.0; // Maximum label width
             let num_labels = 3; // Number of labels horizontally
@@ -92,7 +88,7 @@ pub fn ui_control(&self, ui: &mut egui::Ui) {
 
             let canal = match &self.canal {
                 Some(r) => r,
-                None => ""
+                None => "",
             };
 
             ui.horizontal(|ui| {
@@ -125,24 +121,22 @@ pub fn ui_control(&self, ui: &mut egui::Ui) {
     /// Display the idle state of the LTE
     pub fn ui_idle_lte(&self, ui: &mut egui::Ui) {
         ui.vertical_centered_justified(|ui| {
-            
-            
             let canal_msg = match &self.canal_msg {
                 Some(r) => r,
-                None => ""
+                None => "",
             };
-            
+
             match self.direction {
-            Some(Direction::UL) => {
-                make_label_hover(ui, "IDLE", canal_msg == "RRC connection release", CustomLabelColor::Red);
+                Some(Direction::UL) => {
+                    make_label_hover(ui, "IDLE", canal_msg == "RRC connection release", CustomLabelColor::Red);
+                }
+                Some(Direction::DL) => {
+                    make_label_hover(ui, "IDLE", canal_msg == "RRC connection release", CustomLabelColor::Red);
+                }
+                _ => {
+                    ui.label("IDLE");
+                }
             }
-            Some(Direction::DL) => {
-                make_label_hover(ui, "IDLE", canal_msg == "RRC connection release", CustomLabelColor::Red); 
-            }
-            _ => {
-                ui.label("IDLE");
-            }
-        }
         });
     }
 
