@@ -98,3 +98,134 @@ pub fn make_arrow(ui: &mut egui::Ui, direction: ArrowDirection, color: ArrowColo
 
     ui.label(egui::RichText::new(content).color(current_color).font(font_id.clone()));
 }
+
+/// Enumerate all types of logical channels in LTE technology
+#[derive(PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum LogicalChannelsEnum {
+    /// Paging Control Channel
+    PCCH,
+
+    /// Broadcast Control Channel
+    BCCH,
+
+    ///  Downlink Common Control Channel
+    DL_CCCH,
+
+    /// Downlink Dedicated Control Channel
+    DL_DCCH,
+
+    /// Downlink Dedicated Traffic Channel
+    DL_DTCH,
+
+    /// Multicast Control Channel
+    MCCH,
+
+    /// Multicast Traffic Channel
+    MTCH,
+
+    /// Uplink Common Control Channel
+    UL_CCCH,
+
+    /// Uplink Dedicated Control Channel
+    UL_DCCH,
+
+    /// Uplink Dedicated Traffic Channel
+    UL_DTCH,
+}
+
+impl std::fmt::Display for LogicalChannelsEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let str = match self {
+            LogicalChannelsEnum::PCCH => "PCCH",
+            LogicalChannelsEnum::BCCH => "BCCH",
+            LogicalChannelsEnum::DL_CCCH => "DL-CCCH",
+            LogicalChannelsEnum::DL_DCCH => "DL-DCCH",
+            LogicalChannelsEnum::DL_DTCH => "DL-DTCH",
+            LogicalChannelsEnum::MCCH => "MCCH",
+            LogicalChannelsEnum::MTCH => "MTCH",
+            LogicalChannelsEnum::UL_CCCH => "UL-CCCH",
+            LogicalChannelsEnum::UL_DCCH => "UL-DCCH",
+            LogicalChannelsEnum::UL_DTCH => "UL-DTCH",
+        };
+        write!(f, "{}", str)
+    }
+}
+
+/// Enumerate all types of transport channels in LTE technology
+#[derive(PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum TransportChannelsEnum {
+    /// Paging Channel
+    PCH,
+
+    /// Broadcast Channel
+    BCH,
+
+    /// Downlink Shared Channel
+    DL_SCH,
+
+    /// Multicast Channel
+    MCH,
+
+    /// Random Access Channel
+    RACH,
+
+    /// Uplink Shared Channel
+    UL_SCH,
+}
+
+impl std::fmt::Display for TransportChannelsEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let str = match self {
+            TransportChannelsEnum::PCH => "PCH",
+            TransportChannelsEnum::BCH => "BCH",
+            TransportChannelsEnum::DL_SCH => "DL-SCH",
+            TransportChannelsEnum::MCH => "MCH",
+            TransportChannelsEnum::RACH => "RACH",
+            TransportChannelsEnum::UL_SCH => "UL-SCH",
+        };
+        write!(f, "{}", str)
+    }
+}
+
+/// Enumerate all types of physical channels in LTE technology
+#[derive(PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum PhysicalChannelsEnum {
+    /// Physical Downlink Shared Channel
+    PDSCH,
+
+    /// Physical Broadcast Channel
+    PBCH,
+
+    /// Physical Downlink Control Channel
+    PDCCH,
+
+    /// Physical Multicast Channel
+    PMCH,
+
+    /// Physical Random Access Channel
+    PRACH,
+
+    /// Physical Uplink Shared Channel
+    PUSCH,
+
+    /// Physical Uplink Control Channel
+    PUCCH,
+}
+
+impl std::fmt::Display for PhysicalChannelsEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let str = match self {
+            PhysicalChannelsEnum::PDSCH => "PDSCH",
+            PhysicalChannelsEnum::PBCH => "PBCH",
+            PhysicalChannelsEnum::PDCCH => "PDCCH",
+            PhysicalChannelsEnum::PMCH => "PMCH",
+            PhysicalChannelsEnum::PRACH => "PRACH",
+            PhysicalChannelsEnum::PUSCH => "PUSCH",
+            PhysicalChannelsEnum::PUCCH => "PUCCH",
+        };
+        write!(f, "{}", str)
+    }
+}

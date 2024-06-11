@@ -1,9 +1,13 @@
 //! Logical Channels panel
+
 use eframe::egui;
 use tramex_tools::data::AdditionalInfos;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
 
+use super::functions_panels::LogicalChannelsEnum;
+use super::functions_panels::PhysicalChannelsEnum;
+use super::functions_panels::TransportChannelsEnum;
 use super::functions_panels::{make_label, CustomLabelColor};
 
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
@@ -20,6 +24,7 @@ pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Custo
         "This channel is currently unused"
     });
 }
+
 /// Logical Channels data
 #[derive(Default)]
 pub struct LogicalChannels {
@@ -33,7 +38,7 @@ pub struct LogicalChannels {
     current_index: usize,
 
     /// channel state : which logical channels to switch on
-    state: Option<LogicalChannelState>,
+    state: Option<ChannelState>,
 }
 
 impl LogicalChannels {
@@ -46,21 +51,21 @@ impl LogicalChannels {
     pub fn handle_logic(&mut self) {
         match (self.canal.as_str(), self.canal_msg.as_str()) {
             ("BCCH-BCH", "Master Information Block") => {
-                self.state = Some(LogicalChannelState {
+                self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::BCCH,
                     transport: TransportChannelsEnum::BCH,
                     physical: PhysicalChannelsEnum::PBCH,
                 });
             }
             ("BCCH", "SIB1") => {
-                self.state = Some(LogicalChannelState {
+                self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::BCCH,
                     transport: TransportChannelsEnum::DL_SCH,
                     physical: PhysicalChannelsEnum::PDSCH,
                 });
             }
             ("BCCH", "SIB") => {
-                self.state = Some(LogicalChannelState {
+                self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::BCCH,
                     transport: TransportChannelsEnum::DL_SCH,
                     physical: PhysicalChannelsEnum::PDSCH,
@@ -70,6 +75,37 @@ impl LogicalChannels {
                 log::info!("Unknown message");
             }
         }
+    }
+
+    fn make_label_hover_logical(&self, ui: &mut egui::Ui, logical_channel: LogicalChannelsEnum, color: CustomLabelColor) {
+        let is_active = match &self.state {
+            Some(state) => state.logical == logical_channel,
+            None => false,
+        };
+        make_label_hover(ui, &logical_channel.to_string(), is_active, color);
+    }
+
+    fn make_label_hover_transport(
+        &self,
+        ui: &mut egui::Ui,
+        transport_channel: TransportChannelsEnum,
+        color: CustomLabelColor,
+    ) {
+        let is_active = if let Some(state) = &self.state {
+            state.transport == transport_channel
+        } else {
+            false
+        };
+        make_label_hover(ui, &transport_channel.to_string(), is_active, color);
+    }
+
+    fn make_label_hover_physical(&self, ui: &mut egui::Ui, physical_channel: PhysicalChannelsEnum, color: CustomLabelColor) {
+        let is_active = if let Some(state) = &self.state {
+            state.physical == physical_channel
+        } else {
+            false
+        };
+        make_label_hover(ui, &physical_channel.to_string(), is_active, color);
     }
 }
 
@@ -114,93 +150,9 @@ pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
     });
 }
 
-/// Enumerate all types of logical channels in LTE technology
-#[derive(PartialEq)]
-#[allow(non_camel_case_types)]
-pub enum LogicalChannelsEnum {
-    /// Paging Control Channel
-    PCCH,
-
-    /// Broadcast Control Channel
-    BCCH,
-
-    ///  Downlink Common Control Channel
-    DL_CCCH,
-
-    /// Downlink Dedicated Control Channel
-    DL_DCCH,
-
-    /// Downlink Dedicated Traffic Channel
-    DL_DTCH,
-
-    /// Multicast Control Channel
-    MCCH,
-
-    /// Multicast Traffic Channel
-    MTCH,
-
-    /// Uplink Common Control Channel
-    UL_CCCH,
-
-    /// Uplink Dedicated Control Channel
-    UL_DCCH,
-
-    /// Uplink Dedicated Traffic Channel
-    UL_DTCH,
-}
-
-/// Enumerate all types of transport channels in LTE technology
-#[derive(PartialEq)]
-#[allow(non_camel_case_types)]
-pub enum TransportChannelsEnum {
-    /// Paging Channel
-    PCH,
-
-    /// Broadcast Channel
-    BCH,
-
-    /// Downlink Shared Channel
-    DL_SCH,
-
-    /// Multicast Channel
-    MCH,
-
-    /// Random Access Channel
-    RACH,
-
-    /// Uplink Shared Channel
-    UL_SCH,
-}
-
-/// Enumerate all types of physical channels in LTE technology
-#[derive(PartialEq)]
-#[allow(non_camel_case_types)]
-pub enum PhysicalChannelsEnum {
-    /// Physical Downlink Shared Channel
-    PDSCH,
-
-    /// Physical Broadcast Channel
-    PBCH,
-
-    /// Physical Downlink Control Channel
-    PDCCH,
-
-    /// Physical Multicast Channel
-    PMCH,
-
-    /// Physical Random Access Channel
-    PRACH,
-
-    /// Physical Uplink Shared Channel
-    PUSCH,
-
-    /// Physical Uplink Control Channel
-    PUCCH,
-}
-
 /// Struct that contains the three logical channels associated to the current message
 #[derive(PartialEq)]
-struct LogicalChannelState {
+struct ChannelState {
     /// Logical channel of current message
     logical: LogicalChannelsEnum,
 
@@ -213,170 +165,65 @@ struct LogicalChannelState {
 
 impl super::PanelView for LogicalChannels {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        match &self.state {
-            Some(state) => {
-                egui::Grid::new("some_unique_id").min_col_width(60.0).show(ui, |ui| {
-                    make_label_hover(ui, "PCCH", state.logical == LogicalChannelsEnum::PCCH, CustomLabelColor::Blue);
-                    make_label_hover(ui, "BCCH", state.logical == LogicalChannelsEnum::BCCH, CustomLabelColor::Red);
-                    make_label_hover(
-                        ui,
-                        "CCCH",
-                        state.logical == LogicalChannelsEnum::DL_CCCH,
-                        CustomLabelColor::Blue,
-                    );
-                    make_label_hover(
-                        ui,
-                        "DCCH",
-                        state.logical == LogicalChannelsEnum::DL_DCCH,
-                        CustomLabelColor::Orange,
-                    );
-                    make_label_hover(
-                        ui,
-                        "DTCH",
-                        state.logical == LogicalChannelsEnum::DL_DTCH,
-                        CustomLabelColor::Green,
-                    );
-                    make_label_hover(ui, "MCCH", state.logical == LogicalChannelsEnum::MCCH, CustomLabelColor::Blue);
-                    make_label_hover(
-                        ui,
-                        "MTCH",
-                        state.logical == LogicalChannelsEnum::MTCH,
-                        CustomLabelColor::Green,
-                    );
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "Logical channels");
-                    print_on_grid(ui, "----");
-                    make_label_hover(
-                        ui,
-                        "CCCH",
-                        state.logical == LogicalChannelsEnum::UL_CCCH,
-                        CustomLabelColor::Blue,
-                    );
-                    make_label_hover(
-                        ui,
-                        "DCCH",
-                        state.logical == LogicalChannelsEnum::UL_DCCH,
-                        CustomLabelColor::Orange,
-                    );
-                    make_label_hover(
-                        ui,
-                        "DTCH",
-                        state.logical == LogicalChannelsEnum::UL_DTCH,
-                        CustomLabelColor::Green,
-                    );
-                    ui.end_row();
+        egui::Grid::new("some_unique_id").min_col_width(60.0).show(ui, |ui| {
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::PCCH, CustomLabelColor::Blue);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::BCCH, CustomLabelColor::Red);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_CCCH, CustomLabelColor::Blue);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_DCCH, CustomLabelColor::Orange);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_DTCH, CustomLabelColor::Green);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::MCCH, CustomLabelColor::Blue);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::MTCH, CustomLabelColor::Green);
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Logical channels");
+            print_on_grid(ui, "----");
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_CCCH, CustomLabelColor::Blue);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_DCCH, CustomLabelColor::Orange);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_DTCH, CustomLabelColor::Green);
+            ui.end_row();
 
-                    make_label_hover(
-                        ui,
-                        "PCH",
-                        state.transport == TransportChannelsEnum::PCH,
-                        CustomLabelColor::Blue,
-                    );
-                    make_label_hover(
-                        ui,
-                        "BCH",
-                        state.transport == TransportChannelsEnum::BCH,
-                        CustomLabelColor::Red,
-                    );
-                    print_on_grid(ui, "");
-                    print_on_grid(ui, "");
-                    make_label_hover(
-                        ui,
-                        "DL-SCH",
-                        state.transport == TransportChannelsEnum::DL_SCH,
-                        CustomLabelColor::Green,
-                    );
-                    print_on_grid(ui, "");
-                    make_label_hover(
-                        ui,
-                        "MCH",
-                        state.transport == TransportChannelsEnum::MCH,
-                        CustomLabelColor::Green,
-                    );
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "Transport channels");
-                    print_on_grid(ui, "----");
-                    make_label_hover(
-                        ui,
-                        "RACH",
-                        state.transport == TransportChannelsEnum::RACH,
-                        CustomLabelColor::Blue,
-                    );
-                    make_label_hover(
-                        ui,
-                        "UL-SCH",
-                        state.transport == TransportChannelsEnum::UL_SCH,
-                        CustomLabelColor::Green,
-                    );
-                    ui.end_row();
+            self.make_label_hover_transport(ui, TransportChannelsEnum::PCH, CustomLabelColor::Blue);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::BCH, CustomLabelColor::Red);
+            print_on_grid(ui, "");
+            print_on_grid(ui, "");
+            self.make_label_hover_transport(ui, TransportChannelsEnum::DL_SCH, CustomLabelColor::Green);
+            print_on_grid(ui, "");
+            self.make_label_hover_transport(ui, TransportChannelsEnum::MCH, CustomLabelColor::Green);
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Transport channels");
+            print_on_grid(ui, "----");
+            self.make_label_hover_transport(ui, TransportChannelsEnum::RACH, CustomLabelColor::Blue);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::UL_SCH, CustomLabelColor::Green);
+            ui.end_row();
 
-                    make_label_hover(
-                        ui,
-                        "PDSCH",
-                        state.physical == PhysicalChannelsEnum::PDSCH,
-                        CustomLabelColor::Green,
-                    );
-                    make_label_hover(
-                        ui,
-                        "PBCH",
-                        state.physical == PhysicalChannelsEnum::PBCH,
-                        CustomLabelColor::Red,
-                    );
-                    print_on_grid(ui, "");
-                    print_on_grid(ui, "");
-                    make_label_hover(
-                        ui,
-                        "PDCCH",
-                        state.physical == PhysicalChannelsEnum::PDCCH,
-                        CustomLabelColor::Orange,
-                    );
-                    print_on_grid(ui, "");
-                    make_label_hover(
-                        ui,
-                        "PMCH",
-                        state.physical == PhysicalChannelsEnum::PMCH,
-                        CustomLabelColor::Green,
-                    );
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "Physical channels");
-                    print_on_grid(ui, "----");
-                    make_label_hover(
-                        ui,
-                        "PRACH",
-                        state.physical == PhysicalChannelsEnum::PRACH,
-                        CustomLabelColor::Blue,
-                    );
-                    make_label_hover(
-                        ui,
-                        "PUSCH",
-                        state.physical == PhysicalChannelsEnum::PUSCH,
-                        CustomLabelColor::Green,
-                    );
-                    make_label_hover(
-                        ui,
-                        "PUCCH",
-                        state.physical == PhysicalChannelsEnum::PUCCH,
-                        CustomLabelColor::Orange,
-                    );
-                    ui.end_row();
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PDSCH, CustomLabelColor::Green);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PBCH, CustomLabelColor::Red);
+            print_on_grid(ui, "");
+            print_on_grid(ui, "");
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PDCCH, CustomLabelColor::Orange);
+            print_on_grid(ui, "");
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PMCH, CustomLabelColor::Green);
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Physical channels");
+            print_on_grid(ui, "----");
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PRACH, CustomLabelColor::Blue);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUSCH, CustomLabelColor::Green);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUCCH, CustomLabelColor::Orange);
+            ui.end_row();
 
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "Downlink");
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "");
-                    print_on_grid(ui, "Technology : LTE");
-                    print_on_grid(ui, "");
-                    print_on_grid(ui, "----");
-                    print_on_grid(ui, "Uplink");
-                    print_on_grid(ui, "----");
-                    ui.end_row();
-                });
-            }
-            None => {}
-        }
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Downlink");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "Technology : LTE");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Uplink");
+            print_on_grid(ui, "----");
+            ui.end_row();
+        });
     }
 }
