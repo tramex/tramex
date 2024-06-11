@@ -1,7 +1,7 @@
 //! Frontend module
 use crate::panels::{
-    file_upload::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,  trame_manager::TrameManager,
-    PanelController,
+    file_upload::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
+    trame_manager::TrameManager, PanelController,
 };
 use crate::set_open;
 use egui::Ui;

@@ -39,10 +39,9 @@ impl LinkPanel {
 
     /// Display the control of the link
     pub fn ui_control(&self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| { 
+        ui.vertical_centered_justified(|ui| {
             make_label_hover(ui, "CONNECTED", self.is_connected, CustomLabelColor::Green);
         });
-
     }
 
     /// Display the connection state of the LTE
@@ -235,41 +234,25 @@ impl super::PanelController for LinkPanel {
             if let Some(one_trace) = data.get_current_trace() {
                 match &one_trace.additional_infos {
                     AdditionalInfos::RRCInfos(infos) => {
-                        
-                        if self.current_index<data.current_index{
-                        match (self.is_connected,  infos.canal_msg.as_ref()) {
-                            (true,"RRC connection release")=> { 
-                            self.is_connected = false
-                            },
-                            (false, "RRC connection setup complete")=>{
-                                self.is_connected=true
-                            },
-                        _=>{}
+                        if self.current_index < data.current_index {
+                            match (self.is_connected, self.canal_msg.as_deref()) {
+                                (true, Some("RRC connection release")) => self.is_connected = false,
+                                (false, Some("RRC connection setup complete")) => self.is_connected = true,
+                                _ => {}
+                            }
+                        } else {
+                            match (self.is_connected, self.canal_msg.as_deref()) {
+                                (true, Some("RRC connection setup complete")) => self.is_connected = false,
+                                (false, Some("RRC connection release")) => self.is_connected = true,
+                                _ => {}
+                            }
                         }
 
-                        }
-                        
-                        else{
-                        match (self.is_connected,  infos.canal_msg.as_ref()) {
-                            (true,"RRC connection setup complete")=> { 
-                            self.is_connected = false
-                            },
-                            (false,"RRC connection release")=>{
-                                self.is_connected=true
-                            },
-                        _=>{}
-                        }
-                        }
-                        
                         self.canal = Some(infos.canal.to_owned());
-            self.canal_msg = Some(infos.canal_msg.to_owned());
-            self.direction = Some(infos.direction.clone());
-                        println!("{}",self.is_connected);
+                        self.canal_msg = Some(infos.canal_msg.to_owned());
+                        self.direction = Some(infos.direction.clone());
                     }
-            
-
                 }
-            
             }
 
             self.current_index = data.current_index;
