@@ -23,16 +23,6 @@ fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLab
     });
 }
 
-/// Struct that contains the three logical channels associated to the current message
-#[derive(PartialEq)]
-struct LogicalChannelState {
-    /// Logical channel of current message
-    logical: LogicalChannelsEnum,
-
-    /// Transport channel of current message
-    transport: TransportChannelsEnum,
-}
-
 /// Panel to display the RRC status
 #[derive(Default)]
 pub struct LinkPanel {
@@ -322,62 +312,4 @@ impl super::PanelView for LinkPanel {
         ui.separator();
         self.ui_umts(ui);
     }
-}
-
-/// Enumerate all types of logical channels in LTE technology
-#[derive(PartialEq)]
-#[allow(non_camel_case_types)]
-pub enum LogicalChannelsEnum {
-    /// Paging Control Channel
-    PCCH,
-
-    /// Broadcast Control Channel
-    BCCH,
-
-    ///  Downlink Common Control Channel
-    DL_CCCH,
-
-    /// Downlink Dedicated Control Channel
-    DL_DCCH,
-
-    /// Downlink Dedicated Traffic Channel
-    DL_DTCH,
-
-    /// Multicast Control Channel
-    MCCH,
-
-    /// Multicast Traffic Channel
-    MTCH,
-
-    /// Uplink Common Control Channel
-    UL_CCCH,
-
-    /// Uplink Dedicated Control Channel
-    UL_DCCH,
-
-    /// Uplink Dedicated Traffic Channel
-    UL_DTCH,
-}
-
-/// Enumerate all types of transport channels in LTE technology
-#[derive(PartialEq)]
-#[allow(non_camel_case_types)]
-pub enum TransportChannelsEnum {
-    /// Paging Channel
-    PCH,
-
-    /// Broadcast Channel
-    BCH,
-
-    /// Downlink Shared Channel
-    DL_SCH,
-
-    /// Multicast Channel
-    MCH,
-
-    /// Random Access Channel
-    RACH,
-
-    /// Uplink Shared Channel
-    UL_SCH,
 }
