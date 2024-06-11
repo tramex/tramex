@@ -10,17 +10,7 @@ use tramex_tools::errors::TramexError;
 use tramex_tools::interface::types::Direction;
 
 fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
-    make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(if show {
-        match color {
-            CustomLabelColor::Red => "Broadcast channel",
-            CustomLabelColor::Blue => "Common channel",
-            CustomLabelColor::Green => "Traffic channel",
-            CustomLabelColor::Orange => "Dedicated channel",
-            CustomLabelColor::White => "This channel is currently unused",
-        }
-    } else {
-        "This channel is currently unused"
-    });
+    make_label(ui, label, show, color.clone());
 }
 
 /// Panel to display the RRC status
@@ -31,6 +21,7 @@ pub struct LinkPanel {
     direction: Option<Direction>,
     current_index: usize,
     font_id: egui::FontId,
+    is_connected: bool,
 }
 
 impl LinkPanel {
@@ -42,39 +33,16 @@ impl LinkPanel {
             canal: None,
             canal_msg: None,
             current_index: 0,
+            is_connected: false,
         }
     }
 
     /// Display the control of the link
     pub fn ui_control(&self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| {
-            let canal_msg = self.canal_msg.as_deref().unwrap_or("");
-            let show_red = canal_msg == "RRC connection setup";
-            let show_white = canal_msg == "RRC connection release";
-
-            let label_color = if show_red {
-                egui::Color32::RED
-            } else if show_white {
-                egui::Color32::WHITE
-            } else {
-                ui.style().visuals.text_color()
-            };
-
-            match self.direction {
-                Some(Direction::UL) => {
-                    ui.colored_label(label_color, "CONNECTED");
-                }
-                Some(Direction::DL) => {
-                    ui.colored_label(label_color, "CONNECTED");
-                    if show_white {
-                        make_label_hover(ui, "CONNECTED", show_white, CustomLabelColor::White);
-                    }
-                }
-                _ => {
-                    ui.label("CONNECTED");
-                }
-            }
+        ui.vertical_centered_justified(|ui| { 
+            make_label_hover(ui, "CONNECTED", self.is_connected, CustomLabelColor::Green);
         });
+
     }
 
     /// Display the connection state of the LTE
@@ -93,11 +61,11 @@ impl LinkPanel {
 
             ui.horizontal(|ui| {
                 ui.add_space(space_between_labels);
-                make_label_hover(ui, "PCCH", canal == "PCCH", CustomLabelColor::Blue);
+                make_label_hover(ui, "Ura PCH", canal == "Ura PCH", CustomLabelColor::Blue);
                 ui.add_space(space_between_labels);
                 ui.label(" |  ");
                 ui.add_space(space_between_labels);
-                make_label_hover(ui, "BCCH", canal == "BCCH", CustomLabelColor::Red);
+                make_label_hover(ui, "Cell PCH", canal == "Cell PCH", CustomLabelColor::Red);
                 ui.add_space(space_between_labels);
             });
 
@@ -108,11 +76,11 @@ impl LinkPanel {
 
             ui.horizontal(|ui| {
                 ui.add_space(space_between_labels);
-                make_label_hover(ui, "PCH", canal == "PCH", CustomLabelColor::Red);
+                make_label_hover(ui, "Cell DCH", canal == "Cell DCH", CustomLabelColor::Red);
                 ui.add_space(space_between_labels);
                 ui.label(" | ");
                 ui.add_space(space_between_labels);
-                make_label_hover(ui, "BCH", canal == "BCH", CustomLabelColor::Red);
+                make_label_hover(ui, "Cell FACH", canal == "Cell FACH", CustomLabelColor::Red);
                 ui.add_space(space_between_labels);
             });
         });
@@ -210,13 +178,13 @@ impl LinkPanel {
                 ui.add_space(space_between_arrows);
                 match self.direction {
                     Some(Direction::UL) => {
-                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
                     }
                     Some(Direction::DL) => {
-                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
                     }
                     _ => {
-                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
                     }
                 }
                 ui.add_space(space_between_arrows);
@@ -242,11 +210,11 @@ impl LinkPanel {
                 };
                 make_arrow(ui, ArrowDirection::Up, color1.clone(), &self.font_id);
                 ui.add_space(space_between_arrows);
-                make_arrow(ui, ArrowDirection::Up, color1, &self.font_id);
-                ui.add_space(space_between_arrows);
                 make_arrow(ui, ArrowDirection::Down, color2.clone(), &self.font_id);
                 ui.add_space(space_between_arrows);
                 make_arrow(ui, ArrowDirection::Down, color2, &self.font_id);
+                ui.add_space(space_between_arrows);
+                make_arrow(ui, ArrowDirection::Up, color1, &self.font_id);
                 ui.add_space(space_between_arrows);
             });
         });
@@ -267,12 +235,43 @@ impl super::PanelController for LinkPanel {
             if let Some(one_trace) = data.get_current_trace() {
                 match &one_trace.additional_infos {
                     AdditionalInfos::RRCInfos(infos) => {
+                        
+                        if self.current_index<data.current_index{
+                        match (self.is_connected,  infos.canal_msg.as_ref()) {
+                            (true,"RRC connection release")=> { 
+                            self.is_connected = false
+                            },
+                            (false, "RRC connection setup complete")=>{
+                                self.is_connected=true
+                            },
+                        _=>{}
+                        }
+
+                        }
+                        
+                        else{
+                        match (self.is_connected,  infos.canal_msg.as_ref()) {
+                            (true,"RRC connection setup complete")=> { 
+                            self.is_connected = false
+                            },
+                            (false,"RRC connection release")=>{
+                                self.is_connected=true
+                            },
+                        _=>{}
+                        }
+                        }
+                        
                         self.canal = Some(infos.canal.to_owned());
-                        self.canal_msg = Some(infos.canal_msg.to_owned());
-                        self.direction = Some(infos.direction.clone());
+            self.canal_msg = Some(infos.canal_msg.to_owned());
+            self.direction = Some(infos.direction.clone());
+                        println!("{}",self.is_connected);
                     }
+            
+
                 }
+            
             }
+
             self.current_index = data.current_index;
         }
         egui::Window::new(self.window_title())
