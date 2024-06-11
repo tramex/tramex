@@ -48,7 +48,7 @@ poll-promise = { version = "0.3.0", features = ["web"] }
 tramex-tools = { path = "../tramex-tools" }
 ehttp = { version = "0.5.0" }
 types_lte_3gpp = { version = "1.0.4", features = ["rrc"], optional = true }
-asn1-codecs = "0.6.1"
+
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1.16", optional = true, features = [
