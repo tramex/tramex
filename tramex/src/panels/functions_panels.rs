@@ -21,6 +21,19 @@ pub enum CustomLabelColor {
     White,
 }
 
+impl CustomLabelColor {
+    /// Get the type of channel
+    pub fn get_type_channel(&self) -> &'static str {
+        match self {
+            CustomLabelColor::Red => "Broadcast channel",
+            CustomLabelColor::Blue => "Common channel",
+            CustomLabelColor::Green => "Traffic channel",
+            CustomLabelColor::Orange => "Dedicated channel",
+            CustomLabelColor::White => "This channel is currently unused",
+        }
+    }
+}
+
 /// Print a label on the grid
 pub fn make_label_equal(ui: &mut egui::Ui, label: &str, state: &str, color: CustomLabelColor) {
     make_label(ui, label, label == state, color);
@@ -134,6 +147,24 @@ pub enum LogicalChannelsEnum {
     UL_DTCH,
 }
 
+impl LogicalChannelsEnum {
+    /// Get the color of the logical channel
+    pub fn get_color(&self) -> CustomLabelColor {
+        match self {
+            LogicalChannelsEnum::PCCH => CustomLabelColor::Blue,
+            LogicalChannelsEnum::BCCH => CustomLabelColor::Red,
+            LogicalChannelsEnum::DL_CCCH => CustomLabelColor::Blue,
+            LogicalChannelsEnum::DL_DCCH => CustomLabelColor::Orange,
+            LogicalChannelsEnum::DL_DTCH => CustomLabelColor::Green,
+            LogicalChannelsEnum::MCCH => CustomLabelColor::Blue,
+            LogicalChannelsEnum::MTCH => CustomLabelColor::Green,
+            LogicalChannelsEnum::UL_CCCH => CustomLabelColor::Blue,
+            LogicalChannelsEnum::UL_DCCH => CustomLabelColor::Orange,
+            LogicalChannelsEnum::UL_DTCH => CustomLabelColor::Green,
+        }
+    }
+}
+
 impl std::fmt::Display for LogicalChannelsEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let str = match self {
@@ -175,6 +206,20 @@ pub enum TransportChannelsEnum {
     UL_SCH,
 }
 
+impl TransportChannelsEnum {
+    /// Get the color of the logical channel
+    pub fn get_color(&self) -> CustomLabelColor {
+        match self {
+            TransportChannelsEnum::PCH => CustomLabelColor::Blue,
+            TransportChannelsEnum::BCH => CustomLabelColor::Red,
+            TransportChannelsEnum::DL_SCH => CustomLabelColor::Green,
+            TransportChannelsEnum::MCH => CustomLabelColor::Green,
+            TransportChannelsEnum::RACH => CustomLabelColor::Blue,
+            TransportChannelsEnum::UL_SCH => CustomLabelColor::Green,
+        }
+    }
+}
+
 impl std::fmt::Display for TransportChannelsEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let str = match self {
@@ -213,6 +258,21 @@ pub enum PhysicalChannelsEnum {
 
     /// Physical Uplink Control Channel
     PUCCH,
+}
+
+impl PhysicalChannelsEnum {
+    /// Get the color of the logical channel
+    pub fn get_color(&self) -> CustomLabelColor {
+        match self {
+            PhysicalChannelsEnum::PDSCH => CustomLabelColor::Green,
+            PhysicalChannelsEnum::PBCH => CustomLabelColor::Red,
+            PhysicalChannelsEnum::PDCCH => CustomLabelColor::Orange,
+            PhysicalChannelsEnum::PMCH => CustomLabelColor::Green,
+            PhysicalChannelsEnum::PRACH => CustomLabelColor::Blue,
+            PhysicalChannelsEnum::PUSCH => CustomLabelColor::Green,
+            PhysicalChannelsEnum::PUCCH => CustomLabelColor::Orange,
+        }
+    }
 }
 
 impl std::fmt::Display for PhysicalChannelsEnum {

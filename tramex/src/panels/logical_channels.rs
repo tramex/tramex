@@ -13,15 +13,9 @@ use super::functions_panels::{make_label, CustomLabelColor};
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
 pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
     make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(if show {
-        match color {
-            CustomLabelColor::Red => "Broadcast channel",
-            CustomLabelColor::Blue => "Common channel",
-            CustomLabelColor::Green => "Traffic channel",
-            CustomLabelColor::Orange => "Dedicated channel",
-            CustomLabelColor::White => "This channel is currently unused",
-        }
+        color.get_type_channel()
     } else {
-        "This channel is currently unused"
+        CustomLabelColor::White.get_type_channel()
     });
 }
 
@@ -77,35 +71,30 @@ impl LogicalChannels {
         }
     }
 
-    fn make_label_hover_logical(&self, ui: &mut egui::Ui, logical_channel: LogicalChannelsEnum, color: CustomLabelColor) {
+    fn make_label_hover_logical(&self, ui: &mut egui::Ui, logical_channel: LogicalChannelsEnum) {
         let is_active = match &self.state {
             Some(state) => state.logical == logical_channel,
             None => false,
         };
-        make_label_hover(ui, &logical_channel.to_string(), is_active, color);
+        make_label_hover(ui, &logical_channel.to_string(), is_active, logical_channel.get_color());
     }
 
-    fn make_label_hover_transport(
-        &self,
-        ui: &mut egui::Ui,
-        transport_channel: TransportChannelsEnum,
-        color: CustomLabelColor,
-    ) {
+    fn make_label_hover_transport(&self, ui: &mut egui::Ui, transport_channel: TransportChannelsEnum) {
         let is_active = if let Some(state) = &self.state {
             state.transport == transport_channel
         } else {
             false
         };
-        make_label_hover(ui, &transport_channel.to_string(), is_active, color);
+        make_label_hover(ui, &transport_channel.to_string(), is_active, transport_channel.get_color());
     }
 
-    fn make_label_hover_physical(&self, ui: &mut egui::Ui, physical_channel: PhysicalChannelsEnum, color: CustomLabelColor) {
+    fn make_label_hover_physical(&self, ui: &mut egui::Ui, physical_channel: PhysicalChannelsEnum) {
         let is_active = if let Some(state) = &self.state {
             state.physical == physical_channel
         } else {
             false
         };
-        make_label_hover(ui, &physical_channel.to_string(), is_active, color);
+        make_label_hover(ui, &physical_channel.to_string(), is_active, physical_channel.get_color());
     }
 }
 
@@ -144,6 +133,7 @@ impl super::PanelController for LogicalChannels {
 }
 
 /// Print a label on the grid
+#[inline]
 pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
     ui.vertical_centered(|ui| {
         ui.label(label);
@@ -166,48 +156,48 @@ struct ChannelState {
 impl super::PanelView for LogicalChannels {
     fn ui(&mut self, ui: &mut egui::Ui) {
         egui::Grid::new("some_unique_id").min_col_width(60.0).show(ui, |ui| {
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::PCCH, CustomLabelColor::Blue);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::BCCH, CustomLabelColor::Red);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_CCCH, CustomLabelColor::Blue);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_DCCH, CustomLabelColor::Orange);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_DTCH, CustomLabelColor::Green);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::MCCH, CustomLabelColor::Blue);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::MTCH, CustomLabelColor::Green);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::PCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::BCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_CCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_DCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_DTCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::MCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::MTCH);
             print_on_grid(ui, "----");
             print_on_grid(ui, "Logical channels");
             print_on_grid(ui, "----");
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_CCCH, CustomLabelColor::Blue);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_DCCH, CustomLabelColor::Orange);
-            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_DTCH, CustomLabelColor::Green);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_CCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_DCCH);
+            self.make_label_hover_logical(ui, LogicalChannelsEnum::UL_DTCH);
             ui.end_row();
 
-            self.make_label_hover_transport(ui, TransportChannelsEnum::PCH, CustomLabelColor::Blue);
-            self.make_label_hover_transport(ui, TransportChannelsEnum::BCH, CustomLabelColor::Red);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::PCH);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::BCH);
             print_on_grid(ui, "");
             print_on_grid(ui, "");
-            self.make_label_hover_transport(ui, TransportChannelsEnum::DL_SCH, CustomLabelColor::Green);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::DL_SCH);
             print_on_grid(ui, "");
-            self.make_label_hover_transport(ui, TransportChannelsEnum::MCH, CustomLabelColor::Green);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::MCH);
             print_on_grid(ui, "----");
             print_on_grid(ui, "Transport channels");
             print_on_grid(ui, "----");
-            self.make_label_hover_transport(ui, TransportChannelsEnum::RACH, CustomLabelColor::Blue);
-            self.make_label_hover_transport(ui, TransportChannelsEnum::UL_SCH, CustomLabelColor::Green);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::RACH);
+            self.make_label_hover_transport(ui, TransportChannelsEnum::UL_SCH);
             ui.end_row();
 
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PDSCH, CustomLabelColor::Green);
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PBCH, CustomLabelColor::Red);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PDSCH);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PBCH);
             print_on_grid(ui, "");
             print_on_grid(ui, "");
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PDCCH, CustomLabelColor::Orange);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PDCCH);
             print_on_grid(ui, "");
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PMCH, CustomLabelColor::Green);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PMCH);
             print_on_grid(ui, "----");
             print_on_grid(ui, "Physical channels");
             print_on_grid(ui, "----");
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PRACH, CustomLabelColor::Blue);
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUSCH, CustomLabelColor::Green);
-            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUCCH, CustomLabelColor::Orange);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PRACH);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUSCH);
+            self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUCCH);
             ui.end_row();
 
             print_on_grid(ui, "----");
