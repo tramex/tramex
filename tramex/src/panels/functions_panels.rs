@@ -170,14 +170,14 @@ impl std::fmt::Display for LogicalChannelsEnum {
         let str = match self {
             LogicalChannelsEnum::PCCH => "PCCH",
             LogicalChannelsEnum::BCCH => "BCCH",
-            LogicalChannelsEnum::DL_CCCH => "DL-CCCH",
-            LogicalChannelsEnum::DL_DCCH => "DL-DCCH",
-            LogicalChannelsEnum::DL_DTCH => "DL-DTCH",
+            LogicalChannelsEnum::DL_CCCH => "CCCH",
+            LogicalChannelsEnum::DL_DCCH => "DCCH",
+            LogicalChannelsEnum::DL_DTCH => "DTCH",
             LogicalChannelsEnum::MCCH => "MCCH",
             LogicalChannelsEnum::MTCH => "MTCH",
-            LogicalChannelsEnum::UL_CCCH => "UL-CCCH",
-            LogicalChannelsEnum::UL_DCCH => "UL-DCCH",
-            LogicalChannelsEnum::UL_DTCH => "UL-DTCH",
+            LogicalChannelsEnum::UL_CCCH => "CCCH",
+            LogicalChannelsEnum::UL_DCCH => "DCCH",
+            LogicalChannelsEnum::UL_DTCH => "DTCH",
         };
         write!(f, "{}", str)
     }
