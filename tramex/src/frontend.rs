@@ -4,7 +4,7 @@ use crate::panels::handler_ws::WsHandler;
 use crate::panels::Handler;
 
 use crate::panels::{
-    file_upload::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
+    handler_file::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
     trame_manager::TrameManager, PanelController,
 };
 use crate::set_open;
