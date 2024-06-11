@@ -47,6 +47,7 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
 /// Display a Trace type
 pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &[String]) {
     ui.label(format!("{:?} at {:?}", &curr_trace.layer, &curr_trace.timestamp));
+    ui.label(format!("{:?}", &curr_trace.additional_infos));
     ui.label(format!("{:?}", &curr_trace.hexa));
     if full {
         ui.separator();

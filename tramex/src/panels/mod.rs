@@ -1,9 +1,8 @@
 //! Module: panels
 
-pub mod about;
 pub mod file_upload;
 pub mod logical_channels;
-pub mod message;
+pub mod panel_message;
 pub mod rrc_status;
 pub mod trame_manager;
 
