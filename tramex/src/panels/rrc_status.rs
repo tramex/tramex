@@ -88,67 +88,33 @@ impl LinkPanel {
     /// Display the idle state of the LTE
     pub fn ui_idle_lte(&self, ui: &mut egui::Ui) {
         ui.vertical_centered_justified(|ui| {
-            let canal_msg = match &self.canal_msg {
-                Some(r) => r,
-                None => "",
-            };
-
-            match self.direction {
-                Some(Direction::UL) => {
-                    make_label_hover(ui, "IDLE", canal_msg == "RRC connection release", CustomLabelColor::Red);
-                }
-                Some(Direction::DL) => {
-                    make_label_hover(ui, "IDLE", canal_msg == "RRC connection release", CustomLabelColor::Red);
-                }
-                _ => {
-                    ui.label("IDLE");
-                }
-            }
+            make_label_hover(ui, "IDLE", !self.is_connected, CustomLabelColor::Red);
         });
     }
 
     /// Display the LTE state
     pub fn ui_lte(&self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.direction {
-            Some(Direction::UL) => {
-                ui.colored_label(egui::Color32::GREEN, "LTE");
-            }
-            Some(Direction::DL) => {
-                ui.colored_label(egui::Color32::BLACK, "LTE");
-            }
-            _ => {
-                ui.label("LTE");
-            }
+        ui.vertical_centered_justified(|ui| {
+            
+                ui.colored_label(egui::Color32::BLUE, "LTE");
         });
     }
 
     /// Display the idle state of the UMTS
     pub fn ui_idle_umts(&self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.direction {
-            Some(Direction::UL) => {
-                ui.colored_label(egui::Color32::RED, "IDLE");
-            }
-            Some(Direction::DL) => {
+        ui.vertical_centered_justified(|ui| {
+        
                 ui.colored_label(egui::Color32::BLACK, "IDLE");
-            }
-            _ => {
-                ui.label("IDLE");
-            }
+            
         });
     }
 
     /// Display the UMTS state
     pub fn ui_umts(&self, ui: &mut egui::Ui) {
-        ui.vertical_centered_justified(|ui| match self.direction {
-            Some(Direction::UL) => {
-                ui.colored_label(egui::Color32::RED, "UMTS");
-            }
-            Some(Direction::DL) => {
-                ui.colored_label(egui::Color32::BLACK, "UMTS");
-            }
-            _ => {
-                ui.label("UMTS");
-            }
+        ui.vertical_centered_justified(|ui| {
+            
+                ui.colored_label(egui::Color32::BLUE, "UMTS");
+            
         });
     }
 
@@ -165,10 +131,10 @@ impl LinkPanel {
                 ui.add_space(space_between_arrows);
                 match self.direction {
                     Some(Direction::UL) => {
-                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Blue, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
                     }
                     Some(Direction::DL) => {
-                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Down, ArrowColor::Green, &self.font_id);
                     }
                     _ => {
                         make_arrow(ui, ArrowDirection::Down, ArrowColor::Black, &self.font_id);
@@ -177,10 +143,10 @@ impl LinkPanel {
                 ui.add_space(space_between_arrows);
                 match self.direction {
                     Some(Direction::UL) => {
-                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
                     }
                     Some(Direction::DL) => {
-                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Green, &self.font_id);
+                        make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
                     }
                     _ => {
                         make_arrow(ui, ArrowDirection::Up, ArrowColor::Black, &self.font_id);
@@ -203,17 +169,17 @@ impl LinkPanel {
             ui.horizontal(|ui| {
                 ui.add_space(space_between_arrows);
                 let (color1, color2) = match self.direction {
-                    Some(Direction::UL) => (ArrowColor::Green, ArrowColor::Black),
-                    Some(Direction::DL) => (ArrowColor::Black, ArrowColor::Green),
+                    Some(Direction::UL) => (ArrowColor::Black, ArrowColor::Green),
+                    Some(Direction::DL) => (ArrowColor::Green, ArrowColor::Black),
                     _ => (ArrowColor::Black, ArrowColor::Black),
                 };
-                make_arrow(ui, ArrowDirection::Up, color1.clone(), &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, color1.clone(), &self.font_id);
                 ui.add_space(space_between_arrows);
-                make_arrow(ui, ArrowDirection::Down, color2.clone(), &self.font_id);
+                make_arrow(ui, ArrowDirection::Down, color1, &self.font_id);
                 ui.add_space(space_between_arrows);
-                make_arrow(ui, ArrowDirection::Down, color2, &self.font_id);
+                make_arrow(ui, ArrowDirection::Up, color2.clone(), &self.font_id);
                 ui.add_space(space_between_arrows);
-                make_arrow(ui, ArrowDirection::Up, color1, &self.font_id);
+                make_arrow(ui, ArrowDirection::Up, color2, &self.font_id);
                 ui.add_space(space_between_arrows);
             });
         });
@@ -279,6 +245,7 @@ impl super::PanelView for LinkPanel {
         self.ui_idle_lte(ui);
         ui.separator();
         self.ui_lte(ui);
+        ui.separator();
         ui.separator();
         self.ui_con(ui);
         ui.separator();
