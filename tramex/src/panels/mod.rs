@@ -5,6 +5,7 @@ pub mod handler_file;
 pub mod handler_ws;
 pub mod logical_channels;
 pub mod panel_message;
+pub mod rrc_status;
 pub mod trame_manager;
 
 pub mod functions_panels;

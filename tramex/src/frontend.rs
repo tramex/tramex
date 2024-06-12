@@ -4,8 +4,8 @@ use crate::panels::handler_ws::WsHandler;
 use crate::panels::Handler;
 
 use crate::panels::{
-    handler_file::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, trame_manager::TrameManager,
-    PanelController,
+    handler_file::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
+    trame_manager::TrameManager, PanelController,
 };
 use crate::set_open;
 use egui::Ui;
@@ -76,7 +76,12 @@ impl FrontEnd {
     pub fn new() -> Self {
         let mb = MessageBox::new();
         let lc = LogicalChannels::new();
-        let wins: Vec<Box<dyn PanelController>> = vec![Box::<MessageBox>::new(mb), Box::<LogicalChannels>::new(lc)];
+        let status = LinkPanel::new();
+        let wins: Vec<Box<dyn PanelController>> = vec![
+            Box::<MessageBox>::new(mb),
+            Box::<LogicalChannels>::new(lc),
+            Box::<LinkPanel>::new(status),
+        ];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {
             open_windows.insert(one_box.name().to_owned());
