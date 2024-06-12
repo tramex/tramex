@@ -9,18 +9,30 @@ use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::types::Direction;
 
+/// Make a label with hover effect
 fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
-    make_label(ui, label, show, color.clone());
+    make_label(ui, label, show, color);
 }
 
 /// Panel to display the RRC status
 #[derive(Default)]
 pub struct LinkPanel {
+    /// Canal
     canal: Option<String>,
+
+    /// Canal message
     canal_msg: Option<String>,
+
+    /// Direction
     direction: Option<Direction>,
+
+    /// Current index
     current_index: usize,
+
+    /// Font id
     font_id: egui::FontId,
+
+    /// Is connected
     is_connected: bool,
 }
 
@@ -95,26 +107,21 @@ impl LinkPanel {
     /// Display the LTE state
     pub fn ui_lte(&self, ui: &mut egui::Ui) {
         ui.vertical_centered_justified(|ui| {
-            
-                ui.colored_label(egui::Color32::BLUE, "LTE");
+            ui.colored_label(egui::Color32::BLUE, "LTE");
         });
     }
 
     /// Display the idle state of the UMTS
     pub fn ui_idle_umts(&self, ui: &mut egui::Ui) {
         ui.vertical_centered_justified(|ui| {
-        
-                ui.colored_label(egui::Color32::BLACK, "IDLE");
-            
+            ui.colored_label(egui::Color32::BLACK, "IDLE");
         });
     }
 
     /// Display the UMTS state
     pub fn ui_umts(&self, ui: &mut egui::Ui) {
         ui.vertical_centered_justified(|ui| {
-            
-                ui.colored_label(egui::Color32::BLUE, "UMTS");
-            
+            ui.colored_label(egui::Color32::BLUE, "UMTS");
         });
     }
 
