@@ -56,7 +56,7 @@ impl InterfaceTrait for File {
         data.events.append(&mut traces);
         *available = true;
         if let Some(err) = err_processed {
-            if !(matches!(err.code, ErrorCode::EndOfFile)) {
+            if !(matches!(err.get_code(), ErrorCode::EndOfFile)) {
                 return Err(err);
             }
         }
@@ -102,7 +102,7 @@ impl File {
         let (vec_trace, opt_err) = File::process_string(&self.file_content, self.nb_read, &mut self.index_line);
         match &opt_err {
             Some(err) => {
-                if err.get_code() == ErrorCode::EndOfFile {
+                if matches!(err.get_code(), ErrorCode::EndOfFile) {
                     self.full_read = true;
                 }
             }

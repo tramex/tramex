@@ -36,6 +36,9 @@ pub trait PanelController {
     /// # Errors
     /// Return an error if the panel can't be shown
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError>;
+
+    /// Clear the panel
+    fn clear(&mut self);
 }
 
 /// Handler are Ui for interface

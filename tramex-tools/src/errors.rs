@@ -1,6 +1,6 @@
 //! Error handling for Tramex Tools
 
-#[derive(serde::Deserialize, Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize, Debug, Clone)]
 /// Error codes for Tramex Tools
 pub enum ErrorCode {
     /// Not set
@@ -101,7 +101,7 @@ pub struct TramexError {
     pub message: String,
 
     /// Error code
-    pub code: ErrorCode,
+    code: ErrorCode,
 }
 
 impl TramexError {
