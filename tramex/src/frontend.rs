@@ -1,11 +1,12 @@
 //! Frontend module
+use crate::handlers::handler_file::FileHandler;
 #[cfg(feature = "websocket")]
-use crate::panels::handler_ws::WsHandler;
-use crate::panels::Handler;
+use crate::handlers::handler_ws::WsHandler;
+use crate::handlers::Handler;
 
 use crate::panels::{
-    handler_file::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
-    trame_manager::TrameManager, PanelController,
+    logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel, trame_manager::TrameManager,
+    PanelController,
 };
 use crate::set_open;
 use egui::Ui;

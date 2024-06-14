@@ -206,13 +206,13 @@ impl eframe::App for TramexApp {
 
 /// Display an error
 fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
-    ui.colored_label(egui::Color32::RED, &error_item.message);
+    ui.colored_label(egui::Color32::RED, &error_item.message)
+        .on_hover_text_at_pointer(&error_item.debug);
     if ui.button("Copy error").clicked() {
         ui.output_mut(|o| o.copied_text = format!("{}\n{}", &error_item.get_msg(), &error_item.message,));
     };
     if ui.button("Close this error").clicked() {
         return true;
     }
-    ui.label("Debug").on_hover_text(&error_item.debug);
     false
 }

@@ -1,8 +1,5 @@
 //! Module: panels
 
-pub mod handler_file;
-#[cfg(feature = "websocket")]
-pub mod handler_ws;
 pub mod logical_channels;
 pub mod panel_message;
 pub mod rrc_status;
@@ -11,7 +8,7 @@ pub mod trame_manager;
 pub mod functions_panels;
 
 use eframe::egui;
-use tramex_tools::{connector::Connector, data::Data, errors::TramexError};
+use tramex_tools::{data::Data, errors::TramexError};
 
 /// Something to view in the demo windows
 pub trait PanelView {
@@ -39,15 +36,4 @@ pub trait PanelController {
 
     /// Clear the panel
     fn clear(&mut self);
-}
-
-/// Handler are Ui for interface
-pub trait Handler {
-    /// Render the file upload
-    /// # Errors
-    /// Return an error if the file contains errors
-    fn ui(&mut self, ui: &mut egui::Ui, conn: &mut Connector, new_ctx: egui::Context) -> Result<(), TramexError>;
-
-    /// Render the options
-    fn ui_options(&mut self, ui: &mut egui::Ui);
 }

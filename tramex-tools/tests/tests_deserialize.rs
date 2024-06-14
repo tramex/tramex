@@ -80,7 +80,7 @@ mod tests {
         let res_hexe = extract_hexe(&data);
         assert!(res_hexe.is_err());
         let err = res_hexe.unwrap_err();
-        assert!(err.get_code() == ErrorCode::HexeDecodingError);
+        assert!(matches!(err.get_code(), ErrorCode::HexeDecodingError));
     }
     #[test]
     fn test_extract_hexe_2() {
@@ -92,6 +92,6 @@ mod tests {
         let res_hexe = extract_hexe(&data);
         assert!(res_hexe.is_err());
         let err = res_hexe.unwrap_err();
-        assert!(err.get_code() == ErrorCode::HexeDecodingError);
+        assert!(matches!(err.get_code(), ErrorCode::HexeDecodingError));
     }
 }
