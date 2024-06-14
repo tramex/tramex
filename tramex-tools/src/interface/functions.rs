@@ -1,6 +1,9 @@
 //! useful functions
 
-use crate::{errors::{ErrorCode, TramexError}, tramex_error};
+use crate::{
+    errors::{ErrorCode, TramexError},
+    tramex_error,
+};
 
 /// Extract hexadecimal data from a vector of strings.
 /// # Errors
