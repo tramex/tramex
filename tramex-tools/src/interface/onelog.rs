@@ -7,6 +7,7 @@ use crate::errors::TramexError;
 use crate::interface::functions::extract_hexe;
 
 use crate::interface::{layer::Layer, types::SourceLog};
+use crate::tramex_error;
 
 use super::parser::parser_rrc::RRCInfos;
 use super::types::Direction; // to use the FileParser trait and implementations
@@ -61,24 +62,24 @@ impl OneLog {
                     Some(opt_dir) => match Direction::from_str(opt_dir) {
                         Ok(d) => d,
                         Err(_) => {
-                            return Err(TramexError::new(
+                            return Err(tramex_error!(
                                 format!("Can't format direction {}", opt_dir),
-                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
                             ));
                         }
                     },
                     None => {
-                        return Err(TramexError::new(
+                        return Err(tramex_error!(
                             "Direction not found".to_owned(),
-                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage
                         ));
                     }
                 };
                 let firs_line = self.data[0].split(':').collect::<Vec<&str>>();
                 if firs_line.len() < 2 {
-                    return Err(TramexError::new(
+                    return Err(tramex_error!(
                         format!("Invalid first line {}", self.data[0]),
-                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage
                     ));
                 }
                 let rrc: RRCInfos = RRCInfos {
@@ -96,9 +97,9 @@ impl OneLog {
                 };
                 Ok(trace)
             }
-            _ => Err(TramexError::new(
+            _ => Err(tramex_error!(
                 "Layer not implemented".to_owned(),
-                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
             )),
         }
     }

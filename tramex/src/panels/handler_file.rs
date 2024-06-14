@@ -3,7 +3,7 @@ use std::path::Path;
 
 use eframe::egui;
 use poll_promise::Promise;
-use tramex_tools::{errors::TramexError, interface::interface_file::file_handler::File};
+use tramex_tools::{errors::TramexError, interface::interface_file::file_handler::File, tramex_error};
 
 use super::Handler;
 
@@ -37,6 +37,7 @@ pub struct FileHandler {
 impl FileHandler {
     /// Create a new file handler
     pub fn new(url: &str) -> Self {
+        println!("e");
         let callback = move |res: Result<ehttp::Response, String>| match res {
             Ok(res) => {
                 log::info!("File list fetched");
@@ -45,16 +46,16 @@ impl FileHandler {
                     Ok(items) => Ok(items),
                     Err(e) => {
                         log::warn!("{:?}", e);
-                        Err(TramexError::new(
+                        Err(tramex_error!(
                             e.to_string(),
-                            tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                            tramex_tools::errors::ErrorCode::FileErrorReadingFile
                         ))
                     }
                 }
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                Err(TramexError::new(e.to_string(), tramex_tools::errors::ErrorCode::RequestError))
+                Err(tramex_error!(e.to_string(), tramex_tools::errors::ErrorCode::RequestError))
             }
         };
         let request = ehttp::Request::get(url);
@@ -91,6 +92,7 @@ impl FileHandler {
     /// Clear the file handler
     pub fn clear(&mut self) {
         self.file_upload = None;
+        self.file_list = None;
     }
 
     /// Get the result
@@ -107,14 +109,14 @@ impl FileHandler {
                         Err(e.to_owned())
                     }
                 },
-                None => Err(TramexError::new(
+                None => Err(tramex_error!(
                     "File not ready".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNotReady,
+                    tramex_tools::errors::ErrorCode::FileNotReady
                 )),
             },
-            None => Err(TramexError::new(
+            None => Err(tramex_error!(
                 "No file selected".to_string(),
-                tramex_tools::errors::ErrorCode::FileNotSelected,
+                tramex_tools::errors::ErrorCode::FileNotSelected
             )),
         };
         log::debug!("Result: {:?}", res);
@@ -140,17 +142,17 @@ impl FileHandler {
                         };
                         Ok(File::new(path.into(), v.to_string()))
                     }
-                    Err(e) => Err(TramexError::new(
+                    Err(e) => Err(tramex_error!(
                         e.to_string(),
-                        tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                        tramex_tools::errors::ErrorCode::FileInvalidEncoding
                     )),
                 }
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                Err(TramexError::new(
+                Err(tramex_error!(
                     e.to_string(),
-                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                    tramex_tools::errors::ErrorCode::FileErrorReadingFile
                 ))
             }
         };
@@ -189,13 +191,13 @@ impl FileHandler {
                     log::info!("File reading from wasm");
                     return match std::str::from_utf8(&buf) {
                         Ok(v) => Ok(File::new(curr_file.file_name().into(), v.to_string())),
-                        Err(e) => Err(TramexError::new(
+                        Err(e) => Err(tramex_error!(
                             e.to_string(),
                             tramex_tools::errors::ErrorCode::FileInvalidEncoding,
                         )),
                     };
                 }
-                Err(TramexError::new(
+                Err(tramex_error!(
                     "No file Selected".to_string(),
                     tramex_tools::errors::ErrorCode::FileNotSelected,
                 ))
@@ -213,24 +215,24 @@ impl FileHandler {
                             Ok(v) => v,
                             Err(e) => {
                                 log::warn!("{:?}", e);
-                                return Err(TramexError::new(
+                                return Err(tramex_error!(
                                     e.to_string(),
-                                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                                    tramex_tools::errors::ErrorCode::FileErrorReadingFile
                                 ));
                             }
                         };
                         return match std::str::from_utf8(&buf) {
                             Ok(v) => Ok(File::new(path_buf, v.to_string())),
-                            Err(e) => Err(TramexError::new(
+                            Err(e) => Err(tramex_error!(
                                 e.to_string(),
-                                tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                                tramex_tools::errors::ErrorCode::FileInvalidEncoding
                             )),
                         };
                     }
                 }
-                Err(TramexError::new(
+                Err(tramex_error!(
                     "No file Selected".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNotSelected,
+                    tramex_tools::errors::ErrorCode::FileNotSelected
                 ))
             }))
         }

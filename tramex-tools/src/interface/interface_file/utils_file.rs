@@ -3,7 +3,9 @@
 use std::str::FromStr;
 
 use crate::errors::ErrorCode;
-use crate::interface::parser::{parsing_error_to_tramex_error, FileParser}; // to use the FileParser trait and implementations
+use crate::interface::parser::{parsing_error_to_tramex_error, FileParser};
+use crate::tramex_error;
+// to use the FileParser trait and implementations
 use crate::{
     data::Trace,
     errors::TramexError,
@@ -49,22 +51,22 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
         Some(first_line) => {
             let parts: Vec<&str> = first_line.split_whitespace().collect();
             if parts.is_empty() {
-                return Err(TramexError::new(
+                return Err(tramex_error!(
                     format!("Not enough parts in the line {:?} (line {})", first_line, copy_ix as u64 + 1),
-                    ErrorCode::FileParsing,
+                    ErrorCode::FileParsing
                 ));
             }
             let date = match chrono::NaiveTime::parse_from_str(parts[0], "%H:%M:%S%.3f") {
                 Ok(rdate) => rdate,
                 Err(_) => {
-                    return Err(TramexError::new(
+                    return Err(tramex_error!(
                         format!(
                             "Error while parsing date {:?} in {:?} (line {})",
                             parts[0],
                             first_line,
                             copy_ix + 1
                         ),
-                        ErrorCode::FileParsing,
+                        ErrorCode::FileParsing
                     ));
                 }
             };
@@ -72,14 +74,14 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
             let res_parse = match res_layer {
                 Ok(Layer::RRC) => RRCParser::parse(lines_to_parse),
                 _ => {
-                    return Err(TramexError::new(
+                    return Err(tramex_error!(
                         format!(
                             "Unknown message type {:?} in {:?} (line {})",
                             parts[1],
                             first_line,
                             copy_ix + 1
                         ),
-                        ErrorCode::FileParsing,
+                        ErrorCode::FileParsing
                     ));
                 }
             };

@@ -6,6 +6,7 @@ use crate::errors::ErrorCode;
 use crate::errors::TramexError;
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
+use crate::tramex_error;
 use std::path::PathBuf;
 
 use super::utils_file::parse_one_block;
@@ -115,10 +116,7 @@ impl File {
         let mut vtraces: Vec<Trace> = vec![];
         for _ in 0..nb_to_read {
             if *ix >= lines.len() {
-                return (
-                    vtraces,
-                    Some(TramexError::new("End of file".to_string(), ErrorCode::EndOfFile)),
-                );
+                return (vtraces, Some(tramex_error!("End of file".to_string(), ErrorCode::EndOfFile)));
             }
             match parse_one_block(&lines[*ix..], ix) {
                 Ok(trace) => {

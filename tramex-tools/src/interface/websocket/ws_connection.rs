@@ -2,6 +2,7 @@
 use core::fmt::{Debug, Formatter};
 use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
 
+use crate::tramex_error;
 use crate::{data::Data, errors::TramexError};
 
 use crate::interface::{interface_types::InterfaceTrait, layer::Layers, log_get::LogGet, types::WebSocketLog};
@@ -35,9 +36,9 @@ impl WsConnection {
     pub fn close_impl(&mut self) -> Result<(), TramexError> {
         if let Err(err) = self.ws_sender.close() {
             log::error!("Error closing WebSocket: {}", err);
-            return Err(TramexError::new(
+            return Err(tramex_error!(
                 err.to_string(),
-                crate::errors::ErrorCode::WebSocketErrorClosing,
+                crate::errors::ErrorCode::WebSocketErrorClosing
             ));
         }
         Ok(())
@@ -62,9 +63,9 @@ impl InterfaceTrait for WsConnection {
             }
             Err(err) => {
                 log::error!("Error encoding message: {:?}", err);
-                return Err(TramexError::new(
+                return Err(tramex_error!(
                     err.to_string(),
-                    crate::errors::ErrorCode::WebSocketErrorEncodingMessage,
+                    crate::errors::ErrorCode::WebSocketErrorEncodingMessage
                 ));
             }
         }
@@ -98,25 +99,25 @@ impl InterfaceTrait for WsConnection {
                                 Err(err) => {
                                     log::error!("Error decoding message: {:?}", err);
                                     log::error!("Message: {:?}", event_text);
-                                    return Err(TramexError::new(
+                                    return Err(tramex_error!(
                                         err.to_string(),
-                                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+                                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage
                                     ));
                                 }
                             }
                         }
                         WsMessage::Unknown(str_error) => {
                             log::error!("Unknown message: {:?}", str_error);
-                            return Err(TramexError::new(
+                            return Err(tramex_error!(
                                 str_error,
-                                crate::errors::ErrorCode::WebSocketUnknownMessageReceived,
+                                crate::errors::ErrorCode::WebSocketUnknownMessageReceived
                             ));
                         }
                         WsMessage::Binary(bin) => {
                             log::error!("Unknown binary message: {:?}", bin);
-                            return Err(TramexError::new(
+                            return Err(tramex_error!(
                                 format!("Unknown binary message: {:?}", bin),
-                                crate::errors::ErrorCode::WebSocketUnknownBinaryMessageReceived,
+                                crate::errors::ErrorCode::WebSocketUnknownBinaryMessageReceived
                             ));
                         }
                         _ => {
@@ -131,15 +132,15 @@ impl InterfaceTrait for WsConnection {
                 WsEvent::Closed => {
                     *available = false;
                     log::debug!("WebSocket closed");
-                    return Err(TramexError::new(
+                    return Err(tramex_error!(
                         "WebSocket closed".to_string(),
-                        crate::errors::ErrorCode::WebSocketClosed,
+                        crate::errors::ErrorCode::WebSocketClosed
                     ));
                 }
                 WsEvent::Error(str_err) => {
                     *available = false;
                     log::error!("WebSocket error: {:?}", str_err);
-                    return Err(TramexError::new(str_err, crate::errors::ErrorCode::WebSocketError));
+                    return Err(tramex_error!(str_err, crate::errors::ErrorCode::WebSocketError));
                 }
             }
         }

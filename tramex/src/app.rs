@@ -206,10 +206,6 @@ impl eframe::App for TramexApp {
 
 /// Display an error
 fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
-    ui.label(format!("Error code: {}", error_item.get_msg()));
-    if error_item.is_recoverable() {
-        ui.label("Recoverable error !");
-    }
     ui.colored_label(egui::Color32::RED, &error_item.message);
     if ui.button("Copy error").clicked() {
         ui.output_mut(|o| o.copied_text = format!("{}\n{}", &error_item.get_msg(), &error_item.message,));
@@ -217,5 +213,6 @@ fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
     if ui.button("Close this error").clicked() {
         return true;
     }
+    ui.label("Debug").on_hover_text(&error_item.debug);
     false
 }

@@ -1,6 +1,6 @@
 //! useful functions
 
-use crate::errors::{ErrorCode, TramexError};
+use crate::{errors::{ErrorCode, TramexError}, tramex_error};
 
 /// Extract hexadecimal data from a vector of strings.
 /// # Errors
@@ -20,9 +20,9 @@ pub fn extract_hexe<T: AsRef<str>>(data: &[T]) -> Result<Vec<u8>, TramexError> {
             let chars_only: String = str_piece.chars().filter(|c| !c.is_whitespace()).collect();
             data.push(chars_only);
         } else {
-            return Err(TramexError::new(
+            return Err(tramex_error!(
                 format!("Error decoding hexe {:?} ({})", trimmed, trimmed.len()),
-                ErrorCode::HexeDecodingError,
+                ErrorCode::HexeDecodingError
             ));
         }
     }

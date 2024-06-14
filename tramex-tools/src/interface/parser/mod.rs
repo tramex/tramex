@@ -7,6 +7,7 @@ use crate::data::Trace;
 
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
+use crate::tramex_error;
 use chrono::NaiveTime;
 use chrono::Timelike;
 
@@ -30,7 +31,7 @@ impl ParsingError {
 #[inline]
 pub fn parsing_error_to_tramex_error(error: ParsingError, idx: u64) -> TramexError {
     let index = idx + error.line_idx;
-    TramexError::new(format!("{} (line {})", error.message, index), ErrorCode::FileParsing)
+    tramex_error!(format!("{} (line {})", error.message, index), ErrorCode::FileParsing)
 }
 
 /// Trait for file parser
@@ -60,8 +61,8 @@ pub fn time_to_milliseconds(time: &NaiveTime) -> i64 {
 /// Build a eof_error
 #[inline]
 pub fn eof_error(line_idx: u64) -> TramexError {
-    TramexError::new(
+    tramex_error!(
         format!("End of file (line {})", line_idx),
-        crate::errors::ErrorCode::EndOfFile,
+        crate::errors::ErrorCode::EndOfFile
     )
 }

@@ -56,6 +56,8 @@ impl Connector {
     /// Return an error if the connection failed
     #[cfg(feature = "websocket")]
     pub fn connect(&mut self, url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
+        use crate::tramex_error;
+
         match WsConnection::connect(url, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
                 self.interface = Some(Interface::Ws(WsConnection {
@@ -68,9 +70,9 @@ impl Connector {
             }
             Err(error) => {
                 log::error!("Failed to connect to {:?}: {}", url, error);
-                Err(TramexError::new(
+                Err(tramex_error!(
                     error.to_string(),
-                    crate::errors::ErrorCode::WebSocketFailedToConnect,
+                    crate::errors::ErrorCode::WebSocketFailedToConnect
                 ))
             }
         }
