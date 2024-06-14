@@ -24,10 +24,15 @@ pub struct File {
 
     /// Full read status of the file.
     pub full_read: bool,
+
     /// the number of log to read each batch
     nb_read: usize,
+
     /// The previous line number
     index_line: usize,
+
+    /// Available
+    pub available: bool,
 }
 
 impl Default for File {
@@ -38,24 +43,18 @@ impl Default for File {
             full_read: false,
             nb_read: DEFAULT_NB,
             index_line: 0,
+            available: true,
         }
     }
 }
 
 impl InterfaceTrait for File {
-    fn get_more_data(
-        &mut self,
-        _layer_list: Layers,
-        _max_size: u64,
-        data: &mut Data,
-        available: &mut bool,
-    ) -> Result<(), TramexError> {
+    fn get_more_data(&mut self, _layer_list: Layers, data: &mut Data) -> Result<(), TramexError> {
         if self.full_read {
             return Ok(());
         }
         let (mut traces, err_processed) = self.process();
         data.events.append(&mut traces);
-        *available = true;
         if let Some(err) = err_processed {
             if !(matches!(err.get_code(), ErrorCode::EndOfFile)) {
                 return Err(err);
@@ -64,7 +63,7 @@ impl InterfaceTrait for File {
         Ok(())
     }
 
-    fn try_recv(&mut self, _data: &mut Data, _available: &mut bool) -> Result<(), TramexError> {
+    fn try_recv(&mut self, _data: &mut Data) -> Result<(), TramexError> {
         Ok(())
     }
 
@@ -82,8 +81,22 @@ impl File {
             full_read: false,
             nb_read: DEFAULT_NB,
             index_line: 0,
+            available: true,
         }
     }
+
+    /// set file mode using a path and content
+    pub fn new_file_content(file_path: PathBuf, file_content: String) -> Self {
+        Self {
+            file_path,
+            file_content: file_content.lines().map(|x| x.to_string()).collect(),
+            full_read: false,
+            nb_read: DEFAULT_NB,
+            index_line: 0,
+            available: true,
+        }
+    }
+
     /// Creating a new File defining the number of log to read per batch
     pub fn new_with_to_read(file_path: PathBuf, file_content: String, nb_to_read: usize) -> Self {
         Self {
@@ -92,6 +105,7 @@ impl File {
             full_read: false,
             nb_read: nb_to_read,
             index_line: 0,
+            available: true,
         }
     }
     /// To update the number of log to read per batch

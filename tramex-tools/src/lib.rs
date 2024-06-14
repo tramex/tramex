@@ -9,7 +9,6 @@
 )]
 #![warn(clippy::multiple_crate_versions)]
 
-pub mod connector;
 pub mod data;
 pub mod errors;
 pub mod interface;

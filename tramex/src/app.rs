@@ -20,9 +20,6 @@ pub struct TramexApp {
 
     /// Show about windows
     show_about_windows: bool,
-
-    /// Show about windows
-    show_options_windows: bool,
 }
 
 impl TramexApp {
@@ -49,9 +46,6 @@ impl TramexApp {
             }
             if ui.button("About").clicked() {
                 self.show_about_windows = !self.show_about_windows;
-            }
-            if ui.button("Options").clicked() {
-                self.show_options_windows = !self.show_options_windows;
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
@@ -152,18 +146,6 @@ impl TramexApp {
                 });
             });
     }
-
-    /// Display the options windows
-    fn ui_options_windows(&mut self, ctx: &egui::Context) {
-        egui::Window::new("Options")
-            .open(&mut self.show_options_windows)
-            .resizable([true, true])
-            .show(ctx, |ui| {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    self.frontend.ui_options(ui);
-                });
-            });
-    }
 }
 
 impl Default for TramexApp {
@@ -172,7 +154,6 @@ impl Default for TramexApp {
             frontend: FrontEnd::new(),
             error_panel: vec![],
             show_about_windows: false,
-            show_options_windows: false,
         }
     }
 }
@@ -197,9 +178,6 @@ impl eframe::App for TramexApp {
         self.ui_error_panel(ctx);
         if self.show_about_windows {
             self.ui_about_windows(ctx);
-        }
-        if self.show_options_windows {
-            self.ui_options_windows(ctx);
         }
     }
 }

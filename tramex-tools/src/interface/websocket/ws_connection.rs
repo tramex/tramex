@@ -2,10 +2,11 @@
 use core::fmt::{Debug, Formatter};
 use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
 
+use crate::interface::interface_types::InterfaceTrait;
 use crate::tramex_error;
 use crate::{data::Data, errors::TramexError};
 
-use crate::interface::{interface_types::InterfaceTrait, layer::Layers, log_get::LogGet, types::WebSocketLog};
+use crate::interface::{layer::Layers, log_get::LogGet, types::WebSocketLog};
 /// WsConnection struct
 pub struct WsConnection {
     /// WebSocket sender
@@ -19,9 +20,27 @@ pub struct WsConnection {
 
     /// Connecting flag
     pub connecting: bool,
+
+    /// Asking size max
+    pub asking_size_max: u64,
+
+    /// Available flag
+    pub available: bool,
 }
 
 impl WsConnection {
+    /// Create a new WsConnection
+    pub fn new(ws_sender: WsSender, ws_receiver: WsReceiver) -> Self {
+        Self {
+            ws_sender,
+            ws_receiver,
+            msg_id: 1,
+            connecting: true,
+            asking_size_max: 1024,
+            available: true,
+        }
+    }
+
     /// Connect to a WebSocket
     /// # Errors
     /// Return an error as String if the connection failed - see [`ewebsock::connect_with_wakeup`] for more details
@@ -46,14 +65,8 @@ impl WsConnection {
 }
 
 impl InterfaceTrait for WsConnection {
-    fn get_more_data(
-        &mut self,
-        layer_list: Layers,
-        max_size: u64,
-        _data: &mut Data,
-        _available: &mut bool,
-    ) -> Result<(), TramexError> {
-        let msg = LogGet::new(self.msg_id, layer_list, max_size);
+    fn get_more_data(&mut self, layer_list: Layers, _data: &mut Data) -> Result<(), TramexError> {
+        let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max);
         log::debug!("Sending message: {:?}", msg);
         match serde_json::to_string(&msg) {
             Ok(msg_stringed) => {
@@ -72,12 +85,12 @@ impl InterfaceTrait for WsConnection {
         Ok(())
     }
 
-    fn try_recv(&mut self, data: &mut Data, available: &mut bool) -> Result<(), TramexError> {
+    fn try_recv(&mut self, data: &mut Data) -> Result<(), TramexError> {
         while let Some(event) = self.ws_receiver.try_recv() {
             self.connecting = false;
             match event {
                 WsEvent::Message(msg) => {
-                    *available = true;
+                    self.available = true;
                     match msg {
                         WsMessage::Text(event_text) => {
                             let decoded: Result<WebSocketLog, serde_json::Error> = serde_json::from_str(&event_text);
@@ -126,11 +139,11 @@ impl InterfaceTrait for WsConnection {
                     }
                 }
                 WsEvent::Opened => {
-                    *available = true;
+                    self.available = true;
                     log::debug!("WebSocket opened");
                 }
                 WsEvent::Closed => {
-                    *available = false;
+                    self.available = false;
                     log::debug!("WebSocket closed");
                     return Err(tramex_error!(
                         "WebSocket closed".to_string(),
@@ -138,7 +151,7 @@ impl InterfaceTrait for WsConnection {
                     ));
                 }
                 WsEvent::Error(str_err) => {
-                    *available = false;
+                    self.available = false;
                     log::error!("WebSocket error: {:?}", str_err);
                     return Err(tramex_error!(str_err, crate::errors::ErrorCode::WebSocketError));
                 }
