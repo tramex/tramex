@@ -63,6 +63,7 @@ impl FileHandler {
         s
     }
 
+    /// Parse the current URL to get the files list URL
     fn parse_current_url() -> Option<String> {
         #[cfg(target_arch = "wasm32")]
         {
