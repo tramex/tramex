@@ -40,7 +40,7 @@ jobs:
             - name: Set up cargo cache
               uses: Swatinem/rust-cache@v2
             - name: Build
-              run: trunk build --release --public-url ./ --dist ../dist/
+              run: trunk build --release --public-url ./
             - uses: taiki-e/install-action@cargo-llvm-cov
             - name: Run coverage
               run: |
