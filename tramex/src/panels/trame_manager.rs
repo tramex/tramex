@@ -16,7 +16,7 @@ impl TrameManager {
     /// Create a new TrameManager
     pub fn new() -> Self {
         Self {
-            layers_list: Layers::new(),
+            layers_list: Layers::new_optiniated(),
             should_get_more_log: false,
         }
     }
