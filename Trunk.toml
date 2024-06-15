@@ -1,6 +1,9 @@
 [build]
 target = "tramex/index.html"
-
+dist = "dist"
 
 [watch]
 watch = ["tramex", "tramex-tools"]
+
+[clean]
+dist = "dist"
