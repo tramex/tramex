@@ -167,8 +167,8 @@ impl eframe::App for TramexApp {
             });
         });
 
-        if let Err(err) = self.frontend.ui_connector(ctx) {
-            self.error_panel.push(err);
+        if let Err(err) = &mut self.frontend.ui_connector(ctx) {
+            self.error_panel.append(err);
         }
 
         if let Err(err) = &mut self.frontend.ui(ctx) {

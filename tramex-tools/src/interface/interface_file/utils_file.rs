@@ -81,7 +81,7 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
                             first_line,
                             copy_ix + 1
                         ),
-                        ErrorCode::FileParsing
+                        ErrorCode::ParsingLayerNotImplemented
                     ));
                 }
             };

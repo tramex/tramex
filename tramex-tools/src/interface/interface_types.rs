@@ -22,7 +22,7 @@ pub trait InterfaceTrait {
     /// Get more data
     /// # Errors
     /// Return an error if the data is not received correctly
-    fn get_more_data(&mut self, _layer_list: Layers, data: &mut Data) -> Result<(), TramexError>;
+    fn get_more_data(&mut self, _layer_list: Layers, data: &mut Data) -> Result<(), Vec<TramexError>>;
 
     /// Try to close the interface
     /// # Errors

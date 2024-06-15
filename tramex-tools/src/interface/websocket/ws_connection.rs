@@ -71,7 +71,7 @@ impl WsConnection {
 }
 
 impl InterfaceTrait for WsConnection {
-    fn get_more_data(&mut self, layer_list: Layers, _data: &mut Data) -> Result<(), TramexError> {
+    fn get_more_data(&mut self, layer_list: Layers, _data: &mut Data) -> Result<(), Vec<TramexError>> {
         let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max);
         log::debug!("Sending message: {:?}", msg);
         match serde_json::to_string(&msg) {
@@ -82,10 +82,10 @@ impl InterfaceTrait for WsConnection {
             }
             Err(err) => {
                 log::error!("Error encoding message: {:?}", err);
-                return Err(tramex_error!(
+                return Err(vec![tramex_error!(
                     err.to_string(),
                     crate::errors::ErrorCode::WebSocketErrorEncodingMessage
-                ));
+                )]);
             }
         }
         Ok(())

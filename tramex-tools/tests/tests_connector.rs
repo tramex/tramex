@@ -26,7 +26,7 @@ mod tests {
                 file,
             }
         }
-        pub fn get_more_data(&mut self, layers: Layers) -> Result<(), TramexError> {
+        pub fn get_more_data(&mut self, layers: Layers) -> Result<(), Vec<TramexError>> {
             self.file.get_more_data(layers, &mut self.data)
         }
     }
@@ -87,11 +87,11 @@ mod tests {
         let mut f = DataHandler::new(file);
         match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                unreachable!();
+                assert!(false);
             }
             Err(e) => {
                 eprintln!("{:?}", e);
-                assert!(e.message.contains("Could not parse the JSON like part, missing closing }"));
+                assert!(e[0].message.contains("Could not parse the JSON like part, missing closing }"));
             }
         }
     }
@@ -103,11 +103,11 @@ mod tests {
         let mut f = DataHandler::new(file);
         match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                unreachable!();
+                assert!(false);
             }
             Err(e) => {
                 eprintln!("{:?}", e);
-                assert!(e.message.contains("The canal and/or canal message could not be parsed"));
+                assert!(e[0].message.contains("The canal and/or canal message could not be parsed"));
             }
         }
     }
@@ -119,11 +119,11 @@ mod tests {
         let mut f = DataHandler::new(file);
         match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                unreachable!();
+                assert!(false);
             }
             Err(e) => {
                 eprintln!("{:?}", e);
-                assert!(e.message.contains("Error while parsing date"));
+                assert!(e.first().unwrap().message.contains("Error while parsing date"));
             }
         }
     }
@@ -138,11 +138,11 @@ mod tests {
         let mut last_size_data = 0;
         let mut last_size_errors = 0;
         loop {
-            match f.get_more_data(Layers::all_debug()) {
+            match &mut f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
                     eprintln!("{:?}", e);
-                    errors.push(e);
+                    errors.append(e);
                 }
             }
             if f.data.events.len() == last_size_data && errors.len() == last_size_errors {
@@ -171,10 +171,10 @@ mod tests {
         let mut last_size_data = 0;
         let mut last_size_errors = 0;
         loop {
-            match f.get_more_data(Layers::all_debug()) {
+            match &mut f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
-                    errors.push(e);
+                    errors.append(e);
                 }
             }
             if f.data.events.len() == last_size_data && errors.len() == last_size_errors {

@@ -128,7 +128,7 @@ impl Handler for WsHandler {
         Ok(())
     }
 
-    fn get_more_data(&mut self, layer_list: Layers, data: &mut Data) -> Result<(), TramexError> {
+    fn get_more_data(&mut self, layer_list: Layers, data: &mut Data) -> Result<(), Vec<TramexError>> {
         if let Some(interface_ws) = &mut self.inner {
             return interface_ws.get_more_data(layer_list, data);
         }

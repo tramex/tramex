@@ -432,7 +432,7 @@ impl Handler for FileHandler {
         &mut self,
         layer_list: tramex_tools::interface::layer::Layers,
         data: &mut tramex_tools::data::Data,
-    ) -> Result<(), TramexError> {
+    ) -> Result<(), Vec<TramexError>> {
         if let Some(file) = &mut self.file {
             return file.get_more_data(layer_list, data);
         }

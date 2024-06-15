@@ -111,8 +111,8 @@ impl FrontEnd {
     }
 
     /// Show the UI connector
-    pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
-        let mut error = None;
+    pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
+        let mut errors = vec![];
         if self.open_menu_connector {
             egui::SidePanel::left("backend_panel")
                 .max_width(100.0)
@@ -158,7 +158,7 @@ impl FrontEnd {
                                     }
                                     Ok(false) => {}
                                     Err(err) => {
-                                        error = Some(err);
+                                        errors.push(err);
                                     }
                                 }
                             }
@@ -176,15 +176,19 @@ impl FrontEnd {
                                 if let Err(err) =
                                     handle.get_more_data(self.trame_manager.layers_list.clone(), &mut self.data)
                                 {
-                                    error = Some(err);
+                                    for one_error in err {
+                                        if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
+                                            errors.push(one_error);
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 });
         }
-        if let Some(e) = error {
-            return Err(e);
+        if !errors.is_empty() {
+            return Err(errors);
         }
         Ok(())
     }

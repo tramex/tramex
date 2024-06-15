@@ -20,7 +20,7 @@ pub trait Handler {
     /// Get more data depending on the interface
     /// # Errors
     /// Return an error if the interface is not set
-    fn get_more_data(&mut self, layer_list: Layers, data: &mut Data) -> Result<(), TramexError>;
+    fn get_more_data(&mut self, layer_list: Layers, data: &mut Data) -> Result<(), Vec<TramexError>>;
 
     /// Try to receive data
     /// # Errors
