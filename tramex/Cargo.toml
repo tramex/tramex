@@ -1,6 +1,6 @@
 [package]
 name = "tramex"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "Tramex is a 4G frame analyser"
 license = "GPL-3.0"
@@ -12,7 +12,7 @@ authors = [
 ]
 repository = "https://github.com/tramex/tramex"
 homepage = "https://tramex.github.io/tramex"
-readme = "README.md"
+readme = "../README.md"
 keywords = ["frame", "4G", "LTE"]
 categories = ["visualization", "network-programming"]
 
