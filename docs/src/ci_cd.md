@@ -51,3 +51,9 @@ The Tests file sets up the cargo cache, builds the project and runs the tests im
 > WASM stands for **W**eb **AS**se**M**bly.
 
 This file is executed when a push command is performed or when a pull is requested on the main branch of the Git repository. It is used to test code before any new modification is accepted in order to preserve the consistency of the Tramex code through the development. Unlike the Tests file that runs tests on the consistency of the global code, the WASM file specifically tests the build of the `wasm` rust target (made by `trunk`).
+
+## Typos
+
+`typos.yml` is a file that is executed when a push command is performed or when a pull is requested on the main branch of the Git repository. It is used to check the spelling of the documentation. It uses the `typos` command to check the spelling.
+
+If a false positive is detected, it is possible to add the word to the `typos.toml` file in the root of the repository.
