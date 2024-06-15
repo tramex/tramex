@@ -93,13 +93,13 @@ impl OneLog {
                     layer: Layer::RRC,
                     additional_infos: infos,
                     hexa: self.extract_hexe().unwrap_or_default(),
-                    text: Some(self.data.iter().map(|x| x.to_string()).collect()), // maybe filter files
+                    text: Some(self.data[1..].iter().map(|x| x.to_string()).collect()),
                 };
                 Ok(trace)
             }
             _ => Err(tramex_error!(
-                "Layer not implemented".to_owned(),
-                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                format!("Layer {:?} not implemented", self.layer),
+                crate::errors::ErrorCode::ParsingLayerNotImplemented
             )),
         }
     }

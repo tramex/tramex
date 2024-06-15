@@ -1,0 +1,6 @@
+[build]
+target = "tramex/index.html"
+
+
+[watch]
+watch = ["tramex", "tramex-tools"]

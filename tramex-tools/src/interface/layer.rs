@@ -45,6 +45,9 @@ pub enum Layer {
 
     /// GTPU layer
     GTPU,
+
+    /// Special layer of amarisoft
+    PROD,
 }
 
 impl FromStr for Layer {
@@ -175,12 +178,12 @@ impl Layers {
     /// Create new Layers struct
     pub fn new() -> Self {
         Self {
-            phy: LayerLogLevel::Debug,
+            phy: LayerLogLevel::Warn,
             mac: LayerLogLevel::Warn,
             rlc: LayerLogLevel::Warn,
             pdcp: LayerLogLevel::Warn,
-            rrc: LayerLogLevel::Debug,
-            nas: LayerLogLevel::Debug,
+            rrc: LayerLogLevel::Warn,
+            nas: LayerLogLevel::Warn,
             s72: LayerLogLevel::Warn,
             s1ap: LayerLogLevel::Warn,
             ngap: LayerLogLevel::Warn,
@@ -195,7 +198,7 @@ impl Layers {
     }
 
     /// Create new Layers struct with all debug
-    pub fn all() -> Self {
+    pub fn all_debug() -> Self {
         Self {
             phy: LayerLogLevel::Debug,
             mac: LayerLogLevel::Debug,

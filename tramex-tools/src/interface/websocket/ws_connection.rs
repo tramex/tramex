@@ -1,8 +1,10 @@
 //! WsConnection struct
 use core::fmt::{Debug, Formatter};
 use ewebsock::{WsEvent, WsMessage, WsReceiver, WsSender};
+use std::vec;
 
 use crate::interface::interface_types::InterfaceTrait;
+use crate::interface::types::BaseMessage;
 use crate::tramex_error;
 use crate::{data::Data, errors::TramexError};
 
@@ -26,6 +28,9 @@ pub struct WsConnection {
 
     /// Available flag
     pub available: bool,
+
+    /// Name of the receiver
+    pub name: String,
 }
 
 impl WsConnection {
@@ -38,6 +43,7 @@ impl WsConnection {
             connecting: true,
             asking_size_max: 1024,
             available: true,
+            name: "".to_string(),
         }
     }
 
@@ -85,7 +91,16 @@ impl InterfaceTrait for WsConnection {
         Ok(())
     }
 
-    fn try_recv(&mut self, data: &mut Data) -> Result<(), TramexError> {
+    fn close(&mut self) -> Result<(), TramexError> {
+        self.close_impl()
+    }
+}
+
+impl WsConnection {
+    /// Try to receive data
+    /// # Errors
+    /// Return an error if the data is not received correctly
+    pub fn try_recv(&mut self, data: &mut Data) -> Result<(), Vec<TramexError>> {
         while let Some(event) = self.ws_receiver.try_recv() {
             self.connecting = false;
             match event {
@@ -96,6 +111,7 @@ impl InterfaceTrait for WsConnection {
                             let decoded: Result<WebSocketLog, serde_json::Error> = serde_json::from_str(&event_text);
                             match decoded {
                                 Ok(decoded_data) => {
+                                    let mut errors = vec![];
                                     for one_log in decoded_data.logs {
                                         match one_log.extract_data() {
                                             Ok(trace) => {
@@ -103,35 +119,50 @@ impl InterfaceTrait for WsConnection {
                                             }
                                             Err(err) => {
                                                 log::error!("Error while extracting data: {:?}", err);
-                                                log::error!("Message: {:?}", event_text);
-                                                return Err(err);
+                                                errors.push(err);
                                             }
                                         }
                                     }
+                                    if !errors.is_empty() {
+                                        return Err(errors);
+                                    }
                                 }
-                                Err(err) => {
-                                    log::error!("Error decoding message: {:?}", err);
-                                    log::error!("Message: {:?}", event_text);
-                                    return Err(tramex_error!(
-                                        err.to_string(),
-                                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage
-                                    ));
+                                Err(_err) => {
+                                    let decoded_base: Result<BaseMessage, serde_json::Error> =
+                                        serde_json::from_str(&event_text);
+                                    match decoded_base {
+                                        Ok(decoded_data) => {
+                                            if decoded_data.message == "ready" {
+                                                log::debug!("Received ready message");
+                                            }
+                                            log::debug!("Received BaseMessage: {:?}", decoded_data);
+                                            self.name = decoded_data.name;
+                                        }
+                                        Err(err) => {
+                                            log::error!("Error decoding message: {:?}", err);
+                                            log::error!("Message: {:?}", event_text);
+                                            return Err(vec![tramex_error!(
+                                                err.to_string(),
+                                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                                            )]);
+                                        }
+                                    }
                                 }
                             }
                         }
                         WsMessage::Unknown(str_error) => {
                             log::error!("Unknown message: {:?}", str_error);
-                            return Err(tramex_error!(
+                            return Err(vec![tramex_error!(
                                 str_error,
                                 crate::errors::ErrorCode::WebSocketUnknownMessageReceived
-                            ));
+                            )]);
                         }
                         WsMessage::Binary(bin) => {
                             log::error!("Unknown binary message: {:?}", bin);
-                            return Err(tramex_error!(
+                            return Err(vec![tramex_error!(
                                 format!("Unknown binary message: {:?}", bin),
                                 crate::errors::ErrorCode::WebSocketUnknownBinaryMessageReceived
-                            ));
+                            )]);
                         }
                         _ => {
                             log::debug!("Received Ping-Pong")
@@ -145,23 +176,19 @@ impl InterfaceTrait for WsConnection {
                 WsEvent::Closed => {
                     self.available = false;
                     log::debug!("WebSocket closed");
-                    return Err(tramex_error!(
+                    return Err(vec![tramex_error!(
                         "WebSocket closed".to_string(),
                         crate::errors::ErrorCode::WebSocketClosed
-                    ));
+                    )]);
                 }
                 WsEvent::Error(str_err) => {
                     self.available = false;
                     log::error!("WebSocket error: {:?}", str_err);
-                    return Err(tramex_error!(str_err, crate::errors::ErrorCode::WebSocketError));
+                    return Err(vec![tramex_error!(str_err, crate::errors::ErrorCode::WebSocketError)]);
                 }
             }
         }
         Ok(())
-    }
-
-    fn close(&mut self) -> Result<(), TramexError> {
-        self.close_impl()
     }
 }
 

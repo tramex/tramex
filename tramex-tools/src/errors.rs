@@ -53,6 +53,9 @@ pub enum ErrorCode {
 
     /// Request error
     RequestError,
+
+    /// ParsingLayerNotImplemented
+    ParsingLayerNotImplemented,
 }
 
 impl Default for ErrorCode {
@@ -82,6 +85,7 @@ impl std::fmt::Display for ErrorCode {
             Self::EndOfFile => "End of File",
             Self::FileParsing => "File: Parsing error",
             Self::RequestError => "Request error",
+            Self::ParsingLayerNotImplemented => "Parsing layer not implemented",
         };
         write!(f, "{}", str)
     }

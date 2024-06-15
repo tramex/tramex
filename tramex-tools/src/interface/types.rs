@@ -24,6 +24,25 @@ pub struct WebSocketLog {
     pub logs: Vec<OneLog>,
 }
 
+/// LogGet struct
+#[derive(serde::Deserialize, Debug)]
+pub struct BaseMessage {
+    /// Message
+    pub message: String,
+
+    /// Message ID
+    pub name: String,
+
+    /// Time
+    pub time: f64,
+
+    /// UTC
+    pub utc: f64,
+
+    /// Version
+    pub version: String,
+}
+
 #[derive(Debug, PartialEq)]
 /// LogLevel struct
 pub enum LogLevel {

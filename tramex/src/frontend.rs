@@ -12,7 +12,7 @@ use crate::set_open;
 use egui::Ui;
 use std::collections::BTreeSet;
 use tramex_tools::data::Data;
-use tramex_tools::errors::TramexError;
+use tramex_tools::errors::{ErrorCode, TramexError};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
 /// Choice enum
@@ -196,11 +196,15 @@ impl FrontEnd {
     }
 
     /// Show the UI
-    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
-        let mut error_to_return: Option<TramexError> = None;
+    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
+        let mut error_to_return = vec![];
         if let Some(handle) = &mut self.handler {
-            if let Err(err) = handle.try_recv(&mut self.data) {
-                error_to_return = Some(err);
+            if let Err(errors_vect) = handle.try_recv(&mut self.data) {
+                for one_error in errors_vect {
+                    if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
+                        error_to_return.push(one_error);
+                    }
+                }
             }
         }
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -209,7 +213,7 @@ impl FrontEnd {
                     let mut is_open: bool = self.open_windows.contains(one_window.name());
                     if let Err(err) = one_window.show(ctx, &mut is_open, &mut self.data) {
                         log::error!("Error in window {}", one_window.name());
-                        error_to_return = Some(err);
+                        error_to_return.push(err);
                     }
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
@@ -223,9 +227,9 @@ impl FrontEnd {
                 };
             }
         });
-        match error_to_return {
-            Some(e) => Err(e),
-            None => Ok(()),
+        if !error_to_return.is_empty() {
+            return Err(error_to_return);
         }
+        Ok(())
     }
 }

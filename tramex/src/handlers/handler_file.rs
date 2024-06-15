@@ -404,10 +404,7 @@ impl Handler for FileHandler {
         Ok(())
     }
 
-    fn try_recv(&mut self, data: &mut tramex_tools::data::Data) -> Result<(), TramexError> {
-        if let Some(file) = &mut self.file {
-            return file.try_recv(data);
-        }
+    fn try_recv(&mut self, _data: &mut tramex_tools::data::Data) -> Result<(), Vec<TramexError>> {
         Ok(())
     }
 

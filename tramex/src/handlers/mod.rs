@@ -25,7 +25,7 @@ pub trait Handler {
     /// Try to receive data
     /// # Errors
     /// Return an error if the interface is not set
-    fn try_recv(&mut self, data: &mut Data) -> Result<(), TramexError>;
+    fn try_recv(&mut self, data: &mut Data) -> Result<(), Vec<TramexError>>;
 
     /// Close the interface
     /// # Errors

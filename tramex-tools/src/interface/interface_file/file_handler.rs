@@ -63,10 +63,6 @@ impl InterfaceTrait for File {
         Ok(())
     }
 
-    fn try_recv(&mut self, _data: &mut Data) -> Result<(), TramexError> {
-        Ok(())
-    }
-
     fn close(&mut self) -> Result<(), TramexError> {
         Ok(())
     }

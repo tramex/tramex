@@ -51,7 +51,7 @@ mod tests {
         let mut file = File::new_file_content(filename.into(), content);
         file.change_nb_read(50);
         let mut f = DataHandler::new(file);
-        let res = f.get_more_data(Layers::all());
+        let res = f.get_more_data(Layers::all_debug());
         eprintln!("result {:?}", res);
         eprintln!("count {:?}", f.data.events.len());
         assert!(f.data.events.len() == 15);
@@ -85,7 +85,7 @@ mod tests {
         let content = std::fs::read_to_string(filename).unwrap();
         let file = File::new_file_content(filename.into(), content);
         let mut f = DataHandler::new(file);
-        match f.get_more_data(Layers::all()) {
+        match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
                 unreachable!();
             }
@@ -101,7 +101,7 @@ mod tests {
         let content = std::fs::read_to_string(filename).unwrap();
         let file = File::new_file_content(filename.into(), content);
         let mut f = DataHandler::new(file);
-        match f.get_more_data(Layers::all()) {
+        match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
                 unreachable!();
             }
@@ -117,7 +117,7 @@ mod tests {
         let content = std::fs::read_to_string(filename).unwrap();
         let file = File::new_file_content(filename.into(), content);
         let mut f = DataHandler::new(file);
-        match f.get_more_data(Layers::all()) {
+        match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
                 unreachable!();
             }
@@ -138,7 +138,7 @@ mod tests {
         let mut last_size_data = 0;
         let mut last_size_errors = 0;
         loop {
-            match f.get_more_data(Layers::all()) {
+            match f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
                     eprintln!("{:?}", e);
@@ -171,7 +171,7 @@ mod tests {
         let mut last_size_data = 0;
         let mut last_size_errors = 0;
         loop {
-            match f.get_more_data(Layers::all()) {
+            match f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
                     errors.push(e);

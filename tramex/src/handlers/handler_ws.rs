@@ -90,12 +90,15 @@ impl Handler for WsHandler {
                 if interface_ws.connecting {
                     ui.label("Connecting...");
                     ui.spinner();
-                } else if ui.button("Close").clicked() {
-                    match self.close_ws() {
-                        Ok(_) => {}
-                        Err(err) => return Err(err),
+                } else {
+                    ui.label(format!("Name: {}", &interface_ws.name));
+                    if ui.button("Close").clicked() {
+                        match self.close_ws() {
+                            Ok(_) => {}
+                            Err(err) => return Err(err),
+                        }
+                        return Ok(true);
                     }
-                    return Ok(true);
                 }
             }
             Ok(false)
@@ -118,7 +121,7 @@ impl Handler for WsHandler {
         self.close_ws()
     }
 
-    fn try_recv(&mut self, data: &mut Data) -> Result<(), TramexError> {
+    fn try_recv(&mut self, data: &mut Data) -> Result<(), Vec<TramexError>> {
         if let Some(interface_ws) = &mut self.inner {
             return interface_ws.try_recv(data);
         }

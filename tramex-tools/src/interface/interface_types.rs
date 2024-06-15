@@ -19,11 +19,6 @@ pub enum Interface {
 
 /// Interface trait
 pub trait InterfaceTrait {
-    /// Try to receive data
-    /// # Errors
-    /// Return an error if the data is not received correctly
-    fn try_recv(&mut self, data: &mut Data) -> Result<(), TramexError>;
-
     /// Get more data
     /// # Errors
     /// Return an error if the data is not received correctly

@@ -171,8 +171,8 @@ impl eframe::App for TramexApp {
             self.error_panel.push(err);
         }
 
-        if let Err(err) = self.frontend.ui(ctx) {
-            self.error_panel.push(err);
+        if let Err(err) = &mut self.frontend.ui(ctx) {
+            self.error_panel.append(err);
         }
 
         self.ui_error_panel(ctx);
