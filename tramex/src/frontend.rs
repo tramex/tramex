@@ -152,6 +152,9 @@ impl FrontEnd {
                                 match handle.ui(ui, &mut self.data, ctx.clone()) {
                                     Ok(true) => {
                                         self.handler = None;
+                                        for one_panel in self.windows.iter_mut() {
+                                            one_panel.clear();
+                                        }
                                     }
                                     Ok(false) => {}
                                     Err(err) => {
