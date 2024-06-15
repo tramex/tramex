@@ -46,19 +46,47 @@ pub struct FileHandler {
 impl FileHandler {
     /// Create a new file handler
     pub fn new() -> Self {
+        let url_list = if let Some(url_f) = FileHandler::parse_current_url() {
+            url_f
+        } else {
+            "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into()
+        };
+
         let mut s = Self {
             picked_path: None,
             file_upload: None,
             file_list: None,
-            url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
+            url_files: url_list,
             file: None,
         };
         s.get_file_list();
         s
     }
 
+    fn parse_current_url() -> Option<String> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            match web_sys::window() {
+                Some(window) => {
+                    let location = window.location();
+                    if let Ok(href) = location.href() {
+                        if let Ok(url) = web_sys::Url::new(&href) {
+                            let search_params = url.search_params();
+                            if let Some(url_f) = search_params.get("files_url") {
+                                return Some(url_f);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
     /// Get the files list
     pub fn get_file_list(&mut self) {
+        self.file_list = None;
         let callback = move |res: Result<ehttp::Response, String>| match res {
             Ok(res) => {
                 log::info!("File list fetched");
@@ -68,7 +96,7 @@ impl FileHandler {
                     Err(e) => {
                         log::warn!("{:?}", e);
                         Err(tramex_error!(
-                            e.to_string(),
+                            format!("Error decoding files list: {}", e.to_string()),
                             tramex_tools::errors::ErrorCode::FileErrorReadingFile
                         ))
                     }
@@ -76,7 +104,10 @@ impl FileHandler {
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                Err(tramex_error!(e.to_string(), tramex_tools::errors::ErrorCode::RequestError))
+                Err(tramex_error!(
+                    format!("Error loading files list: {}", e.to_string()),
+                    tramex_tools::errors::ErrorCode::RequestError
+                ))
             }
         };
         let request = ehttp::Request::get(&self.url_files);
@@ -359,6 +390,9 @@ impl Handler for FileHandler {
         ui.collapsing("File Options", |ui| {
             ui.label("Index of files URL:");
             ui.add(egui::TextEdit::singleline(&mut self.url_files));
+            if ui.button("Reload list").clicked() {
+                self.get_file_list();
+            }
         });
     }
 

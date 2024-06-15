@@ -67,7 +67,7 @@ impl TrameManager {
         ui.add_enabled_ui(is_enabled, |ui| {
             let text = if data.events.is_empty() { "Start" } else { "Next" };
             if ui.button(text).clicked() {
-                log::debug!("Next {}", text);
+                log::debug!("Clicked {}", text);
                 if data.events.len() > data.current_index + 1 {
                     data.current_index += 1;
                 } else {

@@ -138,16 +138,16 @@ impl Handler for WsHandler {
     fn show_available(&self, ui: &mut egui::Ui) {
         if let Some(interface_ws) = &self.inner {
             if interface_ws.connecting {
-                ui.label("Connecting...");
+                ui.label("Websocket connecting...");
                 ui.spinner();
                 return;
             }
             if interface_ws.available {
-                ui.label("Connected");
+                ui.label("Websocket connected");
                 return;
             }
         }
-        ui.label("Not connected");
+        ui.label("Websocket Not connected");
     }
 
     fn is_full_read(&self) -> bool {
