@@ -1,13 +1,16 @@
 //! This module contains the definition of the OneLog struct.
 
-use crate::data::Trace;
+use std::str::FromStr;
+
+use crate::data::{AdditionalInfos, Trace};
 use crate::errors::TramexError;
 use crate::interface::functions::extract_hexe;
 
 use crate::interface::{layer::Layer, types::SourceLog};
+use crate::tramex_error;
 
-use super::parser::parser_rrc::RRCParser;
-use super::parser::{parsing_error_to_tramex_error, FileParser}; // to use the FileParser trait and implementations
+use super::parser::parser_rrc::RRCInfos;
+use super::types::Direction; // to use the FileParser trait and implementations
 
 #[derive(serde::Deserialize, Debug)]
 /// Data structure to store the log.
@@ -26,6 +29,9 @@ pub struct OneLog {
 
     /// index
     pub idx: u64,
+
+    /// index
+    pub dir: Option<String>,
 }
 
 impl OneLog {
@@ -52,24 +58,48 @@ impl OneLog {
     pub fn extract_data(&self) -> Result<Trace, TramexError> {
         match self.layer {
             Layer::RRC => {
-                let infos = match RRCParser::parse_additional_infos(&self.data) {
-                    Ok(i) => i,
-                    Err(err) => {
-                        return Err(parsing_error_to_tramex_error(err, 0));
+                let dir = match &self.dir {
+                    Some(opt_dir) => match Direction::from_str(opt_dir) {
+                        Ok(d) => d,
+                        Err(_) => {
+                            return Err(tramex_error!(
+                                format!("Can't format direction {}", opt_dir),
+                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                            ));
+                        }
+                    },
+                    None => {
+                        return Err(tramex_error!(
+                            "Direction not found".to_owned(),
+                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                        ));
                     }
                 };
+                let firs_line = self.data[0].split(':').collect::<Vec<&str>>();
+                if firs_line.len() < 2 {
+                    return Err(tramex_error!(
+                        format!("Invalid first line {}", self.data[0]),
+                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                    ));
+                }
+                let rrc: RRCInfos = RRCInfos {
+                    direction: dir,
+                    canal: firs_line[0].to_owned(),
+                    canal_msg: firs_line[1][1..].to_owned(),
+                };
+                let infos = AdditionalInfos::RRCInfos(rrc);
                 let trace = Trace {
                     timestamp: self.timestamp.to_owned(),
                     layer: Layer::RRC,
                     additional_infos: infos,
                     hexa: self.extract_hexe().unwrap_or_default(),
-                    text: Some(self.data.iter().map(|x| x.to_string()).collect()), // maybe filter files
+                    text: Some(self.data[1..].iter().map(|x| x.to_string()).collect()),
                 };
                 Ok(trace)
             }
-            _ => Err(TramexError::new(
-                "Layer not implemented".to_owned(),
-                crate::errors::ErrorCode::WebSocketErrorDecodingMessage,
+            _ => Err(tramex_error!(
+                format!("Layer {:?} not implemented", self.layer),
+                crate::errors::ErrorCode::ParsingLayerNotImplemented
             )),
         }
     }

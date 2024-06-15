@@ -13,6 +13,7 @@ mod app;
 pub use app::TramexApp;
 
 mod frontend;
+pub mod handlers;
 pub mod panels;
 
 mod utils;

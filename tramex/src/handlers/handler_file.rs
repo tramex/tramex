@@ -3,7 +3,12 @@ use std::path::Path;
 
 use eframe::egui;
 use poll_promise::Promise;
-use tramex_tools::{errors::TramexError, interface::interface_file::file_handler::File};
+use tramex_tools::{
+    data::Data,
+    errors::TramexError,
+    interface::{interface_file::file_handler::File, interface_types::InterfaceTrait},
+    tramex_error,
+};
 
 use super::Handler;
 
@@ -32,11 +37,57 @@ pub struct FileHandler {
 
     /// URL files
     url_files: String,
+
+    #[serde(skip)]
+    /// File
+    file: Option<File>,
 }
 
 impl FileHandler {
     /// Create a new file handler
-    pub fn new(url: &str) -> Self {
+    pub fn new() -> Self {
+        let url_list = if let Some(url_f) = FileHandler::parse_current_url() {
+            url_f
+        } else {
+            "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into()
+        };
+
+        let mut s = Self {
+            picked_path: None,
+            file_upload: None,
+            file_list: None,
+            url_files: url_list,
+            file: None,
+        };
+        s.get_file_list();
+        s
+    }
+
+    /// Parse the current URL to get the files list URL
+    fn parse_current_url() -> Option<String> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            match web_sys::window() {
+                Some(window) => {
+                    let location = window.location();
+                    if let Ok(href) = location.href() {
+                        if let Ok(url) = web_sys::Url::new(&href) {
+                            let search_params = url.search_params();
+                            if let Some(url_f) = search_params.get("files_url") {
+                                return Some(url_f);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    /// Get the files list
+    pub fn get_file_list(&mut self) {
+        self.file_list = None;
         let callback = move |res: Result<ehttp::Response, String>| match res {
             Ok(res) => {
                 log::info!("File list fetched");
@@ -45,40 +96,35 @@ impl FileHandler {
                     Ok(items) => Ok(items),
                     Err(e) => {
                         log::warn!("{:?}", e);
-                        Err(TramexError::new(
-                            e.to_string(),
-                            tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                        Err(tramex_error!(
+                            format!("Error decoding files list: {}", e.to_string()),
+                            tramex_tools::errors::ErrorCode::FileErrorReadingFile
                         ))
                     }
                 }
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                Err(TramexError::new(e.to_string(), tramex_tools::errors::ErrorCode::RequestError))
+                Err(tramex_error!(
+                    format!("Error loading files list: {}", e.to_string()),
+                    tramex_tools::errors::ErrorCode::RequestError
+                ))
             }
         };
-        let request = ehttp::Request::get(url);
-        let file_list;
+        let request = ehttp::Request::get(&self.url_files);
         #[cfg(target_arch = "wasm32")]
         {
-            file_list = Some(Promise::spawn_local(async move {
+            self.file_list = Some(Promise::spawn_local(async move {
                 let res = ehttp::fetch_async(request).await;
                 callback(res)
             }));
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            file_list = Some(Promise::spawn_thread("http_get", move || {
+            self.file_list = Some(Promise::spawn_thread("http_get", move || {
                 let res = ehttp::fetch_blocking(&request);
                 callback(res)
             }));
-        }
-
-        Self {
-            picked_path: None,
-            file_upload: None,
-            file_list,
-            url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
         }
     }
 
@@ -91,31 +137,29 @@ impl FileHandler {
     /// Clear the file handler
     pub fn clear(&mut self) {
         self.file_upload = None;
+        self.file_list = None;
     }
 
     /// Get the result
     /// # Errors
     /// Return an error if the file contains errors
-    pub fn get_result(&mut self) -> Result<File, TramexError> {
+    pub fn get_result(&mut self) -> Result<Option<File>, TramexError> {
         let mut should_clean = false;
         let res = match &self.file_upload {
             Some(result) => match &result.ready() {
                 Some(ready) => match ready {
-                    Ok(curr_file) => Ok(curr_file.clone()),
+                    Ok(curr_file) => Ok(Some(curr_file.clone())),
                     Err(e) => {
                         should_clean = true;
                         Err(e.to_owned())
                     }
                 },
-                None => Err(TramexError::new(
+                None => Err(tramex_error!(
                     "File not ready".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNotReady,
+                    tramex_tools::errors::ErrorCode::FileNotReady
                 )),
             },
-            None => Err(TramexError::new(
-                "No file selected".to_string(),
-                tramex_tools::errors::ErrorCode::FileNotSelected,
-            )),
+            None => Ok(None),
         };
         log::debug!("Result: {:?}", res);
         if should_clean {
@@ -140,17 +184,17 @@ impl FileHandler {
                         };
                         Ok(File::new(path.into(), v.to_string()))
                     }
-                    Err(e) => Err(TramexError::new(
+                    Err(e) => Err(tramex_error!(
                         e.to_string(),
-                        tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                        tramex_tools::errors::ErrorCode::FileInvalidEncoding
                     )),
                 }
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                Err(TramexError::new(
+                Err(tramex_error!(
                     e.to_string(),
-                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                    tramex_tools::errors::ErrorCode::FileErrorReadingFile
                 ))
             }
         };
@@ -189,15 +233,15 @@ impl FileHandler {
                     log::info!("File reading from wasm");
                     return match std::str::from_utf8(&buf) {
                         Ok(v) => Ok(File::new(curr_file.file_name().into(), v.to_string())),
-                        Err(e) => Err(TramexError::new(
+                        Err(e) => Err(tramex_error!(
                             e.to_string(),
-                            tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                            tramex_tools::errors::ErrorCode::FileInvalidEncoding
                         )),
                     };
                 }
-                Err(TramexError::new(
-                    "No file Selected".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNotSelected,
+                Err(tramex_error!(
+                    "Upload: no file Selected".to_string(),
+                    tramex_tools::errors::ErrorCode::FileNotSelected
                 ))
             }));
         }
@@ -213,24 +257,24 @@ impl FileHandler {
                             Ok(v) => v,
                             Err(e) => {
                                 log::warn!("{:?}", e);
-                                return Err(TramexError::new(
+                                return Err(tramex_error!(
                                     e.to_string(),
-                                    tramex_tools::errors::ErrorCode::FileErrorReadingFile,
+                                    tramex_tools::errors::ErrorCode::FileErrorReadingFile
                                 ));
                             }
                         };
                         return match std::str::from_utf8(&buf) {
                             Ok(v) => Ok(File::new(path_buf, v.to_string())),
-                            Err(e) => Err(TramexError::new(
+                            Err(e) => Err(tramex_error!(
                                 e.to_string(),
-                                tramex_tools::errors::ErrorCode::FileInvalidEncoding,
+                                tramex_tools::errors::ErrorCode::FileInvalidEncoding
                             )),
                         };
                     }
                 }
-                Err(TramexError::new(
-                    "No file Selected".to_string(),
-                    tramex_tools::errors::ErrorCode::FileNotSelected,
+                Err(tramex_error!(
+                    "Upload: no file Selected".to_string(),
+                    tramex_tools::errors::ErrorCode::FileNotSelected
                 ))
             }))
         }
@@ -314,6 +358,7 @@ impl FileHandler {
     /// Return an error if the file contains errors
     pub fn check_file_load(&mut self) -> Result<(), TramexError> {
         if self.picked_path.is_none() {
+            let mut error = None;
             if let Some(result) = &self.file_upload {
                 if let Some(ready) = result.ready() {
                     match &ready {
@@ -327,10 +372,14 @@ impl FileHandler {
                             self.picked_path = Some(path_filename);
                         }
                         Err(e) => {
-                            return Err(e.to_owned());
+                            error = Some(e.to_owned());
                         }
                     }
                 }
+            }
+            if let Some(e) = error {
+                self.clear();
+                return Err(e);
             }
         }
         Ok(())
@@ -339,32 +388,84 @@ impl FileHandler {
 
 impl Handler for FileHandler {
     fn ui_options(&mut self, ui: &mut egui::Ui) {
-        ui.label("File Options");
+        ui.collapsing("File Options", |ui| {
+            ui.label("Index of files URL:");
+            ui.add(egui::TextEdit::singleline(&mut self.url_files));
+            if ui.button("Reload list").clicked() {
+                self.get_file_list();
+            }
+        });
     }
 
-    fn ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        conn: &mut tramex_tools::connector::Connector,
-        _new_ctx: egui::Context,
-    ) -> Result<(), TramexError> {
+    fn ui(&mut self, ui: &mut egui::Ui, data: &mut Data, _new_ctx: egui::Context) -> Result<bool, TramexError> {
         self.internal_ui(ui)?; // may return error
-        if self.picked_path.is_some() && conn.interface.is_none() {
+        if self.picked_path.is_some() && self.file.is_none() {
             match self.get_result() {
-                Ok(curr_file) => {
-                    conn.set_file(curr_file);
+                Ok(Some(curr_file)) => {
+                    self.file = curr_file.into();
                     self.clear();
                 }
+                Ok(None) => {}
                 Err(err) => {
                     log::error!("Error in get_result() {:?}", err);
+                    self.clear();
                     return Err(err);
                 }
             };
         };
         if self.get_picket_path().is_some() && ui.button("Close").on_hover_text("Close file").clicked() {
             self.reset();
-            conn.clear_interface();
+            data.clear();
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    fn close(&mut self) -> Result<(), TramexError> {
+        if let Some(file) = &mut self.file {
+            file.close()?;
         }
         Ok(())
+    }
+
+    fn get_more_data(
+        &mut self,
+        layer_list: tramex_tools::interface::layer::Layers,
+        data: &mut tramex_tools::data::Data,
+    ) -> Result<(), Vec<TramexError>> {
+        if let Some(file) = &mut self.file {
+            return file.get_more_data(layer_list, data);
+        }
+        Ok(())
+    }
+
+    fn try_recv(&mut self, _data: &mut tramex_tools::data::Data) -> Result<(), Vec<TramexError>> {
+        Ok(())
+    }
+
+    fn show_available(&self, ui: &mut egui::Ui) {
+        if self.file.is_some() {
+            ui.label("File available");
+        } else {
+            ui.label("File not available");
+        }
+    }
+
+    fn is_full_read(&self) -> bool {
+        if let Some(file) = &self.file {
+            return file.full_read;
+        }
+        false
+    }
+
+    fn is_interface(&self) -> bool {
+        self.file.is_some()
+    }
+
+    fn is_interface_available(&self) -> bool {
+        if let Some(file) = &self.file {
+            return file.available;
+        }
+        false
     }
 }

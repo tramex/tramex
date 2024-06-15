@@ -1,18 +1,18 @@
 //! Frontend module
+use crate::handlers::handler_file::FileHandler;
 #[cfg(feature = "websocket")]
-use crate::panels::handler_ws::WsHandler;
-use crate::panels::Handler;
+use crate::handlers::handler_ws::WsHandler;
+use crate::handlers::Handler;
 
 use crate::panels::{
-    handler_file::FileHandler, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
-    trame_manager::TrameManager, PanelController,
+    logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel, trame_manager::TrameManager,
+    PanelController,
 };
 use crate::set_open;
 use egui::Ui;
 use std::collections::BTreeSet;
-use tramex_tools::connector::Connector;
-use tramex_tools::errors::TramexError;
-use tramex_tools::interface::interface_types::Interface;
+use tramex_tools::data::Data;
+use tramex_tools::errors::{ErrorCode, TramexError};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
 /// Choice enum
@@ -29,8 +29,9 @@ pub enum Choice {
 #[derive(serde::Deserialize, serde::Serialize)]
 /// FrontEnd struct
 pub struct FrontEnd {
-    /// Connector
-    pub connector: Connector,
+    /// Data
+    #[serde(skip)]
+    pub data: Data,
 
     /// Open windows
     pub open_windows: BTreeSet<String>,
@@ -51,22 +52,18 @@ pub struct FrontEnd {
 
     /// Radio choice
     pub radio_choice: Choice,
-
-    /// URL files
-    pub url_files: String,
 }
 
 impl Default for FrontEnd {
     fn default() -> Self {
         Self {
-            connector: Connector::new(),
+            data: Data::default(),
             open_windows: BTreeSet::new(),
             windows: Vec::new(),
             open_menu_connector: true,
             radio_choice: Choice::default(),
             handler: None,
             trame_manager: TrameManager::new(),
-            url_files: "https://raw.githubusercontent.com/tramex/files/main/list.json?raw=true".into(),
         }
     }
 }
@@ -87,31 +84,20 @@ impl FrontEnd {
             open_windows.insert(one_box.name().to_owned());
         }
         Self {
-            connector: Connector::new(),
             open_windows,
             windows: wins,
             ..Default::default()
         }
     }
 
-    /// Show tiny ui in about panel
-    pub fn ui_options(&mut self, ui: &mut egui::Ui) {
-        match &mut self.handler {
-            Some(handler) => {
-                handler.ui_options(ui);
-                ui.label("Index of files URL:");
-                ui.add(egui::TextEdit::singleline(&mut self.url_files));
-            }
-            None => {}
-        }
-    }
-
     /// Menu bar
     pub fn menu_bar(&mut self, ui: &mut Ui) {
-        if self.connector.available {
+        if self.interface_available() {
             ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
                 ui.horizontal(|ui| {
-                    self.trame_manager.show_controls(ui, &mut self.connector);
+                    if let Some(handle) = &self.handler {
+                        self.trame_manager.show_controls(ui, &mut self.data, handle.is_full_read());
+                    }
                     ui.menu_button("Windows", |ui| {
                         for one_window in self.windows.iter_mut() {
                             let mut is_open: bool = self.open_windows.contains(one_window.name());
@@ -125,8 +111,8 @@ impl FrontEnd {
     }
 
     /// Show the UI connector
-    pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
-        let mut error = None;
+    pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
+        let mut errors = vec![];
         if self.open_menu_connector {
             egui::SidePanel::left("backend_panel")
                 .max_width(100.0)
@@ -136,92 +122,121 @@ impl FrontEnd {
                         ui.heading("Connector");
                         let save = self.radio_choice.clone();
                         ui.horizontal(|ui| {
-                            ui.add_enabled_ui(self.connector.interface.is_none(), |ui| {
+                            let enabled = if let Some(handle) = &self.handler {
+                                !handle.is_interface()
+                            } else {
+                                true
+                            };
+                            ui.add_enabled_ui(enabled, |ui| {
                                 ui.label("Choose ws or file");
                                 ui.radio_value(&mut self.radio_choice, Choice::File, "File");
                                 #[cfg(feature = "websocket")]
                                 ui.radio_value(&mut self.radio_choice, Choice::WebSocket, "WebSocket");
                             });
                         });
-                        ui.vertical(|ui| match &self.radio_choice {
+                        match &self.radio_choice {
                             #[cfg(feature = "websocket")]
                             Choice::WebSocket => {
                                 if save != self.radio_choice || self.handler.is_none() {
                                     self.handler = Some(Box::new(WsHandler::new()));
                                 }
-                                if let Some(handler) = &mut self.handler {
-                                    if let Err(err) = handler.ui(ui, &mut self.connector, ctx.clone()) {
-                                        error = Some(err);
-                                    }
-                                }
                             }
                             Choice::File => {
                                 if save != self.radio_choice || self.handler.is_none() {
-                                    self.handler = Some(Box::new(FileHandler::new(&self.url_files)));
+                                    self.handler = Some(Box::new(FileHandler::new()));
                                 }
-                                if let Some(file_handle) = &mut self.handler {
-                                    if let Err(err) = file_handle.ui(ui, &mut self.connector, ctx.clone()) {
-                                        error = Some(err);
+                            }
+                        };
+                        ui.vertical(|ui| {
+                            if let Some(handle) = &mut self.handler {
+                                match handle.ui(ui, &mut self.data, ctx.clone()) {
+                                    Ok(true) => {
+                                        self.handler = None;
+                                        for one_panel in self.windows.iter_mut() {
+                                            one_panel.clear();
+                                        }
+                                    }
+                                    Ok(false) => {}
+                                    Err(err) => {
+                                        errors.push(err);
                                     }
                                 }
                             }
                         });
                     });
                     ui.separator();
-                    if self.connector.available {
-                        self.trame_manager.show_options(ui, &mut self.connector);
-                        if self.trame_manager.should_get_more_log {
-                            self.trame_manager.should_get_more_log = false;
-                            if let Err(err) = self.connector.get_more_data(self.trame_manager.layers_list.clone()) {
-                                error = Some(err);
+                    if let Some(handle) = &mut self.handler {
+                        handle.ui_options(ui);
+                    }
+                    if self.interface_available() {
+                        if let Some(handle) = &mut self.handler {
+                            self.trame_manager.show_options(ui);
+                            if self.trame_manager.should_get_more_log {
+                                self.trame_manager.should_get_more_log = false;
+                                if let Err(err) =
+                                    handle.get_more_data(self.trame_manager.layers_list.clone(), &mut self.data)
+                                {
+                                    for one_error in err {
+                                        if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
+                                            errors.push(one_error);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 });
         }
-        if let Some(e) = error {
-            return Err(e);
+        if !errors.is_empty() {
+            return Err(errors);
         }
         Ok(())
     }
 
+    /// Check if the interface is available
+    pub fn interface_available(&self) -> bool {
+        if let Some(handle) = &self.handler {
+            handle.is_interface_available()
+        } else {
+            false
+        }
+    }
+
     /// Show the UI
-    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), TramexError> {
-        let mut error_to_return: Option<TramexError> = None;
-        if self.connector.interface.is_some() {
-            if let Err(err) = self.connector.try_recv() {
-                error_to_return = Some(err);
+    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
+        let mut error_to_return = vec![];
+        if let Some(handle) = &mut self.handler {
+            if let Err(errors_vect) = handle.try_recv(&mut self.data) {
+                for one_error in errors_vect {
+                    if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
+                        error_to_return.push(one_error);
+                    }
+                }
             }
         }
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.connector.available {
+            if self.interface_available() {
                 for one_window in self.windows.iter_mut() {
                     let mut is_open: bool = self.open_windows.contains(one_window.name());
-                    if let Err(err) = one_window.show(ctx, &mut is_open, &mut self.connector.data) {
+                    if let Err(err) = one_window.show(ctx, &mut is_open, &mut self.data) {
                         log::error!("Error in window {}", one_window.name());
-                        error_to_return = Some(err);
+                        error_to_return.push(err);
                     }
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
                 // show nothing
             } else {
-                match &self.connector.interface {
-                    #[cfg(feature = "websocket")]
-                    Some(Interface::Ws(_interface_ws)) => {
-                        ui.label("WebSocket not available");
-                    }
-                    Some(Interface::File(_interface_file)) => {
-                        ui.label("File not available");
-                    }
+                match &self.handler {
+                    Some(handle) => handle.show_available(ui),
                     None => {
                         ui.label("Not connected");
                     }
-                }
+                };
             }
         });
-        match error_to_return {
-            Some(e) => Err(e),
-            None => Ok(()),
+        if !error_to_return.is_empty() {
+            return Err(error_to_return);
         }
+        Ok(())
     }
 }

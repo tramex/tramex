@@ -20,9 +20,6 @@ pub struct TramexApp {
 
     /// Show about windows
     show_about_windows: bool,
-
-    /// Show about windows
-    show_options_windows: bool,
 }
 
 impl TramexApp {
@@ -49,9 +46,6 @@ impl TramexApp {
             }
             if ui.button("About").clicked() {
                 self.show_about_windows = !self.show_about_windows;
-            }
-            if ui.button("Options").clicked() {
-                self.show_options_windows = !self.show_options_windows;
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
@@ -152,18 +146,6 @@ impl TramexApp {
                 });
             });
     }
-
-    /// Display the options windows
-    fn ui_options_windows(&mut self, ctx: &egui::Context) {
-        egui::Window::new("Options")
-            .open(&mut self.show_options_windows)
-            .resizable([true, true])
-            .show(ctx, |ui| {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    self.frontend.ui_options(ui);
-                });
-            });
-    }
 }
 
 impl Default for TramexApp {
@@ -172,7 +154,6 @@ impl Default for TramexApp {
             frontend: FrontEnd::new(),
             error_panel: vec![],
             show_about_windows: false,
-            show_options_windows: false,
         }
     }
 }
@@ -186,31 +167,25 @@ impl eframe::App for TramexApp {
             });
         });
 
-        if let Err(err) = self.frontend.ui_connector(ctx) {
-            self.error_panel.push(err);
+        if let Err(err) = &mut self.frontend.ui_connector(ctx) {
+            self.error_panel.append(err);
         }
 
-        if let Err(err) = self.frontend.ui(ctx) {
-            self.error_panel.push(err);
+        if let Err(err) = &mut self.frontend.ui(ctx) {
+            self.error_panel.append(err);
         }
 
         self.ui_error_panel(ctx);
         if self.show_about_windows {
             self.ui_about_windows(ctx);
         }
-        if self.show_options_windows {
-            self.ui_options_windows(ctx);
-        }
     }
 }
 
 /// Display an error
 fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
-    ui.label(format!("Error code: {}", error_item.get_msg()));
-    if error_item.is_recoverable() {
-        ui.label("Recoverable error !");
-    }
-    ui.colored_label(egui::Color32::RED, &error_item.message);
+    ui.colored_label(egui::Color32::RED, &error_item.message)
+        .on_hover_text_at_pointer(&error_item.debug);
     if ui.button("Copy error").clicked() {
         ui.output_mut(|o| o.copied_text = format!("{}\n{}", &error_item.get_msg(), &error_item.message,));
     };

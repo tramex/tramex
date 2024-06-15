@@ -45,6 +45,9 @@ pub enum Layer {
 
     /// GTPU layer
     GTPU,
+
+    /// Special layer of amarisoft
+    PROD,
 }
 
 impl FromStr for Layer {
@@ -174,28 +177,18 @@ pub struct Layers {
 impl Layers {
     /// Create new Layers struct
     pub fn new() -> Self {
-        Self {
-            phy: LayerLogLevel::Debug,
-            mac: LayerLogLevel::Warn,
-            rlc: LayerLogLevel::Warn,
-            pdcp: LayerLogLevel::Warn,
-            rrc: LayerLogLevel::Debug,
-            nas: LayerLogLevel::Debug,
-            s72: LayerLogLevel::Warn,
-            s1ap: LayerLogLevel::Warn,
-            ngap: LayerLogLevel::Warn,
-            gtpu: LayerLogLevel::Warn,
-            x2ap: LayerLogLevel::Warn,
-            xnap: LayerLogLevel::Warn,
-            m2ap: LayerLogLevel::Warn,
-            lppa: LayerLogLevel::Warn,
-            nrppa: LayerLogLevel::Warn,
-            trx: LayerLogLevel::Warn,
-        }
+        Self::default()
+    }
+
+    /// Create new Layers but in an optiniated way
+    pub fn new_optiniated() -> Self {
+        let mut layers = Layers::new();
+        layers.rrc = LayerLogLevel::Debug;
+        layers
     }
 
     /// Create new Layers struct with all debug
-    pub fn all() -> Self {
+    pub fn all_debug() -> Self {
         Self {
             phy: LayerLogLevel::Debug,
             mac: LayerLogLevel::Debug,

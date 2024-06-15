@@ -139,6 +139,13 @@ impl super::PanelController for LogicalChannels {
         "Mobile Phone - Logical channels (layer 3)"
     }
 
+    fn clear(&mut self) {
+        self.canal = String::new();
+        self.canal_msg = String::new();
+        self.current_index = 0;
+        self.state = None;
+    }
+
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
         if data.is_different_index(self.current_index) {
             if let Some(one_trace) = data.get_current_trace() {
@@ -156,7 +163,7 @@ impl super::PanelController for LogicalChannels {
             .default_width(320.0)
             .default_height(480.0)
             .open(open)
-            .resizable([true, false])
+            .resizable([true, true])
             .show(ctx, |ui| {
                 use super::PanelView as _;
                 self.ui(ui);

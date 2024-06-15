@@ -44,3 +44,11 @@ Another simple solution is to create a `~/.cargo/config.toml` file and add the f
 [build]
 jobs = 10
 ```
+
+## Change file list from url
+
+Using search parameters, you can change the file list from a url. For example, to change the file list from `https://example.com/`, you can use the following url:
+
+```url
+https://tramex.github.io/tramex/?files_url=https://example.com/
+```

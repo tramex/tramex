@@ -1,6 +1,6 @@
 //! Error handling for Tramex Tools
 
-#[derive(serde::Deserialize, Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize, Debug, Clone)]
 /// Error codes for Tramex Tools
 pub enum ErrorCode {
     /// Not set
@@ -53,6 +53,9 @@ pub enum ErrorCode {
 
     /// Request error
     RequestError,
+
+    /// ParsingLayerNotImplemented
+    ParsingLayerNotImplemented,
 }
 
 impl Default for ErrorCode {
@@ -82,6 +85,7 @@ impl std::fmt::Display for ErrorCode {
             Self::EndOfFile => "End of File",
             Self::FileParsing => "File: Parsing error",
             Self::RequestError => "Request error",
+            Self::ParsingLayerNotImplemented => "Parsing layer not implemented",
         };
         write!(f, "{}", str)
     }
@@ -100,15 +104,27 @@ pub struct TramexError {
     /// Error message (human readable)
     pub message: String,
 
+    /// Debug information
+    pub debug: String,
+
     /// Error code
-    pub code: ErrorCode,
+    code: ErrorCode,
 }
 
 impl TramexError {
     /// Create a new error
     pub fn new(message: String, code: ErrorCode) -> Self {
         log::debug!("Error: {} - {}\n{}", code, message, std::backtrace::Backtrace::capture());
-        Self { message, code }
+        Self {
+            message,
+            code,
+            debug: String::new(),
+        }
+    }
+
+    /// Create a new error
+    pub fn new_with_line(message: String, code: ErrorCode, debug: String) -> Self {
+        Self { message, code, debug }
     }
 
     /// Check if the error is recoverable
@@ -118,11 +134,19 @@ impl TramexError {
 
     /// Get the error message
     pub fn get_msg(&self) -> String {
-        format!("[{}] {}", self.code, self.code)
+        format!("[{}] {}", self.code, self.message)
     }
 
     /// Get the error code
     pub fn get_code(&self) -> ErrorCode {
         self.code.clone()
     }
+}
+
+/// Macro to get the file and line number
+#[macro_export]
+macro_rules! tramex_error {
+    ($msg:expr, $code:expr) => {
+        TramexError::new_with_line($msg, $code, format!("{}:{}", file!(), line!()))
+    };
 }

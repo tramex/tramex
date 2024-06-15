@@ -1,7 +1,6 @@
 //! TrameManager
 use eframe::egui;
-use tramex_tools::connector::Connector;
-use tramex_tools::interface::interface_types::Interface;
+use tramex_tools::data::Data;
 use tramex_tools::interface::layer::{LayerLogLevel, Layers};
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -17,7 +16,7 @@ impl TrameManager {
     /// Create a new TrameManager
     pub fn new() -> Self {
         Self {
-            layers_list: Layers::new(),
+            layers_list: Layers::new_optiniated(),
             should_get_more_log: false,
         }
     }
@@ -31,16 +30,8 @@ impl Default for TrameManager {
 
 impl TrameManager {
     /// Show the options
-    pub fn show_options(&mut self, ui: &mut egui::Ui, data: &mut Connector) {
+    pub fn show_options(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Options", |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Asking size: ");
-                ui.add(
-                    egui::DragValue::new(&mut data.asking_size_max)
-                        .speed(2.0)
-                        .clamp_range(64.0..=4096.0),
-                );
-            });
             checkbox(ui, &mut self.layers_list.phy, "PHY");
             checkbox(ui, &mut self.layers_list.mac, "MAC");
             checkbox(ui, &mut self.layers_list.rlc, "RLC");
@@ -61,44 +52,39 @@ impl TrameManager {
     }
 
     /// Show the controls
-    pub fn show_controls(&mut self, ui: &mut egui::Ui, connector: &mut Connector) {
-        let is_full_read = match connector.interface {
-            Some(Interface::File(ref file)) => !file.full_read,
-            _ => true,
-        };
-        ui.add_enabled_ui(is_full_read, |ui| {
+    pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Data, is_full_read: bool) {
+        ui.add_enabled_ui(!is_full_read, |ui| {
             if ui.button("More").clicked() {
                 log::debug!("More");
                 self.should_get_more_log = true;
             }
         });
-        let is_enabled =
-            if !connector.data.events.is_empty() && connector.data.events.len() - 1 == connector.data.current_index {
-                is_full_read
-            } else {
-                true
-            };
+        let is_enabled = if !data.events.is_empty() && data.events.len() - 1 == data.current_index {
+            !is_full_read
+        } else {
+            true
+        };
         ui.add_enabled_ui(is_enabled, |ui| {
-            let text = if connector.data.events.is_empty() { "Start" } else { "Next" };
+            let text = if data.events.is_empty() { "Start" } else { "Next" };
             if ui.button(text).clicked() {
-                log::debug!("Next {}", text);
-                if connector.data.events.len() > connector.data.current_index + 1 {
-                    connector.data.current_index += 1;
+                log::debug!("Clicked {}", text);
+                if data.events.len() > data.current_index + 1 {
+                    data.current_index += 1;
                 } else {
                     self.should_get_more_log = true;
                 }
                 // preloading
-                if !connector.data.events.is_empty() && connector.data.current_index == (connector.data.events.len() - 1) {
+                if !data.events.is_empty() && data.current_index == (data.events.len() - 1) {
                     log::debug!("Preloading");
                     self.should_get_more_log = true;
                 }
             }
         });
-        ui.add_enabled_ui(connector.data.current_index > 0, |ui| {
+        ui.add_enabled_ui(data.current_index > 0, |ui| {
             if ui.button("Previous").clicked() {
                 log::debug!("Previous");
-                if connector.data.current_index > 0 {
-                    connector.data.current_index -= 1;
+                if data.current_index > 0 {
+                    data.current_index -= 1;
                 }
             }
         });

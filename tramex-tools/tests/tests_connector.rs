@@ -3,17 +3,33 @@
 mod tests {
     use std::path::Path;
 
-    use connector::Connector;
     use tramex_tools::{
-        connector,
-        data::AdditionalInfos,
+        data::{AdditionalInfos, Data},
         errors::TramexError,
         interface::{
-            interface_types::Interface,
+            interface_file::file_handler::File,
+            interface_types::InterfaceTrait,
             layer::{Layer, Layers},
             types::Direction,
         },
     };
+
+    pub struct DataHandler {
+        pub data: Data,
+        pub file: File,
+    }
+
+    impl DataHandler {
+        pub fn new(file: File) -> Self {
+            Self {
+                data: Default::default(),
+                file,
+            }
+        }
+        pub fn get_more_data(&mut self, layers: Layers) -> Result<(), Vec<TramexError>> {
+            self.file.get_more_data(layers, &mut self.data)
+        }
+    }
 
     fn get_path(p: &str) -> String {
         if std::env::current_dir().unwrap().ends_with("tramex-tools") {
@@ -32,16 +48,10 @@ mod tests {
     fn test_file() {
         let filename = &get_path("enb.log");
         let content = std::fs::read_to_string(filename).unwrap();
-        let mut f = Connector::new_file_content(filename.into(), content);
-        match &mut f.interface {
-            Some(Interface::File(file)) => {
-                file.change_nb_read(50);
-            }
-            _ => {
-                unreachable!();
-            }
-        }
-        let res = f.get_more_data(Layers::all());
+        let mut file = File::new_file_content(filename.into(), content);
+        file.change_nb_read(50);
+        let mut f = DataHandler::new(file);
+        let res = f.get_more_data(Layers::all_debug());
         eprintln!("result {:?}", res);
         eprintln!("count {:?}", f.data.events.len());
         assert!(f.data.events.len() == 15);
@@ -73,14 +83,15 @@ mod tests {
     fn test_jsonlike() {
         let filename = &get_path("enb_jsonlike_error.log");
         let content = std::fs::read_to_string(filename).unwrap();
-        let mut f = Connector::new_file_content(filename.into(), content);
-        match f.get_more_data(Layers::all()) {
+        let file = File::new_file_content(filename.into(), content);
+        let mut f = DataHandler::new(file);
+        match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                unreachable!();
+                assert!(false);
             }
             Err(e) => {
                 eprintln!("{:?}", e);
-                assert!(e.message.contains("Could not parse the JSON like part, missing closing }"));
+                assert!(e[0].message.contains("Could not parse the JSON like part, missing closing }"));
             }
         }
     }
@@ -88,14 +99,15 @@ mod tests {
     fn test_malformed_fl() {
         let filename = &get_path("enb_canal_or_canal_message_malformed.log");
         let content = std::fs::read_to_string(filename).unwrap();
-        let mut f = Connector::new_file_content(filename.into(), content);
-        match f.get_more_data(Layers::all()) {
+        let file = File::new_file_content(filename.into(), content);
+        let mut f = DataHandler::new(file);
+        match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                unreachable!();
+                assert!(false);
             }
             Err(e) => {
                 eprintln!("{:?}", e);
-                assert!(e.message.contains("The canal and/or canal message could not be parsed"));
+                assert!(e[0].message.contains("The canal and/or canal message could not be parsed"));
             }
         }
     }
@@ -103,14 +115,15 @@ mod tests {
     fn test_error_date() {
         let filename = &get_path("enb_date_err.log");
         let content = std::fs::read_to_string(filename).unwrap();
-        let mut f = Connector::new_file_content(filename.into(), content);
-        match f.get_more_data(Layers::all()) {
+        let file = File::new_file_content(filename.into(), content);
+        let mut f = DataHandler::new(file);
+        match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                unreachable!();
+                assert!(false);
             }
             Err(e) => {
                 eprintln!("{:?}", e);
-                assert!(e.message.contains("Error while parsing date"));
+                assert!(e.first().unwrap().message.contains("Error while parsing date"));
             }
         }
     }
@@ -119,16 +132,17 @@ mod tests {
     fn test_error_date_full_file() {
         let filename = &get_path("enb_date_err.log");
         let content = std::fs::read_to_string(filename).unwrap();
-        let mut f = Connector::new_file_content(filename.into(), content);
+        let file = File::new_file_content(filename.into(), content);
+        let mut f = DataHandler::new(file);
         let mut errors: Vec<TramexError> = vec![];
         let mut last_size_data = 0;
         let mut last_size_errors = 0;
         loop {
-            match f.get_more_data(Layers::all()) {
+            match &mut f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
                     eprintln!("{:?}", e);
-                    errors.push(e);
+                    errors.append(e);
                 }
             }
             if f.data.events.len() == last_size_data && errors.len() == last_size_errors {
@@ -151,15 +165,16 @@ mod tests {
     fn test_other_file() {
         let filename = &get_path("enb0.log");
         let content = std::fs::read_to_string(filename).unwrap();
-        let mut f = Connector::new_file_content(filename.into(), content);
+        let file = File::new_file_content(filename.into(), content);
+        let mut f = DataHandler::new(file);
         let mut errors: Vec<TramexError> = vec![];
         let mut last_size_data = 0;
         let mut last_size_errors = 0;
         loop {
-            match f.get_more_data(Layers::all()) {
+            match &mut f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
-                    errors.push(e);
+                    errors.append(e);
                 }
             }
             if f.data.events.len() == last_size_data && errors.len() == last_size_errors {

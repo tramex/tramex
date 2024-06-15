@@ -41,6 +41,13 @@ impl super::PanelController for MessageBox {
         "Current Message"
     }
 
+    fn clear(&mut self) {
+        self.current_trace = None;
+        self.events_len = 0;
+        self.current_index = 0;
+        self.save_text = Vec::new();
+    }
+
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
         if data.is_different_index(self.current_index) {
             if let Some(trace) = data.get_current_trace() {
