@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 use tramex_tools::data::Trace;
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::{
-    asn1_codecs::{uper::UperCodec, PerCodecData},
+    export::asn1_codecs::{uper::UperCodec, PerCodecData},
     uper::spec_rrc,
 };
 
