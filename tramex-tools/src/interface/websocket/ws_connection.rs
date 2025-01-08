@@ -194,12 +194,12 @@ impl WsConnection {
 
 impl Debug for WsConnection {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> core::fmt::Result {
-        return formatter
+        formatter
             .debug_struct("Interface")
             .field("ws_sender", &"Box<WsSender>")
             .field("ws_receiver", &"Box<WsReceiver>")
             .field("connecting", &self.connecting)
-            .finish();
+            .finish()
     }
 }
 

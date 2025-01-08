@@ -18,7 +18,7 @@ Finally, you can clone the repository with :
 git clone git@github.com:tramex/tramex.git
 ```
 
-## Development
+## Development commands
 
 To start the application, you can run the following command in the repository :
 

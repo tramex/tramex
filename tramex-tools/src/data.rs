@@ -14,7 +14,7 @@ pub struct Data {
 impl Data {
     /// return the current trace
     pub fn get_current_trace(&self) -> Option<&Trace> {
-        return self.events.get(self.current_index);
+        self.events.get(self.current_index)
     }
 
     /// return if the index is different from the current index

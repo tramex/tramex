@@ -111,6 +111,8 @@ impl FrontEnd {
     }
 
     /// Show the UI connector
+    /// # Errors
+    /// Return a vector of TramexError
     pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
         let mut errors = vec![];
         if self.open_menu_connector {
@@ -203,6 +205,8 @@ impl FrontEnd {
     }
 
     /// Show the UI
+    /// # Errors
+    /// Return a vector of TramexError
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
         let mut error_to_return = vec![];
         if let Some(handle) = &mut self.handler {

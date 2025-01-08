@@ -1,4 +1,7 @@
 //! Layer enum and Layers struct
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::str::FromStr;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
@@ -97,11 +100,11 @@ impl serde::Serialize for LayerLogLevel {
     }
 }
 
-impl ToString for LayerLogLevel {
-    fn to_string(&self) -> String {
+impl Display for LayerLogLevel {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            LayerLogLevel::Debug => "debug".to_string(),
-            LayerLogLevel::Warn => "warn".to_string(),
+            LayerLogLevel::Debug => write!(f, "debug"),
+            LayerLogLevel::Warn => write!(f, "warn"),
         }
     }
 }

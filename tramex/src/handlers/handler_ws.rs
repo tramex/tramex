@@ -60,6 +60,8 @@ impl WsHandler {
     }
 
     /// Close the websocket
+    /// # Errors
+    /// Return an error if the closing failed
     fn close_ws(&mut self) -> Result<(), TramexError> {
         if let Some(interface_ws) = &mut self.inner {
             return interface_ws.close_impl();
