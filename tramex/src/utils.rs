@@ -71,7 +71,7 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &[String]
         {
             ui.separator();
             egui::ScrollArea::vertical()
-                .id_source("scroll_area_types")
+                .id_salt("scroll_area_types")
                 .max_height(250.0)
                 .auto_shrink([false, true])
                 .show(ui, |ui| {
