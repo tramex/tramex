@@ -117,7 +117,6 @@ impl FrontEnd {
         let mut errors = vec![];
         if self.open_menu_connector {
             egui::SidePanel::left("backend_panel")
-                .max_width(100.0)
                 .resizable(false)
                 .show_animated(ctx, self.open_menu_connector, |ui| {
                     ui.vertical_centered(|ui| {

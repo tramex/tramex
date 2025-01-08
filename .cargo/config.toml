@@ -1,2 +1,7 @@
 [target.wasm32-unknown-unknown]
-rustflags = ["--cfg=web_sys_unstable_apis"]
+
+# rustflags = ["--cfg=web_sys_unstable_apis"] # disable see knowledge base
+# web_sys_unstable_apis is required to enable the web_sys clipboard API which eframe web uses,
+# as well as by the wasm32-backend of the wgpu crate.
+# https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.Clipboard.html
+# https://rustwasm.github.io/docs/wasm-bindgen/web-sys/unstable-apis.html

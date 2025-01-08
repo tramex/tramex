@@ -31,8 +31,8 @@ tokio = ["tramex-tools/tokio", "dep:tokio"]
 
 
 [dependencies]
-egui = "0.27.2"
-eframe = { version = "0.27.2", default-features = true, features = [
+egui = "0.30.0"
+eframe = { version = "0.30.0", default-features = true, features = [
     "accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
@@ -40,19 +40,19 @@ eframe = { version = "0.27.2", default-features = true, features = [
     "ron",
 ] }
 log = "0.4"
-serde_json = "1.0.113"
-env_logger = "0.11.3"
-serde = { version = "1.0.197", features = ["derive"] }
-rfd = "0.14.0"
+serde_json = "1.0.135"
+env_logger = "0.11.6"
+serde = { version = "1.0.217", features = ["derive"] }
+rfd = "0.15.2"
 poll-promise = { version = "0.3.0", features = ["web"] }
 tramex-tools = { path = "../tramex-tools" }
 ehttp = { version = "0.5.0" }
 types_lte_3gpp = { version = "1.0.4", features = ["rrc"], optional = true }
-asn1-codecs = { version = "0.6.1", optional = true }
+asn1-codecs = { version = "0.7.0", optional = true }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1.16", optional = true, features = [
+tokio = { version = "1.42", optional = true, features = [
     "macros",
     "rt-multi-thread",
 ] }
@@ -60,4 +60,4 @@ tokio = { version = "1.16", optional = true, features = [
 # web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3.4", features = ["Url", "UrlSearchParams"] }
+web-sys = { version = "0.3.76", features = ["Url", "UrlSearchParams"] }

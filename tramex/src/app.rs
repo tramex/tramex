@@ -38,7 +38,7 @@ impl TramexApp {
 
     /// Save the app state to the given storage.
     fn menu_bar(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui) {
-        egui::widgets::global_dark_light_mode_switch(ui);
+        egui::widgets::global_theme_preference_switch(ui);
         ui.separator();
         ui.menu_button("Menu", |ui| {
             if ui.button("Organize windows").clicked() {
@@ -79,7 +79,7 @@ impl TramexApp {
                 .show(ctx, |ui| {
                     let mut to_clean = vec![];
                     egui::ScrollArea::vertical()
-                        .id_source("scroll_area_errors")
+                        .id_salt("scroll_area_errors")
                         .max_height(400.0)
                         .auto_shrink([false, true])
                         .show(ui, |ui| {

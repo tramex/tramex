@@ -54,7 +54,7 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &[String]
         match &curr_trace.text {
             Some(vec_text) => {
                 egui::ScrollArea::vertical()
-                    .id_source("scroll_area_raw")
+                    .id_salt("scroll_area_raw")
                     .max_height(250.0)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {

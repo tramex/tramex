@@ -59,13 +59,7 @@ impl WsConnection {
     /// # Errors
     /// Return an error if its fail see [`ewebsock::WsSender::close`] for more details
     pub fn close_impl(&mut self) -> Result<(), TramexError> {
-        if let Err(err) = self.ws_sender.close() {
-            log::error!("Error closing WebSocket: {}", err);
-            return Err(tramex_error!(
-                err.to_string(),
-                crate::errors::ErrorCode::WebSocketErrorClosing
-            ));
-        }
+        self.ws_sender.close();
         Ok(())
     }
 }
@@ -206,8 +200,6 @@ impl Debug for WsConnection {
 impl Drop for WsConnection {
     fn drop(&mut self) {
         log::debug!("Cleaning WsConnection");
-        if let Err(err) = self.ws_sender.close() {
-            log::error!("Error closing WebSocket: {}", err);
-        }
+        self.ws_sender.close()
     }
 }

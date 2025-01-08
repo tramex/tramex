@@ -79,7 +79,7 @@ impl Handler for WsHandler {
                 ui.add(
                     egui::DragValue::new(&mut interface_ws.asking_size_max)
                         .speed(2.0)
-                        .clamp_range(64.0..=4096.0),
+                        .range(64.0..=4096.0),
                 );
             });
         }
