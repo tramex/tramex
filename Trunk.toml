@@ -4,6 +4,3 @@ dist = "dist"
 
 [watch]
 watch = ["tramex", "tramex-tools"]
-
-[clean]
-dist = "dist"
