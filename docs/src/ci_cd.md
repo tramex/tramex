@@ -2,9 +2,9 @@
 
 **C**ontinuous **I**ntegration/**C**ontinuous **D**elivery is a conceptual approach that consists in automatizing actions done on applications throughout their life cycle such as tests, integration or delivery in order to accelerate their development.
 
-For more information on the global topic, please refer to : <https://about.gitlab.com/topics/ci-cd/>
+For more information on the global topic, please refer to: <https://about.gitlab.com/topics/ci-cd/>
 
-In the Tramex project, CI/CD is used for deployment and tests. There are three files :
+In the Tramex project, CI/CD is used for deployment and tests. There are three files:
 
 - [`deploy.yml`](https://github.com/tramex/tramex/blob/main/.github/workflows/deploy.yml)
 - [`tests.yml`](https://github.com/tramex/tramex/blob/main/.github/workflows/tests.yml)
@@ -18,7 +18,7 @@ The file gives precisions on the running context and the steps to follow. Each s
 
 This file is executed when a push command is performed on the main branch of the GIT repository. It can be ran automatically when trying to push or manually from the Action tab.
 
-The targets of the deployment file are the GitHub Pages. GitHub Pages is a static site hosting service that publishes a website using either HTML, CSS or JavaScript files stored on a GitHub repository. For more information on this topic, please refer to : <https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages>
+The targets of the deployment file are the GitHub Pages. GitHub Pages is a static site hosting service that publishes a website using either HTML, CSS or JavaScript files stored on a GitHub repository. For more information on this topic, please refer to: <https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages>
 
 The deployment file follows the recommended steps which are the configuration of the pages, the cargo cache and the mdbook, the build, the coverage and finally the deployment.
 

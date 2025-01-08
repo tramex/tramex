@@ -4,7 +4,7 @@
 
 > Fixed in eframe `0.29.` <https://github.com/emilk/egui/pull/4980#pullrequestreview-2260129833>
 
-To enable copy-pasting in the browser, you will need to add the `--cfg=web_sys_unstable_apis` flag. For more information, please refer to the following links :
+To enable copy-pasting in the browser, you will need to add the `--cfg=web_sys_unstable_apis` flag. For more information, please refer to the following links:
 
 - <https://docs.rs/web-sys/0.3.69/web_sys/struct.Clipboard.html>
 - <https://rustwasm.github.io/docs/wasm-bindgen/web-sys/unstable-apis.html>
