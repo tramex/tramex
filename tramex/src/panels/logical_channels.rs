@@ -8,7 +8,7 @@ use tramex_tools::errors::TramexError;
 use super::functions_panels::LogicalChannelsEnum;
 use super::functions_panels::PhysicalChannelsEnum;
 use super::functions_panels::TransportChannelsEnum;
-use super::functions_panels::{make_label, CustomLabelColor};
+use super::functions_panels::{CustomLabelColor, make_label};
 
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
 pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {

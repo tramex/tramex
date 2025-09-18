@@ -93,7 +93,7 @@ impl FileParser for RRCParser {
                 return Err(ParsingError::new(
                     format!("The direction could not be parsed in the part {:?} of {}", parts[2], line),
                     1,
-                ))
+                ));
             }
         };
         if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {

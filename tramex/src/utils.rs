@@ -1,10 +1,10 @@
 //! This module contains some utility functions used in the application.
-use egui::{text::LayoutJob, Color32, TextFormat, Ui};
+use egui::{Color32, TextFormat, Ui, text::LayoutJob};
 use std::collections::BTreeSet;
 use tramex_tools::data::Trace;
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::{
-    export::asn1_codecs::{uper::UperCodec, PerCodecData},
+    export::asn1_codecs::{PerCodecData, uper::UperCodec},
     uper::spec_rrc,
 };
 

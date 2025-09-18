@@ -3,7 +3,7 @@
 use std::str::FromStr;
 
 use crate::errors::ErrorCode;
-use crate::interface::parser::{parsing_error_to_tramex_error, FileParser};
+use crate::interface::parser::{FileParser, parsing_error_to_tramex_error};
 use crate::tramex_error;
 // to use the FileParser trait and implementations
 use crate::{
