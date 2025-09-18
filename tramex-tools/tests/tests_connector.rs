@@ -34,13 +34,13 @@ mod tests {
     fn get_path(p: &str) -> String {
         if std::env::current_dir().unwrap().ends_with("tramex-tools") {
             let filename = Path::new("tests").join(p).to_string_lossy().to_string();
-            eprintln!("{:?}", filename);
+            eprintln!("{filename:?}");
             return filename;
         }
         let filename = file!();
         let filename = Path::new(filename).parent().unwrap().join(p).to_string_lossy().to_string();
-        eprintln!("{:?}", filename);
-        return filename;
+        eprintln!("{filename:?}");
+        filename
     }
 
     #[test]
@@ -52,7 +52,7 @@ mod tests {
         file.change_nb_read(50);
         let mut f = DataHandler::new(file);
         let res = f.get_more_data(Layers::all_debug());
-        eprintln!("result {:?}", res);
+        eprintln!("result {res:?}");
         eprintln!("count {:?}", f.data.events.len());
         assert!(f.data.events.len() == 15);
         let one_trace = f.data.events[0].clone();
@@ -90,7 +90,7 @@ mod tests {
                 assert!(false);
             }
             Err(e) => {
-                eprintln!("{:?}", e);
+                eprintln!("{e:?}");
                 assert!(e[0].message.contains("Could not parse the JSON like part, missing closing }"));
             }
         }
@@ -106,7 +106,7 @@ mod tests {
                 assert!(false);
             }
             Err(e) => {
-                eprintln!("{:?}", e);
+                eprintln!("{e:?}");
                 assert!(e[0].message.contains("The canal and/or canal message could not be parsed"));
             }
         }
@@ -122,7 +122,7 @@ mod tests {
                 assert!(false);
             }
             Err(e) => {
-                eprintln!("{:?}", e);
+                eprintln!("{e:?}");
                 assert!(e.first().unwrap().message.contains("Error while parsing date"));
             }
         }
@@ -141,7 +141,7 @@ mod tests {
             match &mut f.get_more_data(Layers::all_debug()) {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("{:?}", e);
+                    eprintln!("{e:?}");
                     errors.append(e);
                 }
             }
@@ -156,7 +156,7 @@ mod tests {
         }
         eprintln!("data: {:?}", f.data.events.len());
         eprintln!("errors: {:?}", errors.len());
-        assert!(f.data.events.len() == 0);
+        assert!(f.data.events.is_empty());
         assert!(errors.len() == 1);
         assert!(errors[0].message.contains("Error while parsing date"));
     }
@@ -190,9 +190,9 @@ mod tests {
         let count_events = number_rrc - num_error_direction;
         let count_errors = total - number_rrc + num_error_direction;
         eprintln!("data: {:?}", f.data.events.len());
-        eprintln!("count_events: {:?}", count_events);
+        eprintln!("count_events: {count_events:?}");
         eprintln!("errors: {:?}", errors.len());
-        eprintln!("count_errors: {:?}", count_errors);
+        eprintln!("count_errors: {count_errors:?}");
         eprintln!("{:?}", errors.last());
         assert!(f.data.events.len() == count_events);
         assert!(errors.len() == count_errors);
