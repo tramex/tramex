@@ -12,7 +12,7 @@ concurrency:
     cancel-in-progress: true
 
 env:
-    RUST_CHANNEL: 1.83.0
+    RUST_CHANNEL: 1.88.0
     RUSTFLAGS: -D warnings
 
 jobs:

@@ -1,7 +1,7 @@
 [package]
 name = "tramex"
 version = "1.0.0"
-edition = "2021"
+edition = "2024"
 description = "Tramex is a 4G frame analyser"
 license = "GPL-3.0"
 authors = [
