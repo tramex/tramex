@@ -60,6 +60,8 @@ impl WsHandler {
     }
 
     /// Close the websocket
+    /// # Errors
+    /// Return an error if the closing failed
     fn close_ws(&mut self) -> Result<(), TramexError> {
         if let Some(interface_ws) = &mut self.inner {
             return interface_ws.close_impl();
@@ -77,7 +79,7 @@ impl Handler for WsHandler {
                 ui.add(
                     egui::DragValue::new(&mut interface_ws.asking_size_max)
                         .speed(2.0)
-                        .clamp_range(64.0..=4096.0),
+                        .range(64.0..=4096.0),
                 );
             });
         }

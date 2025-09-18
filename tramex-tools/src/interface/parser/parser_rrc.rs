@@ -25,6 +25,8 @@ pub struct RRCParser;
 
 impl RRCParser {
     /// Function that parses the hexadecimal part of a log
+    /// # Errors
+    /// Returns a ParsingError if the hexadecimal part could not be parsed
     fn parse_lines(lines: &[String]) -> Result<(Vec<u8>, Vec<String>), ParsingError> {
         let lines_len = lines.len();
         let mut ix = 0;
@@ -91,7 +93,7 @@ impl FileParser for RRCParser {
                 return Err(ParsingError::new(
                     format!("The direction could not be parsed in the part {:?} of {}", parts[2], line),
                     1,
-                ))
+                ));
             }
         };
         if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {
@@ -100,11 +102,11 @@ impl FileParser for RRCParser {
                 1,
             ));
         }
-        return Ok(AdditionalInfos::RRCInfos(RRCInfos {
+        Ok(AdditionalInfos::RRCInfos(RRCInfos {
             direction,
             canal: concatenated[0].to_owned(),
             canal_msg: concatenated[1].trim_start().to_owned(),
-        }));
+        }))
     }
 
     fn parse(lines: &[String]) -> Result<Trace, ParsingError> {

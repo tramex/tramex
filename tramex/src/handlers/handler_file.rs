@@ -95,7 +95,7 @@ impl FileHandler {
                 match items {
                     Ok(items) => Ok(items),
                     Err(e) => {
-                        log::warn!("{:?}", e);
+                        log::warn!("{e:?}");
                         Err(tramex_error!(
                             format!("Error decoding files list: {}", e.to_string()),
                             tramex_tools::errors::ErrorCode::FileErrorReadingFile
@@ -104,7 +104,7 @@ impl FileHandler {
                 }
             }
             Err(e) => {
-                log::warn!("{:?}", e);
+                log::warn!("{e:?}");
                 Err(tramex_error!(
                     format!("Error loading files list: {}", e.to_string()),
                     tramex_tools::errors::ErrorCode::RequestError
@@ -161,7 +161,7 @@ impl FileHandler {
             },
             None => Ok(None),
         };
-        log::debug!("Result: {:?}", res);
+        log::debug!("Result: {res:?}");
         if should_clean {
             log::debug!("Cleaning file upload");
             self.clear();
@@ -191,7 +191,7 @@ impl FileHandler {
                 }
             }
             Err(e) => {
-                log::warn!("{:?}", e);
+                log::warn!("{e:?}");
                 Err(tramex_error!(
                     e.to_string(),
                     tramex_tools::errors::ErrorCode::FileErrorReadingFile
@@ -256,7 +256,7 @@ impl FileHandler {
                         let buf = match buf {
                             Ok(v) => v,
                             Err(e) => {
-                                log::warn!("{:?}", e);
+                                log::warn!("{e:?}");
                                 return Err(tramex_error!(
                                     e.to_string(),
                                     tramex_tools::errors::ErrorCode::FileErrorReadingFile
@@ -312,7 +312,7 @@ impl FileHandler {
                                                     None => sub_item,
                                                 };
                                                 if ui.button(path).clicked() {
-                                                    log::info!("File selected: {}", sub_item);
+                                                    log::info!("File selected: {sub_item}");
                                                     file_path = Some(sub_item.to_string());
                                                 }
                                             }
@@ -407,7 +407,7 @@ impl Handler for FileHandler {
                 }
                 Ok(None) => {}
                 Err(err) => {
-                    log::error!("Error in get_result() {:?}", err);
+                    log::error!("Error in get_result() {err:?}");
                     self.clear();
                     return Err(err);
                 }

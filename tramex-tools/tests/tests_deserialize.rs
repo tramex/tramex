@@ -41,7 +41,7 @@ mod tests {
         let oked = ws_log.is_ok();
         if let Err(ref e) = ws_log {
             println!("-------------------");
-            println!("{:?}", e);
+            println!("{e:?}");
             println!("-------------------");
             assert!(oked);
         }
@@ -61,7 +61,7 @@ mod tests {
         let res_hexe = extract_hexe(&data);
         assert!(res_hexe.is_ok());
         let hexe = res_hexe.unwrap();
-        println!("{:?}", hexe);
+        println!("{hexe:?}");
         let res: Vec<u8> = vec![
             0, 128, 76, 97, 188, 140, 140, 193, 22, 8, 168, 2, 64, 4, 8, 1, 115, 57, 79, 82, 213, 66, 72, 0, 24, 1, 46, 56,
             3, 132, 40, 197, 176, 157, 75, 72,

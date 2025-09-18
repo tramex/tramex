@@ -1,9 +1,9 @@
 //! Panel to display the RRC status
-use super::functions_panels::make_arrow;
-use super::functions_panels::make_label;
 use super::functions_panels::ArrowColor;
 use super::functions_panels::ArrowDirection;
 use super::functions_panels::CustomLabelColor;
+use super::functions_panels::make_arrow;
+use super::functions_panels::make_label;
 use tramex_tools::data::AdditionalInfos;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;

@@ -78,6 +78,7 @@ impl super::PanelController for MessageBox {
         egui::Window::new(self.window_title())
             .default_width(320.0)
             .default_height(480.0)
+            .resizable(true)
             .open(open)
             .show(ctx, |ui| {
                 use super::PanelView as _;

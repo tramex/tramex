@@ -1,11 +1,12 @@
 //! This module contains some utility functions used in the application.
-#[cfg(feature = "types_lte_3gpp")]
-use asn1_codecs::{uper::UperCodec, PerCodecData};
-use egui::{text::LayoutJob, Color32, TextFormat, Ui};
+use egui::{Color32, TextFormat, Ui, text::LayoutJob};
 use std::collections::BTreeSet;
 use tramex_tools::data::Trace;
 #[cfg(feature = "types_lte_3gpp")]
-use types_lte_3gpp::uper::spec_rrc;
+use types_lte_3gpp::{
+    export::asn1_codecs::{PerCodecData, uper::UperCodec},
+    uper::spec_rrc,
+};
 
 /// Create an hyperlink open in a new tab
 pub fn make_hyperlink(ui: &mut egui::Ui, label: &str, url: &str, new_tab: bool) {
@@ -54,7 +55,7 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &[String]
         match &curr_trace.text {
             Some(vec_text) => {
                 egui::ScrollArea::vertical()
-                    .id_source("scroll_area_raw")
+                    .id_salt("scroll_area_raw")
                     .max_height(250.0)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
@@ -71,7 +72,7 @@ pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &[String]
         {
             ui.separator();
             egui::ScrollArea::vertical()
-                .id_source("scroll_area_types")
+                .id_salt("scroll_area_types")
                 .max_height(250.0)
                 .auto_shrink([false, true])
                 .show(ui, |ui| {

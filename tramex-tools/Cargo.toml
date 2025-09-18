@@ -1,7 +1,7 @@
 [package]
 name = "tramex-tools"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 description = "Tramex utilities"
 license = "GPL-3.0"
 authors = [
@@ -24,9 +24,8 @@ websocket = ["dep:ewebsock"]
 tokio = ["ewebsock/tokio"]
 
 [dependencies]
-serde = { version = "1.0.197", features = ["derive"] }
-log = "0.4.20"
-serde_json = "1.0.114"
-regex = "1.10.4"
-ewebsock = { version = "0.5.0", features = ["tls"], optional = true }
-chrono = "0.4.38"
+serde = { version = "1.0.217", features = ["derive"] }
+log = "0.4.22"
+serde_json = "1.0.135"
+ewebsock = { version = "0.8.0", features = ["tls"], optional = true }
+chrono = "0.4.39"

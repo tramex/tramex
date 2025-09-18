@@ -29,13 +29,7 @@ pub struct LogGet {
 impl LogGet {
     /// Create a new LogGet struct
     pub fn new(id: u64, layers_list: Layers, max_size: u64) -> Self {
-        let max_size = if max_size < 64 {
-            64
-        } else if max_size > 4096 {
-            4096
-        } else {
-            max_size
-        };
+        let max_size = max_size.clamp(64, 4096);
         Self {
             timeout: 1,
             min: 64,

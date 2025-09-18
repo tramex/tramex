@@ -87,7 +87,7 @@ impl std::fmt::Display for ErrorCode {
             Self::RequestError => "Request error",
             Self::ParsingLayerNotImplemented => "Parsing layer not implemented",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 

@@ -6,7 +6,7 @@ Tramex is a university project conducted in Télécom Paris supervised by Philip
 
 Tramex is a project that serves the goal of allowing users to analyze and visualize frames in a 4G network.
 
-Tramex is a project derived from :
+Tramex is a project derived from:
 
 - VIGIE
 - Amarisoft web interface

@@ -1,12 +1,12 @@
 //! Frontend module
+use crate::handlers::Handler;
 use crate::handlers::handler_file::FileHandler;
 #[cfg(feature = "websocket")]
 use crate::handlers::handler_ws::WsHandler;
-use crate::handlers::Handler;
 
 use crate::panels::{
-    logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel, trame_manager::TrameManager,
-    PanelController,
+    PanelController, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
+    trame_manager::TrameManager,
 };
 use crate::set_open;
 use egui::Ui;
@@ -111,11 +111,12 @@ impl FrontEnd {
     }
 
     /// Show the UI connector
+    /// # Errors
+    /// Return a vector of TramexError
     pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
         let mut errors = vec![];
         if self.open_menu_connector {
             egui::SidePanel::left("backend_panel")
-                .max_width(100.0)
                 .resizable(false)
                 .show_animated(ctx, self.open_menu_connector, |ui| {
                     ui.vertical_centered(|ui| {
@@ -203,6 +204,8 @@ impl FrontEnd {
     }
 
     /// Show the UI
+    /// # Errors
+    /// Return a vector of TramexError
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
         let mut error_to_return = vec![];
         if let Some(handle) = &mut self.handler {

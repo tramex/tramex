@@ -112,7 +112,7 @@ impl File {
         (vec_trace, opt_err)
     }
     /// To process a string passed in argument, with index and batch to read
-    pub fn process_string(lines: &Vec<String>, nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Vec<TramexError>) {
+    pub fn process_string(lines: &[String], nb_to_read: usize, ix: &mut usize) -> (Vec<Trace>, Vec<TramexError>) {
         let mut traces = vec![];
         let mut errors = vec![];
         for _ in 0..nb_to_read {

@@ -51,7 +51,11 @@ impl WsConnection {
     /// # Errors
     /// Return an error as String if the connection failed - see [`ewebsock::connect_with_wakeup`] for more details
     pub fn connect(url: &str, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(WsSender, WsReceiver), String> {
-        let options = ewebsock::Options::default();
+        let options = ewebsock::Options {
+            #[cfg(not(target_arch = "wasm32"))]
+            additional_headers: vec![("Origin".to_string(), "tramex".to_string())],
+            ..Default::default()
+        };
         ewebsock::connect_with_wakeup(url, options, wakeup)
     }
 
@@ -59,13 +63,7 @@ impl WsConnection {
     /// # Errors
     /// Return an error if its fail see [`ewebsock::WsSender::close`] for more details
     pub fn close_impl(&mut self) -> Result<(), TramexError> {
-        if let Err(err) = self.ws_sender.close() {
-            log::error!("Error closing WebSocket: {}", err);
-            return Err(tramex_error!(
-                err.to_string(),
-                crate::errors::ErrorCode::WebSocketErrorClosing
-            ));
-        }
+        self.ws_sender.close();
         Ok(())
     }
 }
@@ -73,15 +71,15 @@ impl WsConnection {
 impl InterfaceTrait for WsConnection {
     fn get_more_data(&mut self, layer_list: Layers, _data: &mut Data) -> Result<(), Vec<TramexError>> {
         let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max);
-        log::debug!("Sending message: {:?}", msg);
+        log::debug!("Sending message: {msg:?}");
         match serde_json::to_string(&msg) {
             Ok(msg_stringed) => {
-                log::debug!("{}", msg_stringed);
+                log::debug!("{msg_stringed}");
                 self.ws_sender.send(WsMessage::Text(msg_stringed));
                 self.msg_id += 1;
             }
             Err(err) => {
-                log::error!("Error encoding message: {:?}", err);
+                log::error!("Error encoding message: {err:?}");
                 return Err(vec![tramex_error!(
                     err.to_string(),
                     crate::errors::ErrorCode::WebSocketErrorEncodingMessage
@@ -118,7 +116,7 @@ impl WsConnection {
                                                 data.events.push(trace);
                                             }
                                             Err(err) => {
-                                                log::error!("Error while extracting data: {:?}", err);
+                                                log::error!("Error while extracting data: {err:?}");
                                                 errors.push(err);
                                             }
                                         }
@@ -135,12 +133,12 @@ impl WsConnection {
                                             if decoded_data.message == "ready" {
                                                 log::debug!("Received ready message");
                                             }
-                                            log::debug!("Received BaseMessage: {:?}", decoded_data);
+                                            log::debug!("Received BaseMessage: {decoded_data:?}");
                                             self.name = decoded_data.name;
                                         }
                                         Err(err) => {
-                                            log::error!("Error decoding message: {:?}", err);
-                                            log::error!("Message: {:?}", event_text);
+                                            log::error!("Error decoding message: {err:?}");
+                                            log::error!("Message: {event_text:?}");
                                             return Err(vec![tramex_error!(
                                                 err.to_string(),
                                                 crate::errors::ErrorCode::WebSocketErrorDecodingMessage
@@ -151,16 +149,16 @@ impl WsConnection {
                             }
                         }
                         WsMessage::Unknown(str_error) => {
-                            log::error!("Unknown message: {:?}", str_error);
+                            log::error!("Unknown message: {str_error:?}");
                             return Err(vec![tramex_error!(
                                 str_error,
                                 crate::errors::ErrorCode::WebSocketUnknownMessageReceived
                             )]);
                         }
                         WsMessage::Binary(bin) => {
-                            log::error!("Unknown binary message: {:?}", bin);
+                            log::error!("Unknown binary message: {bin:?}");
                             return Err(vec![tramex_error!(
-                                format!("Unknown binary message: {:?}", bin),
+                                format!("Unknown binary message: {bin:?}"),
                                 crate::errors::ErrorCode::WebSocketUnknownBinaryMessageReceived
                             )]);
                         }
@@ -183,7 +181,7 @@ impl WsConnection {
                 }
                 WsEvent::Error(str_err) => {
                     self.available = false;
-                    log::error!("WebSocket error: {:?}", str_err);
+                    log::error!("WebSocket error: {str_err:?}");
                     return Err(vec![tramex_error!(str_err, crate::errors::ErrorCode::WebSocketError)]);
                 }
             }
@@ -194,20 +192,18 @@ impl WsConnection {
 
 impl Debug for WsConnection {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> core::fmt::Result {
-        return formatter
+        formatter
             .debug_struct("Interface")
             .field("ws_sender", &"Box<WsSender>")
             .field("ws_receiver", &"Box<WsReceiver>")
             .field("connecting", &self.connecting)
-            .finish();
+            .finish()
     }
 }
 
 impl Drop for WsConnection {
     fn drop(&mut self) {
         log::debug!("Cleaning WsConnection");
-        if let Err(err) = self.ws_sender.close() {
-            log::error!("Error closing WebSocket: {}", err);
-        }
+        self.ws_sender.close()
     }
 }
