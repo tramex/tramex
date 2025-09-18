@@ -5,7 +5,7 @@
 
 Tramex is a project conducted in Télécom Paris with the support of the CMA IMTfor5G+ project in the context of France 2030 program.
 The goal of the project is to design a teaching tool for 4G and 5G air interface and access networks procedures. The tool is developed in Rust language.
-It can both be used inside a web environnement for the design of labs supporing lectures. It can also be used in a standalone environment.
+It can be used inside a web environnement for the design of labs supporting lectures. It can also be used in a standalone environment.
 
 
 - Demo available at <https://tramex.github.io/tramex/>
