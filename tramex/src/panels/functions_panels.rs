@@ -179,7 +179,7 @@ impl std::fmt::Display for LogicalChannelsEnum {
             LogicalChannelsEnum::UL_DCCH => "DCCH",
             LogicalChannelsEnum::UL_DTCH => "DTCH",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -230,7 +230,7 @@ impl std::fmt::Display for TransportChannelsEnum {
             TransportChannelsEnum::RACH => "RACH",
             TransportChannelsEnum::UL_SCH => "UL-SCH",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -286,6 +286,6 @@ impl std::fmt::Display for PhysicalChannelsEnum {
             PhysicalChannelsEnum::PUSCH => "PUSCH",
             PhysicalChannelsEnum::PUCCH => "PUCCH",
         };
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
