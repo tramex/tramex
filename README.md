@@ -1,6 +1,6 @@
 # tramex
 
-<div style="text-align: center;">
+<div align="center">
 <img width="204" height="192" alt="Sans titre" src="https://github.com/user-attachments/assets/e067993a-6474-4e88-96b0-58d230712cba" />
 </div>
 
@@ -12,7 +12,7 @@ It can be used inside a web environment for the design of labs supporting lectur
 - Demo available at <https://tramex.github.io/tramex/>
 - Documentation available at <https://tramex.github.io/tramex/docs/>
 
-<div style="text-align: center;">
+<div align="center">
 
 ![tramex logo](tramex/assets/icon-256.png)
 
