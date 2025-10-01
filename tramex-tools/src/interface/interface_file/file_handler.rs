@@ -4,6 +4,7 @@ use crate::data::Data;
 use crate::data::Trace;
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
+use crate::interface::parse_config::FileMetadata;
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use crate::tramex_error;
@@ -53,12 +54,20 @@ impl InterfaceTrait for File {
         if self.full_read {
             return Ok(());
         }
+        
+        // Parse metadata on first call
+        if self.index_line == 0 && data.events.is_empty() {
+            data.metadata = FileMetadata::parse_from_lines(&self.file_content);
+        }
+        
+        // println!("line: {}", self.index_line);
         let (mut traces, err_processed) = self.process();
         data.events.append(&mut traces);
         if !err_processed.is_empty() {
             let filtered = err_processed
                 .iter()
-                .filter(|x| !matches!(x.get_code(), ErrorCode::EndOfFile))
+                .filter(|tmx_err| !matches!(tmx_err.get_code(), ErrorCode::EndOfFile))
+                .filter(|tmx_err| !matches!(tmx_err.get_code(), ErrorCode::ParsingLayerNotImplemented))
                 .cloned()
                 .collect();
             return Err(filtered);

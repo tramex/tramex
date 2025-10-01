@@ -198,4 +198,44 @@ mod tests {
         assert!(errors.len() == count_errors);
         assert!(errors.last().unwrap().message.contains("Unknown message type"));
     }
+
+    #[test]
+    fn test_gnb_file() {
+        let filename = &get_path("gnb-64-truncated.log");
+        let content = std::fs::read_to_string(filename).unwrap();
+        let file = File::new_file_content(filename.into(), content);
+        let mut f = DataHandler::new(file);
+        let mut errors: Vec<TramexError> = vec![];
+        
+        let read_full = false;
+        f.file.change_nb_read(100);
+        let max_batches = 10;
+        let mut batch_count = 0;
+
+        loop {
+            match &mut f.get_more_data(Layers::all_debug()) {
+                Ok(_) => {}
+                Err(e) => {
+                    errors.append(e);
+                }
+            }
+            println!("batch: {}", batch_count);
+            batch_count += 1;
+            // Stop after N batches OR when file is fully read
+            if (!read_full && batch_count >= max_batches) || f.file.full_read {
+                break;
+            }
+        }
+
+        eprintln!("data: {:?}", f.data.events.len());
+        eprintln!("errors: {:?}", errors.len());
+        eprintln!("last error: {:?}", errors.last());
+        
+        // Test metadata parsing
+        use tramex_tools::interface::parse_config::Technology;
+        assert_eq!(f.data.metadata.technology, Technology::NR);
+        assert!(f.data.metadata.cell_info.is_some());
+        eprintln!("Technology: {:?}", f.data.metadata.technology);
+        eprintln!("Cell info: {:?}", f.data.metadata.cell_info);
+    }
 }

@@ -5,19 +5,23 @@ use std::str::FromStr;
 use crate::errors::ErrorCode;
 use crate::interface::parser::{FileParser, parsing_error_to_tramex_error};
 use crate::tramex_error;
-// to use the FileParser trait and implementations
 use crate::{
     data::Trace,
     errors::TramexError,
     interface::{
         layer::Layer,
-        parser::{eof_error, parser_rrc::RRCParser, time_to_milliseconds},
+        parser::{
+            eof_error,
+            parser_basic::BasicParser,
+            parser_rrc::RRCParser,
+            time_to_milliseconds,
+        },
     },
 };
 
 /// Function that parses one log
-/// # Errors
 /// Return an error if the parsing fails
+/// note : should receive only one block instead of the full remaining text ?
 pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, TramexError> {
     // no more lines to read
     if lines.is_empty() {
@@ -73,7 +77,8 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
             let res_layer = Layer::from_str(parts[1].trim_start_matches('[').trim_end_matches(']'));
             let res_parse = match res_layer {
                 Ok(Layer::RRC) => RRCParser::parse(lines_to_parse),
-                _ => {
+                Ok(layer) => BasicParser::parse_with_layer(lines_to_parse, layer),
+                Err(_) => {
                     return Err(tramex_error!(
                         format!(
                             "Unknown message type {:?} in {:?} (line {})",
@@ -87,7 +92,7 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
             };
             match res_parse {
                 Ok(mut trace) => {
-                    trace.timestamp = time_to_milliseconds(&date) as u64;
+                    trace.timestamp = time_to_milliseconds(&date);
                     Ok(trace)
                 }
                 Err(err) => Err(parsing_error_to_tramex_error(err, copy_ix as u64)),

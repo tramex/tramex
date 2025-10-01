@@ -4,11 +4,15 @@ use eframe::egui;
 use tramex_tools::{
     data::{Data, Trace},
     errors::TramexError,
+    interface::parse_config::Technology,
 };
 
 /// Message box
 #[derive(Default)]
 pub struct MessageBox {
+    /// technology (LTE or NR)
+    technology: Technology,
+
     /// current trace
     current_trace: Option<Trace>,
 
@@ -49,6 +53,8 @@ impl super::PanelController for MessageBox {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
+        // Update technology from data metadata
+        self.technology = data.metadata.technology;
         if data.is_different_index(self.current_index) {
             if let Some(trace) = data.get_current_trace() {
                 self.current_trace = Some(trace.clone());
@@ -90,6 +96,8 @@ impl super::PanelController for MessageBox {
 
 impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
+        ui.heading(format!("Technology : {}", self.technology));
+        ui.separator();
         ui.heading("Received events:");
         ui.checkbox(&mut self.show_full, "Show full message");
         ui.horizontal(|ui| {

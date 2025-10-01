@@ -19,7 +19,7 @@ pub struct OneLog {
     pub data: Vec<String>,
 
     /// Milliseconds since January 1st 1970.
-    pub timestamp: u64,
+    pub timestamp: i64,
 
     /// log layer
     pub layer: Layer,
@@ -89,7 +89,7 @@ impl OneLog {
                 };
                 let infos = AdditionalInfos::RRCInfos(rrc);
                 let trace = Trace {
-                    timestamp: self.timestamp.to_owned(),
+                    timestamp: self.timestamp,
                     layer: Layer::RRC,
                     additional_infos: infos,
                     hexa: self.extract_hexe().unwrap_or_default(),

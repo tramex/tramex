@@ -49,6 +49,9 @@ pub enum Layer {
     /// GTPU layer
     GTPU,
 
+    /// SDAP layer
+    SDAP,
+
     /// Special layer of amarisoft
     PROD,
 }
@@ -72,6 +75,7 @@ impl FromStr for Layer {
             "LPPA" => Ok(Layer::LPPA),
             "NRPPA" => Ok(Layer::NRPPA),
             "GTPU" => Ok(Layer::GTPU),
+            "SDAP" => Ok(Layer::SDAP),
             _ => Err(()),
         }
     }
@@ -175,6 +179,10 @@ pub struct Layers {
     #[serde(rename(serialize = "TRX"))]
     /// TRX layer
     pub trx: LayerLogLevel,
+
+    #[serde(rename(serialize = "SDAP"))]
+    /// SDAP layer
+    pub sdap: LayerLogLevel,
 }
 
 impl Layers {
@@ -186,8 +194,36 @@ impl Layers {
     /// Create new Layers but in an optiniated way
     pub fn new_optiniated() -> Self {
         let mut layers = Layers::new();
+        layers.phy = LayerLogLevel::Debug;
+        layers.mac = LayerLogLevel::Debug;
+        layers.rlc = LayerLogLevel::Debug;
+        layers.pdcp = LayerLogLevel::Debug;
+        layers.sdap = LayerLogLevel::Debug;
         layers.rrc = LayerLogLevel::Debug;
+        layers.nas = LayerLogLevel::Debug;
         layers
+    }
+
+    /// Check if a specific layer is enabled (Debug level)
+    pub fn is_layer_enabled(&self, layer: &Layer) -> bool {
+        match layer {
+            Layer::PHY => matches!(self.phy, LayerLogLevel::Debug),
+            Layer::MAC => matches!(self.mac, LayerLogLevel::Debug),
+            Layer::RLC => matches!(self.rlc, LayerLogLevel::Debug),
+            Layer::PDCP => matches!(self.pdcp, LayerLogLevel::Debug),
+            Layer::RRC => matches!(self.rrc, LayerLogLevel::Debug),
+            Layer::NAS => matches!(self.nas, LayerLogLevel::Debug),
+            Layer::S1AP => matches!(self.s1ap, LayerLogLevel::Debug),
+            Layer::NGAP => matches!(self.ngap, LayerLogLevel::Debug),
+            Layer::X2AP => matches!(self.x2ap, LayerLogLevel::Debug),
+            Layer::XNAP => matches!(self.xnap, LayerLogLevel::Debug),
+            Layer::M2AP => matches!(self.m2ap, LayerLogLevel::Debug),
+            Layer::LPPA => matches!(self.lppa, LayerLogLevel::Debug),
+            Layer::NRPPA => matches!(self.nrppa, LayerLogLevel::Debug),
+            Layer::GTPU => matches!(self.gtpu, LayerLogLevel::Debug),
+            Layer::SDAP => matches!(self.sdap, LayerLogLevel::Debug),
+            Layer::PROD => true, // Always show PROD layer
+        }
     }
 
     /// Create new Layers struct with all debug
@@ -209,6 +245,7 @@ impl Layers {
             lppa: LayerLogLevel::Debug,
             nrppa: LayerLogLevel::Debug,
             trx: LayerLogLevel::Debug,
+            sdap: LayerLogLevel::Debug,
         }
     }
 }

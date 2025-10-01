@@ -142,7 +142,8 @@ impl super::PanelController for LinkPanel {
                         self.canal = Some(infos.canal.to_owned());
                         self.canal_msg = Some(infos.canal_msg.to_owned());
                         self.direction = Some(infos.direction.clone());
-                    }
+                    },
+                    _ => {}
                 }
             }
 

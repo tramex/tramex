@@ -1,5 +1,5 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::interface::{layer::Layer, parser::parser_rrc::RRCInfos};
+use crate::interface::{parse_config::FileMetadata, layer::Layer, parser::parser_rrc::RRCInfos};
 use core::fmt::Debug;
 
 #[derive(Debug)]
@@ -9,6 +9,8 @@ pub struct Data {
     pub events: Vec<Trace>,
     /// Current index of the vector.
     pub current_index: usize,
+    /// File metadata (connection type, version, etc.)
+    pub metadata: FileMetadata,
 }
 
 impl Data {
@@ -29,6 +31,7 @@ impl Data {
     pub fn clear(&mut self) {
         self.events.clear();
         self.current_index = 0;
+        self.metadata = FileMetadata::default();
     }
 }
 
@@ -38,6 +41,7 @@ impl Default for Data {
         Self {
             events: Vec::with_capacity(default_data_size),
             current_index: 0,
+            metadata: FileMetadata::default(),
         }
     }
 }
@@ -47,7 +51,7 @@ impl Default for Data {
 pub struct Trace {
     /// Message type.
     /// Timestamp of the message.
-    pub timestamp: u64,
+    pub timestamp: i64,
 
     /// Layer of the message.
     pub layer: Layer,
@@ -67,4 +71,6 @@ pub struct Trace {
 pub enum AdditionalInfos {
     /// RRC message
     RRCInfos(RRCInfos),
+    /// No additional info (for simple log entries like PHY, MAC, etc.)
+    None,
 }

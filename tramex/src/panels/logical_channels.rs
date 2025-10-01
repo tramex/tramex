@@ -147,13 +147,15 @@ impl super::PanelController for LogicalChannels {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
+        
         if data.is_different_index(self.current_index) {
             if let Some(one_trace) = data.get_current_trace() {
                 match &one_trace.additional_infos {
                     AdditionalInfos::RRCInfos(infos) => {
                         self.canal = infos.canal.to_owned();
                         self.canal_msg = infos.canal_msg.to_owned();
-                    }
+                    },
+                    _ => {}
                 }
             }
             self.current_index = data.current_index;
@@ -196,6 +198,21 @@ struct ChannelState {
 impl super::PanelView for LogicalChannels {
     fn ui(&mut self, ui: &mut egui::Ui) {
         egui::Grid::new("some_unique_id").min_col_width(60.0).show(ui, |ui| {
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Downlink");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "");
+            print_on_grid(ui, "----");
+            print_on_grid(ui, "Uplink");
+            print_on_grid(ui, "----");
+            ui.end_row();
+            
             self.make_label_hover_logical(ui, LogicalChannelsEnum::PCCH);
             self.make_label_hover_logical(ui, LogicalChannelsEnum::BCCH);
             self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_CCCH);
@@ -238,21 +255,6 @@ impl super::PanelView for LogicalChannels {
             self.make_label_hover_physical(ui, PhysicalChannelsEnum::PRACH);
             self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUSCH);
             self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUCCH);
-            ui.end_row();
-
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "Downlink");
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "");
-            print_on_grid(ui, "Technology : LTE");
-            print_on_grid(ui, "");
-            print_on_grid(ui, "----");
-            print_on_grid(ui, "Uplink");
-            print_on_grid(ui, "----");
             ui.end_row();
         });
     }
