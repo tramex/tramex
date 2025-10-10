@@ -92,6 +92,18 @@ impl InterfaceTrait for WsConnection {
     fn close(&mut self) -> Result<(), TramexError> {
         self.close_impl()
     }
+    
+    fn supports_preloading(&self) -> bool {
+        false  // WebSocket cannot preload - server controls data
+    }
+    
+    fn get_total_event_count(&self) -> Option<usize> {
+        None  // Unknown for WebSocket
+    }
+    
+    fn is_fully_read(&self) -> bool {
+        !self.available  // If connection is closed, we're done
+    }
 }
 
 impl WsConnection {

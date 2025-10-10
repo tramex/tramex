@@ -54,6 +54,10 @@ impl TramexApp {
                 }
             }
         });
+        
+        // Windows menu button
+        self.frontend.menu_bar(ui);
+        
         ui.menu_button("About", |ui| {
             make_hyperlink(ui, "User documentation", "https://tramex.github.io/tramex/docs/", true);
             make_hyperlink(ui, "tramex types", "https://tramex.github.io/tramex/crates/tramex/", true);
@@ -163,7 +167,6 @@ impl eframe::App for TramexApp {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal_wrapped(|ui| {
                 self.menu_bar(ctx, ui);
-                self.frontend.menu_bar(ui);
             });
         });
 

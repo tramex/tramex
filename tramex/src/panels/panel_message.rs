@@ -98,14 +98,12 @@ impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading(format!("Technology : {}", self.technology));
         ui.separator();
-        ui.heading("Received events:");
+        
+        // Show full message checkbox
         ui.checkbox(&mut self.show_full, "Show full message");
-        ui.horizontal(|ui| {
-            ui.label(format!("Received events: {}", self.events_len));
-        });
+        ui.separator();
 
         if let Some(one_trace) = &self.current_trace {
-            ui.label(format!("Current msg index: {}", self.current_index + 1));
             display_log(ui, one_trace, self.show_full, &self.save_text);
         }
     }

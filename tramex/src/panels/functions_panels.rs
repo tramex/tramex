@@ -112,7 +112,7 @@ pub fn make_arrow(ui: &mut egui::Ui, direction: ArrowDirection, color: ArrowColo
     ui.label(egui::RichText::new(content).color(current_color).font(font_id.clone()));
 }
 
-/// Enumerate all types of logical channels in LTE technology
+/// Enumerate all types of logical channels in LTE & NR technologies
 #[derive(PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum LogicalChannelsEnum {
@@ -183,7 +183,7 @@ impl std::fmt::Display for LogicalChannelsEnum {
     }
 }
 
-/// Enumerate all types of transport channels in LTE technology
+/// Enumerate all types of transport channels in LTE & NR technologies
 #[derive(PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum TransportChannelsEnum {
@@ -234,7 +234,7 @@ impl std::fmt::Display for TransportChannelsEnum {
     }
 }
 
-/// Enumerate all types of physical channels in LTE technology
+/// Enumerate all types of physical channels in LTE & NR technologies
 #[derive(PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum PhysicalChannelsEnum {

@@ -5,8 +5,8 @@ use crate::handlers::handler_file::FileHandler;
 use crate::handlers::handler_ws::WsHandler;
 
 use crate::panels::{
-    PanelController, logical_channels::LogicalChannels, panel_message::MessageBox, rrc_status::LinkPanel,
-    trame_manager::TrameManager,
+    PanelController, logical_channels::LogicalChannels, navigation_panel::NavigationPanel,
+    panel_message::MessageBox, rrc_status::LinkPanel, trame_manager::TrameManager,
 };
 use crate::set_open;
 use egui::Ui;
@@ -52,6 +52,10 @@ pub struct FrontEnd {
 
     /// Radio choice
     pub radio_choice: Choice,
+    
+    #[serde(skip)]
+    /// Navigation panel (separate reference for button handling)
+    nav_panel: NavigationPanel,
 }
 
 impl Default for FrontEnd {
@@ -64,6 +68,7 @@ impl Default for FrontEnd {
             radio_choice: Choice::default(),
             handler: None,
             trame_manager: TrameManager::new(),
+            nav_panel: NavigationPanel::new(),
         }
     }
 }
@@ -83,6 +88,9 @@ impl FrontEnd {
         for one_box in wins.iter() {
             open_windows.insert(one_box.name().to_owned());
         }
+        // Add Navigation panel to open windows by default
+        open_windows.insert("Navigation".to_owned());
+        
         Self {
             open_windows,
             windows: wins,
@@ -90,22 +98,20 @@ impl FrontEnd {
         }
     }
 
-    /// Menu bar
     pub fn menu_bar(&mut self, ui: &mut Ui) {
         if self.interface_available() {
-            ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
-                ui.horizontal(|ui| {
-                    if let Some(handle) = &self.handler {
-                        self.trame_manager.show_controls(ui, &mut self.data, handle.is_full_read());
-                    }
-                    ui.menu_button("Windows", |ui| {
-                        for one_window in self.windows.iter_mut() {
-                            let mut is_open: bool = self.open_windows.contains(one_window.name());
-                            ui.checkbox(&mut is_open, one_window.name());
-                            set_open(&mut self.open_windows, one_window.name(), is_open);
-                        }
-                    });
-                });
+            ui.menu_button("Windows", |ui| {
+                // Navigation panel
+                let mut nav_open = self.open_windows.contains("Navigation");
+                ui.checkbox(&mut nav_open, "Navigation");
+                set_open(&mut self.open_windows, "Navigation", nav_open);
+                
+                // Other windows
+                for one_window in self.windows.iter_mut() {
+                    let mut is_open: bool = self.open_windows.contains(one_window.name());
+                    ui.checkbox(&mut is_open, one_window.name());
+                    set_open(&mut self.open_windows, one_window.name(), is_open);
+                }
             });
         }
     }
@@ -169,11 +175,16 @@ impl FrontEnd {
                     if let Some(handle) = &mut self.handler {
                         handle.ui_options(ui);
                     }
+                    // Show layer options always (not just when file is loaded)
+                    self.trame_manager.show_options(ui);
+                    
                     if self.interface_available() {
                         if let Some(handle) = &mut self.handler {
-                            self.trame_manager.show_options(ui);
-                            if self.trame_manager.should_get_more_log {
+                            // Keep loading batches until we find an enabled event or reach end of file
+                            while self.trame_manager.should_get_more_log {
                                 self.trame_manager.should_get_more_log = false;
+                                let should_continue = self.trame_manager.continue_navigation_after_load;
+                                
                                 if let Err(err) =
                                     handle.get_more_data(self.trame_manager.layers_list.clone(), &mut self.data)
                                 {
@@ -182,6 +193,16 @@ impl FrontEnd {
                                             errors.push(one_error);
                                         }
                                     }
+                                    self.trame_manager.continue_navigation_after_load = false;
+                                    break;  // Stop on error
+                                } else if should_continue {
+                                    // Data loaded successfully, continue navigation
+                                    self.trame_manager.continue_navigation_after_load = false;
+                                    self.trame_manager.continue_to_next_enabled(&mut self.data, handle.is_full_read());
+                                    // If should_get_more_log is still true, the loop will continue
+                                } else {
+                                    // Just loading more data, not continuing navigation
+                                    break;
                                 }
                             }
                         }
@@ -219,6 +240,33 @@ impl FrontEnd {
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.interface_available() {
+                // Update total count in navigation panel
+                if let Some(handle) = &self.handler {
+                    self.nav_panel.total_count = handle.get_total_event_count();
+                }
+                
+                // Show navigation panel separately
+                let mut nav_open = self.open_windows.contains("Navigation");
+                if let Err(err) = self.nav_panel.show(ctx, &mut nav_open, &mut self.data) {
+                    log::error!("Error in Navigation panel");
+                    error_to_return.push(err);
+                }
+                set_open(&mut self.open_windows, "Navigation", nav_open);
+                
+                // Handle navigation button clicks
+                if self.nav_panel.should_go_next {
+                    self.nav_panel.should_go_next = false;
+                    if let Some(handle) = &self.handler {
+                        self.trame_manager.continue_to_next_enabled(&mut self.data, handle.is_full_read());
+                    }
+                }
+                if self.nav_panel.should_go_previous {
+                    self.nav_panel.should_go_previous = false;
+                    // Call previous navigation method (need to expose it)
+                    self.trame_manager.go_to_previous(&mut self.data);
+                }
+                
+                // Show other windows
                 for one_window in self.windows.iter_mut() {
                     let mut is_open: bool = self.open_windows.contains(one_window.name());
                     if let Err(err) = one_window.show(ctx, &mut is_open, &mut self.data) {
@@ -227,7 +275,6 @@ impl FrontEnd {
                     }
                     set_open(&mut self.open_windows, one_window.name(), is_open);
                 }
-                // show nothing
             } else {
                 match &self.handler {
                     Some(handle) => handle.show_available(ui),

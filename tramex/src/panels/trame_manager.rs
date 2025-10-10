@@ -10,6 +10,9 @@ pub struct TrameManager {
     pub layers_list: Layers,
     /// boolean to get more log
     pub should_get_more_log: bool,
+    /// Flag to continue navigation after loading more data
+    #[serde(skip)]
+    pub continue_navigation_after_load: bool,
 }
 
 impl TrameManager {
@@ -18,6 +21,7 @@ impl TrameManager {
         Self {
             layers_list: Layers::new_optiniated(),
             should_get_more_log: false,
+            continue_navigation_after_load: false,
         }
     }
 }
@@ -31,7 +35,7 @@ impl Default for TrameManager {
 impl TrameManager {
     /// Show the options
     pub fn show_options(&mut self, ui: &mut egui::Ui) {
-        ui.collapsing("Couches", |ui| {
+        ui.collapsing("Layers", |ui| {
             ui.collapsing("Radio", |ui| {
                 checkbox(ui, &mut self.layers_list.phy, "PHY");
                 checkbox(ui, &mut self.layers_list.mac, "MAC");
@@ -41,7 +45,7 @@ impl TrameManager {
                 checkbox(ui, &mut self.layers_list.rrc, "RRC");
                 checkbox(ui, &mut self.layers_list.nas, "NAS");
             });
-                ui.collapsing("Coeur de réseau", |ui| {
+                ui.collapsing("Core Network", |ui| {
                 checkbox(ui, &mut self.layers_list.s72, "S72");
                 checkbox(ui, &mut self.layers_list.s1ap, "S1AP");
                 checkbox(ui, &mut self.layers_list.ngap, "NGAP");
@@ -56,34 +60,17 @@ impl TrameManager {
         });
     }
 
-    /// Show the controls
-    pub fn show_controls(&mut self, ui: &mut egui::Ui, data: &mut Data, is_full_read: bool) {
-        ui.add_enabled_ui(!is_full_read, |ui| {
-            if ui.button("More").clicked() {
-                log::debug!("More");
-                self.should_get_more_log = true;
-            }
-        });
-        let is_enabled = if !data.events.is_empty() && data.events.len() - 1 == data.current_index {
-            !is_full_read
-        } else {
-            true
-        };
-        ui.add_enabled_ui(is_enabled, |ui| {
-            let text = if data.events.is_empty() { "Start" } else { "Next" };
-            if ui.button(text).clicked() {
-                log::debug!("Clicked {text}");
-                self.go_to_next_enabled_event(data, is_full_read);
-            }
-        });
-        ui.add_enabled_ui(data.current_index > 0, |ui| {
-            if ui.button("Previous").clicked() {
-                log::debug!("Previous");
-                self.go_to_previous_enabled_event(data);
-            }
-        });
+    /// Continue navigation to next enabled event (called after loading more data)
+    pub fn continue_to_next_enabled(&mut self, data: &mut Data, is_full_read: bool) {
+        log::debug!("Continuing navigation from index {}", data.current_index);
+        self.go_to_next_enabled_event(data, is_full_read);
     }
-
+    
+    /// Public method to go to previous enabled event
+    pub fn go_to_previous(&mut self, data: &mut Data) {
+        self.go_to_previous_enabled_event(data);
+    }
+    
     /// Navigate to the next event that matches the enabled layer filters
     fn go_to_next_enabled_event(&mut self, data: &mut Data, is_full_read: bool) {        
         // Try to find the next enabled event
@@ -95,6 +82,7 @@ impl TrameManager {
                 if let Some(trace) = data.events.get(data.current_index) {
                     if self.layers_list.is_layer_enabled(&trace.layer) {
                         // Found an enabled event
+                        log::debug!("Found enabled event at index {}", data.current_index);
                         break;
                     }
                     // Continue to next event
@@ -102,15 +90,24 @@ impl TrameManager {
                     break;
                 }
             } else {
-                // Reached the end, need more logs
-                self.should_get_more_log = true;
-                break;
+                // Reached the end of loaded events
+                if is_full_read {
+                    // No more data available, stay at current position
+                    log::debug!("Reached end of file, no more enabled events");
+                    break;
+                } else {
+                    // Request more data and continue searching
+                    log::debug!("Reached end of batch at index {}, requesting more data", data.current_index);
+                    self.should_get_more_log = true;
+                    self.continue_navigation_after_load = true;
+                    break;
+                }
             }
         }
         
         // Preloading: if we're near the end, request more logs
         if !data.events.is_empty() && data.current_index >= (data.events.len() - 5) && !is_full_read {
-            log::debug!("Preloading");
+            log::debug!("Preloading: near end of loaded events");
             self.should_get_more_log = true;
         }
     }

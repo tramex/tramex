@@ -43,4 +43,14 @@ pub trait Handler {
 
     /// Check if the interface is available
     fn is_interface_available(&self) -> bool;
+    
+    /// Check if the interface supports preloading (file mode only)
+    fn supports_preloading(&self) -> bool {
+        false
+    }
+    
+    /// Get total event count if known (file mode only)
+    fn get_total_event_count(&self) -> Option<usize> {
+        None
+    }
 }

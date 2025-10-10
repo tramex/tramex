@@ -43,8 +43,13 @@ impl LogicalChannels {
 
     /// Handle the logic of the panel
     pub fn handle_logic(&mut self) {
-        match (self.canal.as_str(), self.canal_msg.as_str()) {
-            ("BCCH-BCH", "Master Information Block") => {
+        let canal = self.canal.as_str().replace("-NR", ""); // merge NR and LTE for now
+        let canal_msg = self.canal_msg.as_str();
+        // println!("canal: {}", canal);
+        // println!("canal_msg: {}", canal_msg);
+        match (canal.as_str(), canal_msg) {
+            ("BCCH-BCH", "Master Information Block")  //4G
+            | ("BCCH-BCH", "MIB") => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::BCCH,
                     transport: TransportChannelsEnum::BCH,
@@ -58,37 +63,51 @@ impl LogicalChannels {
                     physical: PhysicalChannelsEnum::PDSCH,
                 });
             }
-            ("CCCH", "RRC connection request") | ("CCCH", "RRC connection reestablishment request") => {
+            ("CCCH", "RRC connection request") //4G
+            | ("CCCH", "RRC connection reestablishment request") //4G
+            | ("CCCH", "RRC setup reestablishment request")
+            | ("CCCH", "RRC setup request") => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::UL_CCCH,
                     transport: TransportChannelsEnum::RACH,
                     physical: PhysicalChannelsEnum::PRACH,
                 });
             }
-            ("CCCH", "RRC connection setup") | ("CCCH", "RRC connection reestablishment") => {
+            ("CCCH", "RRC connection setup") //4G
+            | ("CCCH", "RRC connection reestablishment") //4G
+            | ("CCCH", "RRC setup reestablishment") //5G
+            | ("CCCH", "RRC setup") //5G
+            => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::DL_CCCH,
                     transport: TransportChannelsEnum::DL_SCH,
                     physical: PhysicalChannelsEnum::PDSCH,
                 });
             }
-            ("DCCH", "RRC connection setup complete")
-            | ("DCCH", "UL information transfer")
-            | ("DCCH", "Security mode complete")
-            | ("DCCH", "UE capability information")
-            | ("DCCH", "RRC connection reconfiguration complete")
-            | ("DCCH", "RRC connection reestablishment complete") => {
+            ("DCCH", "RRC connection setup complete") //4G
+            | ("DCCH", "UL information transfer") 
+            | ("DCCH", "Security mode complete") 
+            | ("DCCH", "UE capability information") 
+            | ("DCCH", "RRC connection reconfiguration complete") //4G
+            | ("DCCH", "RRC connection reestablishment complete") //4G
+            | ("DCCH", "RRC setup complete") //5G
+            | ("DCCH", "RRC reconfiguration complete") //5G
+            | ("DCCH", "RRC reestablishment complete") //5G
+            => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::UL_DCCH,
                     transport: TransportChannelsEnum::UL_SCH,
                     physical: PhysicalChannelsEnum::PUSCH,
                 });
             }
-            ("DCCH", "DL information transfer")
-            | ("DCCH", "Security mode command")
+            ("DCCH", "DL information transfer") 
+            | ("DCCH", "Security mode command") 
             | ("DCCH", "UE capability enquiry")
-            | ("DCCH", "RRC connection reconfiguration")
-            | ("DCCH", "RRC connection release") => {
+            | ("DCCH", "RRC connection reconfiguration") //4G
+            | ("DCCH", "RRC connection release") //4G
+            | ("DCCH", "RRC reconfiguration") //5G
+            | ("DCCH", "RRC release") //5G
+            => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::DL_DCCH,
                     transport: TransportChannelsEnum::DL_SCH,

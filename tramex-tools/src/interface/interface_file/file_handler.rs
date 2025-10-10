@@ -9,11 +9,17 @@ use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use crate::tramex_error;
 use std::path::PathBuf;
+use std::collections::HashMap;
 
 use super::utils_file::parse_one_block;
+use super::file_index::{FileIndex};
 
 /// The default number of log processed by batch
 const DEFAULT_NB: usize = 50;
+
+/// The number of logs to preload ahead
+const PRELOAD_COUNT: usize = 50;
+
 #[derive(Debug, Clone)]
 /// Data structure to store the file.
 pub struct File {
@@ -29,11 +35,20 @@ pub struct File {
     /// the number of log to read each batch
     nb_read: usize,
 
-    /// The previous line number
+    /// The previous line number (deprecated - kept for compatibility)
     index_line: usize,
 
     /// Available
     pub available: bool,
+    
+    /// File index for efficient navigation (Option 3)
+    pub index: Option<FileIndex>,
+    
+    /// Cache of parsed traces (index -> Trace)
+    parsed_cache: HashMap<usize, Trace>,
+    
+    /// Current logical index in the file index
+    pub current_log_index: usize,
 }
 
 impl Default for File {
@@ -45,6 +60,9 @@ impl Default for File {
             nb_read: DEFAULT_NB,
             index_line: 0,
             available: true,
+            index: None,
+            parsed_cache: HashMap::new(),
+            current_log_index: 0,
         }
     }
 }
@@ -55,12 +73,25 @@ impl InterfaceTrait for File {
             return Ok(());
         }
         
-        // Parse metadata on first call
-        if self.index_line == 0 && data.events.is_empty() {
+        // Parse metadata on first call and build index
+        if self.index.is_none() && data.events.is_empty() {
             data.metadata = FileMetadata::parse_from_lines(&self.file_content);
+            
+            // Build file index (Option 3)
+            log::info!("Building file index...");
+            match FileIndex::build_from_lines(&self.file_content) {
+                Ok(index) => {
+                    log::info!("File index built: {} logs found", index.total_count);
+                    self.index = Some(index);
+                }
+                Err(e) => {
+                    log::error!("Failed to build file index: {}", e.message);
+                    return Err(vec![e]);
+                }
+            }
         }
         
-        // println!("line: {}", self.index_line);
+        // Use old batch processing for now (will be optimized later)
         let (mut traces, err_processed) = self.process();
         data.events.append(&mut traces);
         if !err_processed.is_empty() {
@@ -78,6 +109,18 @@ impl InterfaceTrait for File {
     fn close(&mut self) -> Result<(), TramexError> {
         Ok(())
     }
+    
+    fn supports_preloading(&self) -> bool {
+        true
+    }
+    
+    fn get_total_event_count(&self) -> Option<usize> {
+        self.index.as_ref().map(|idx| idx.total_count)
+    }
+    
+    fn is_fully_read(&self) -> bool {
+        self.full_read
+    }
 }
 
 impl File {
@@ -90,6 +133,9 @@ impl File {
             nb_read: DEFAULT_NB,
             index_line: 0,
             available: true,
+            index: None,
+            parsed_cache: HashMap::new(),
+            current_log_index: 0,
         }
     }
 
@@ -102,6 +148,9 @@ impl File {
             nb_read: DEFAULT_NB,
             index_line: 0,
             available: true,
+            index: None,
+            parsed_cache: HashMap::new(),
+            current_log_index: 0,
         }
     }
 

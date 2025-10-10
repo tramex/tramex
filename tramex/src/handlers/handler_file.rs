@@ -468,4 +468,12 @@ impl Handler for FileHandler {
         }
         false
     }
+    
+    fn supports_preloading(&self) -> bool {
+        self.file.as_ref().map_or(false, |f| f.index.is_some())
+    }
+    
+    fn get_total_event_count(&self) -> Option<usize> {
+        self.file.as_ref().and_then(|f| f.index.as_ref().map(|idx| idx.total_count))
+    }
 }
