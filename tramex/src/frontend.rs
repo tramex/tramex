@@ -6,7 +6,8 @@ use crate::handlers::handler_ws::WsHandler;
 
 use crate::panels::{
     PanelController, logical_channels::LogicalChannels, navigation_panel::NavigationPanel,
-    panel_message::MessageBox, rrc_status::LinkPanel, trame_manager::TrameManager,
+    panel_message::MessageBox, rrc_status::RRCStatusPanel, rrc_field_viewer::RrcFieldViewer,
+    trame_manager::TrameManager,
 };
 use crate::set_open;
 use egui::Ui;
@@ -78,11 +79,13 @@ impl FrontEnd {
     pub fn new() -> Self {
         let mb = MessageBox::new();
         let lc = LogicalChannels::new();
-        let status = LinkPanel::new();
+        let status = RRCStatusPanel::new();
+        let rrc_fields = RrcFieldViewer::new();
         let wins: Vec<Box<dyn PanelController>> = vec![
             Box::<MessageBox>::new(mb),
             Box::<LogicalChannels>::new(lc),
-            Box::<LinkPanel>::new(status),
+            Box::<RRCStatusPanel>::new(status),
+            Box::<RrcFieldViewer>::new(rrc_fields),
         ];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {
@@ -258,12 +261,16 @@ impl FrontEnd {
                     self.nav_panel.should_go_next = false;
                     if let Some(handle) = &self.handler {
                         self.trame_manager.continue_to_next_enabled(&mut self.data, handle.is_full_read());
+                        // Parse ASN.1 to JSON for RRC messages
+                        self.parse_current_rrc_message();
                     }
                 }
                 if self.nav_panel.should_go_previous {
                     self.nav_panel.should_go_previous = false;
                     // Call previous navigation method (need to expose it)
                     self.trame_manager.go_to_previous(&mut self.data);
+                    // Parse ASN.1 to JSON for RRC messages
+                    self.parse_current_rrc_message();
                 }
                 
                 // Show other windows
@@ -288,5 +295,14 @@ impl FrontEnd {
             return Err(error_to_return);
         }
         Ok(())
+    }
+    
+    /// Parse ASN.1 from current RRC message and log as JSON
+    fn parse_current_rrc_message(&self) {
+        if let Some(trace) = self.data.get_current_trace() {
+            if let Some(json) = trace.parse_asn1_to_json() {
+                log::info!("RRC Message JSON:\n{}", serde_json::to_string_pretty(&json).unwrap_or_default());
+            }
+        }
     }
 }

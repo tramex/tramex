@@ -238,4 +238,95 @@ mod tests {
         eprintln!("Technology: {:?}", f.data.metadata.technology);
         eprintln!("Cell info: {:?}", f.data.metadata.cell_info);
     }
+
+    #[test]
+    fn test_asn1_parser() {
+        use tramex_tools::asn1_parser::parse_asn1_to_json;
+        
+        // Example RRC message (MIB)
+        let asn1_text = r#"{
+            message mib: {
+                systemFrameNumber '111000'B,
+                subCarrierSpacingCommon scs30or120,
+                ssb-SubcarrierOffset 0,
+                dmrs-TypeA-Position pos2,
+                pdcch-ConfigSIB1 {
+                    controlResourceSetZero 10,
+                    searchSpaceZero 0
+                },
+                cellBarred notBarred,
+                intraFreqReselection allowed,
+                spare '0'B
+            }
+        }"#;
+
+        let result = parse_asn1_to_json(asn1_text);
+        assert!(result.is_ok(), "Failed to parse ASN.1: {:?}", result.err());
+        
+        let json = result.unwrap();
+        eprintln!("Parsed JSON:\n{}", serde_json::to_string_pretty(&json).unwrap());
+        
+        // Verify structure
+        assert!(json.is_object());
+        assert!(json["message"].is_object());
+        assert!(json["message"]["mib"].is_object());
+        assert!(json["message"]["mib"]["pdcch-ConfigSIB1"].is_object());
+        assert_eq!(json["message"]["mib"]["pdcch-ConfigSIB1"]["controlResourceSetZero"], 10);
+        assert_eq!(json["message"]["mib"]["pdcch-ConfigSIB1"]["searchSpaceZero"], 0);
+    }
+
+    #[test]
+    fn test_asn1_parser_nested() {
+        use tramex_tools::asn1_parser::parse_asn1_to_json;
+        
+        // Test nested sequences
+        let asn1_text = r#"{
+            cellSelectionInfo {
+                q-RxLevMin -70,
+                q-QualMin -20
+            },
+            cellAccessRelatedInfo {
+                trackingAreaCode '000065'H,
+                cellIdentity '001234501'H
+            }
+        }"#;
+
+        let result = parse_asn1_to_json(asn1_text);
+        assert!(result.is_ok());
+        
+        let json = result.unwrap();
+        assert!(json["cellSelectionInfo"].is_object());
+        assert_eq!(json["cellSelectionInfo"]["q-RxLevMin"], -70);
+        assert_eq!(json["cellSelectionInfo"]["q-QualMin"], -20);
+    }
+
+    #[test]
+    fn test_asn1_parser_array() {
+        use tramex_tools::asn1_parser::parse_asn1_to_json;
+        
+        // Test array parsing
+        let asn1_text = r#"{
+            mcc {
+                0,
+                0,
+                1
+            }
+        }"#;
+
+        let result = parse_asn1_to_json(asn1_text);
+        if let Err(e) = &result {
+            eprintln!("Parse error: {}", e);
+        }
+        assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
+        
+        let json = result.unwrap();
+        eprintln!("Parsed JSON: {}", serde_json::to_string_pretty(&json).unwrap());
+        
+        // The mcc field contains an array
+        assert!(json["mcc"].is_array(), "mcc is not an array: {:?}", json["mcc"]);
+        assert_eq!(json["mcc"][0], 0);
+        assert_eq!(json["mcc"][1], 0);
+        assert_eq!(json["mcc"][2], 1);
+    }
 }
+

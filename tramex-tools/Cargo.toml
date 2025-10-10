@@ -29,3 +29,5 @@ log = "0.4.22"
 serde_json = "1.0.135"
 ewebsock = { version = "0.8.0", features = ["tls"], optional = true }
 chrono = "0.4.39"
+pest = "2.7"
+pest_derive = "2.7"

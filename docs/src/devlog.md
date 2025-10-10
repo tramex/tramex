@@ -302,3 +302,180 @@ Windows Menu:
   ☑ Logical Channels
   ☑ Link Panel
 ```
+
+---
+
+## 5. RRC Field Viewer & Message Panel Improvements
+
+### Implementation Date
+2025-10-10
+
+### Problem Solved
+- No dedicated panel for viewing specific RRC message fields
+- Message panel displayed too much information (timestamp, hex always visible)
+- Array values in JSON were not properly displayed
+- Technology information was not visible in logical channels panel
+- Technology detection relied only on file headers (which could be missing)
+
+### Solution: RRC Field Viewer + UI Enhancements
+
+#### New RRC Field Viewer Panel (`rrc_field_viewer.rs`)
+A dedicated panel for displaying extracted fields from RRC messages with configurable field mappings.
+
+**Key Features:**
+- **Configurable field mappings**: Define which fields to extract per message type
+- **JSON path navigation**: Support for nested objects and array indexing with `[N]` syntax
+- **Automatic value formatting**: 
+  - Arrays displayed as `[item1, item2, ...]`
+  - Objects with `decimal`/`hex` fields automatically formatted
+  - Units can be added to values (e.g., "dB")
+- **Grid layout**: Clean table display with field names and values
+
+**Default Configurations:**
+- **SIB1 (4G)**: mcc, mnc (from `plmn-IdentityList[0].plmn-Identity`)
+- **SIB1 (5G)**: q-RxLevMin, q-QualMin, mcc, mnc, cellId, trackingAreaCode (from `plmn-IdentityInfoList[0]`)
+
+**JSON Path Examples:**
+```rust
+// Simple field
+"message.c1.systemInformationBlockType1.cellSelectionInfo.q-RxLevMin"
+
+// Array indexing
+"message.c1.systemInformationBlockType1.cellAccessRelatedInfo.plmn-IdentityList[0].plmn-Identity.mcc"
+
+// Nested arrays
+"message.c1.systemInformationBlockType1.cellAccessRelatedInfo.plmn-IdentityInfoList[0].plmn-IdentityList[0].mcc"
+```
+
+**Value Extraction:**
+- **Arrays**: `[0, 0, 1]` → displayed as `[0, 0, 1]`
+- **Objects with decimal**: `{"decimal": 101, "hex": "000065"}` → displayed as `101`
+- **Objects with hex**: `{"hex": "001234501"}` → displayed as `0x001234501`
+
+#### Message Panel Improvements
+**UI Cleanup:**
+- **Layer type**: Now displayed as large heading
+- **Timestamp removed**: No longer displayed by default
+- **Hex moved**: Only shown in "Show full message" section for RRC layers
+- **Simplified layout**: Less clutter, more focus on important info
+
+**Before:**
+```
+RRC at 12:34:56.789
+AdditionalInfos(...)
+Hex: [0x12, 0x34, ...]
+[Show full message checkbox]
+```
+
+**After:**
+```
+Layer: RRC
+
+AdditionalInfos(...)
+[Show full message checkbox]
+
+[When checked:]
+  Hex: [0x12, 0x34, ...]
+  [ASN.1 text...]
+```
+
+#### Technology Detection Enhancement
+**Two-tier detection system:**
+
+1. **Primary**: File header parsing (existing)
+   - Looks for `nr_arfcn` (5G) or `earfcn` (4G) in Cell line
+   
+2. **Fallback**: RRC canal name inference (new)
+   - If technology is `Unknown` after header parsing
+   - Checks first RRC trace canal name:
+     - Ends with `"-NR"` → `Technology::NR`
+     - Otherwise → `Technology::LTE`
+   - Applied during file parsing in `file_handler.rs`
+
+**Benefits:**
+- Works even when file headers are missing
+- Propagates to all panels automatically
+- Displayed in Logical Channels panel
+
+#### Logical Channels Panel Update
+**New display:**
+```
+[----] [----] [----] [Downlink] [----] [----] [----]
+[    ] [Techno: LTE (4G)] [    ] [----] [Uplink] [----]
+```
+
+Shows technology (LTE/NR) in the channel grid for quick reference.
+
+### Files Modified
+
+**New Files:**
+- `tramex/src/panels/rrc_field_viewer.rs` - New RRC field viewer panel
+
+**Modified Files:**
+- `tramex/src/panels/mod.rs` - Added rrc_field_viewer module
+- `tramex/src/frontend.rs` - Integrated RRC Field Viewer panel
+- `tramex/src/panels/panel_message.rs` - UI improvements, moved display_log function
+- `tramex/src/utils.rs` - Removed display_log (moved to panel_message.rs)
+- `tramex/src/panels/logical_channels.rs` - Added technology display
+- `tramex-tools/src/interface/interface_file/file_handler.rs` - Technology inference logic
+- `tramex-tools/src/interface/parse_config.rs` - Technology enum and FileMetadata
+
+### Technical Details
+
+**Array Indexing Implementation:**
+```rust
+// Supports syntax like "field[0].nested[1].value"
+if let Some(bracket_pos) = part.find('[') {
+    let field_name = &part[..bracket_pos];
+    let index_str = &part[bracket_pos+1..part.len()-1];
+    
+    current = current.get(field_name)?;
+    
+    if let Value::Array(arr) = current {
+        let index: usize = index_str.parse().ok()?;
+        current = arr.get(index)?;
+    }
+}
+```
+
+**Technology Inference:**
+```rust
+// In file_handler.rs during batch processing
+if data.metadata.technology == Technology::Unknown {
+    for trace in &traces {
+        if let AdditionalInfos::RRCInfos(infos) = &trace.additional_infos {
+            if infos.canal.ends_with("-NR") {
+                data.metadata.technology = Technology::NR;
+            } else {
+                data.metadata.technology = Technology::LTE;
+            }
+            break;
+        }
+    }
+}
+```
+
+### Benefits
+
+**For Users:**
+- Quick access to important RRC message fields
+- Cleaner message panel with less clutter
+- Technology always visible and correctly detected
+- Easy to understand array values
+
+**For Developers:**
+- Easy to add new message configurations
+- Flexible JSON path system
+- Centralized technology detection
+- Extensible field mapping system
+
+### Future Enhancements
+
+1. **Dynamic field configuration**: Load field mappings from config file
+2. **More message types**: Add configurations for other RRC messages (SIB2, MIB, etc.)
+3. **Field filtering**: Show/hide specific fields
+4. **Export fields**: Copy field values to clipboard
+5. **Field history**: Track field value changes over time
+6. **Comparison view**: Compare fields across multiple messages
+
+---

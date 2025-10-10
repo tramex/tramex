@@ -1,12 +1,16 @@
 //! Message panel
-use crate::display_log;
 use eframe::egui;
+
 use tramex_tools::{
     data::{Data, Trace},
     errors::TramexError,
-    interface::parse_config::Technology,
+    interface::{layer::Layer, parse_config::Technology},
 };
-
+#[cfg(feature = "types_lte_3gpp")]
+use types_lte_3gpp::{
+    export::asn1_codecs::{PerCodecData, uper::UperCodec},
+    uper::spec_rrc,
+};
 /// Message box
 #[derive(Default)]
 pub struct MessageBox {
@@ -98,13 +102,80 @@ impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
         ui.heading(format!("Technology : {}", self.technology));
         ui.separator();
-        
-        // Show full message checkbox
-        ui.checkbox(&mut self.show_full, "Show full message");
-        ui.separator();
 
         if let Some(one_trace) = &self.current_trace {
-            display_log(ui, one_trace, self.show_full, &self.save_text);
+            display_log(ui, one_trace, &mut self.show_full, &self.save_text);
         }
+    }
+}
+
+/// Display a Trace type
+fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _text: &[String]) {
+    // Display layer type in big heading
+    ui.heading(format!("Layer : {:?}", &curr_trace.layer));
+    ui.spacing();
+
+    // Display additional infos
+    ui.label(format!("{:?}", &curr_trace.additional_infos));
+    ui.separator();
+
+    // Show full message checkbox
+    ui.checkbox(show_full, "Show full message");
+
+    if *show_full {
+        ui.separator();
+        egui::ScrollArea::vertical()
+            .id_salt("scroll_area_raw")
+            .max_height(250.0)
+            .auto_shrink([false, true])
+            .show(ui, |ui| {
+                // Display hex in full message zone
+                if curr_trace.layer == Layer::RRC {
+                    ui.label(format!("Hex: {:?}", &curr_trace.hexa));
+                }
+                
+                match &curr_trace.text {
+                    Some(vec_text) => {
+                        for elem in vec_text {
+                            ui.label(elem);
+                        }
+                    }
+                    None => {
+                        ui.label("No text available for this trame");
+                    }
+                }
+            });
+        #[cfg(feature = "types_lte_3gpp")]
+        {
+            ui.separator();
+            egui::ScrollArea::vertical()
+                .id_salt("scroll_area_types")
+                .max_height(250.0)
+                .auto_shrink([false, true])
+                .show(ui, |ui| {
+                    for line in _text {
+                        ui.label(line);
+                    }
+                });
+        }
+    }
+}
+
+/// Decode the hexa value with types_lte_3gpp
+#[cfg(feature = "types_lte_3gpp")]
+pub fn hexe_decoding(curr_trace: &Trace) -> String {
+    use tramex_tools::interface::layer::Layer;
+
+    let mut codec_data = PerCodecData::from_slice_uper(&curr_trace.hexa);
+    match curr_trace.layer {
+        Layer::RRC => {
+            // we should check the type of the message before decoding (TODO)
+            let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
+            if let Ok(res) = sib1 {
+                return format!("{:?}", res);
+            }
+            "No value".to_string()
+        }
+        _ => "Not implemented".to_string(),
     }
 }

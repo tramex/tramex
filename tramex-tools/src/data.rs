@@ -1,6 +1,7 @@
 //! This module contains the data structures used to store the data of the application.
 use crate::interface::{parse_config::FileMetadata, layer::Layer, parser::parser_rrc::RRCInfos};
 use core::fmt::Debug;
+use crate::asn1_parser::parse_asn1_to_json;
 
 #[derive(Debug)]
 /// Data structure to store Trace of the application.
@@ -64,6 +65,41 @@ pub struct Trace {
 
     /// Text representation of the message from the API
     pub text: Option<Vec<String>>,
+}
+
+impl Trace {
+    /// Parse ASN.1 text from RRC messages and return as JSON
+    /// 
+    /// # Returns
+    /// * `Some(Value)` - Parsed JSON if the trace has ASN.1 text and is an RRC layer
+    /// * `None` - If no text available or not an RRC layer
+    /// 
+    /// # Errors
+    /// Logs error if parsing fails but returns None
+    pub fn parse_asn1_to_json(&self) -> Option<serde_json::Value> {
+        // Only parse RRC layers
+        if !matches!(self.layer, Layer::RRC) {
+            return None;
+        }
+        
+        // Check if we have text to parse
+        let text = self.text.as_ref()?;
+        
+        // Join all text lines into a single string
+        let asn1_text = text.join("\n");
+        
+        // Parse ASN.1 to JSON
+        match parse_asn1_to_json(&asn1_text) {
+            Ok(json) => {
+                log::debug!("Parsed ASN.1 to JSON: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
+                Some(json)
+            }
+            Err(e) => {
+                log::warn!("Failed to parse ASN.1: {}", e);
+                None
+            }
+        }
+    }
 }
 
 /// Data structure to store custom messages (from the amarisoft API)

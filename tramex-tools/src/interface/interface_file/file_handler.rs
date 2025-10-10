@@ -1,10 +1,9 @@
 //! File Handler
 
-use crate::data::Data;
-use crate::data::Trace;
+use crate::data::{AdditionalInfos, Data, Trace};
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
-use crate::interface::parse_config::FileMetadata;
+use crate::interface::parse_config::{FileMetadata, Technology};
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use crate::tramex_error;
@@ -93,6 +92,21 @@ impl InterfaceTrait for File {
         
         // Use old batch processing for now (will be optimized later)
         let (mut traces, err_processed) = self.process();
+        
+        // Infer technology from RRC canal name if metadata is Unknown
+        if data.metadata.technology == Technology::Unknown {
+            for trace in &traces {
+                if let AdditionalInfos::RRCInfos(infos) = &trace.additional_infos {
+                    if infos.canal.ends_with("-NR") {
+                        data.metadata.technology = Technology::NR;
+                    } else {
+                        data.metadata.technology = Technology::LTE;
+                    }
+                    break; // Only need to check the first RRC trace
+                }
+            }
+        }
+        
         data.events.append(&mut traces);
         if !err_processed.is_empty() {
             let filtered = err_processed

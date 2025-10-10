@@ -1,14 +1,6 @@
 //! This module contains some utility functions used in the application.
 use egui::{Color32, TextFormat, Ui, text::LayoutJob};
 use std::collections::BTreeSet;
-use tramex_tools::data::Trace;
-use chrono::DateTime;
-
-#[cfg(feature = "types_lte_3gpp")]
-use types_lte_3gpp::{
-    export::asn1_codecs::{PerCodecData, uper::UperCodec},
-    uper::spec_rrc,
-};
 
 /// Create an hyperlink open in a new tab
 pub fn make_hyperlink(ui: &mut egui::Ui, label: &str, url: &str, new_tab: bool) {
@@ -45,65 +37,4 @@ pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) 
             ..Default::default()
         },
     );
-}
-
-/// Display a Trace type
-pub fn display_log(ui: &mut Ui, curr_trace: &Trace, full: bool, _text: &[String]) {
-    let timestamp_str = DateTime::from_timestamp_millis(curr_trace.timestamp)
-        .map(|dt| dt.format("%H:%M:%S%.3f").to_string())
-        .unwrap_or_else(|| format!("{} ms", curr_trace.timestamp));
-    ui.label(format!("{:?} at {}", &curr_trace.layer, timestamp_str));
-    ui.label(format!("{:?}", &curr_trace.additional_infos));
-    ui.label(format!("{:?}", &curr_trace.hexa));
-    if full {
-        ui.separator();
-        match &curr_trace.text {
-            Some(vec_text) => {
-                egui::ScrollArea::vertical()
-                    .id_salt("scroll_area_raw")
-                    .max_height(250.0)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        for elem in vec_text {
-                            ui.label(elem);
-                        }
-                    });
-            }
-            None => {
-                ui.label("No text available for this trame");
-            }
-        }
-        #[cfg(feature = "types_lte_3gpp")]
-        {
-            ui.separator();
-            egui::ScrollArea::vertical()
-                .id_salt("scroll_area_types")
-                .max_height(250.0)
-                .auto_shrink([false, true])
-                .show(ui, |ui| {
-                    for line in _text {
-                        ui.label(line);
-                    }
-                });
-        }
-    }
-}
-
-/// Decode the hexa value with types_lte_3gpp
-#[cfg(feature = "types_lte_3gpp")]
-pub fn hexe_decoding(curr_trace: &Trace) -> String {
-    use tramex_tools::interface::layer::Layer;
-
-    let mut codec_data = PerCodecData::from_slice_uper(&curr_trace.hexa);
-    match curr_trace.layer {
-        Layer::RRC => {
-            // we should check the type of the message before decoding (TODO)
-            let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
-            if let Ok(res) = sib1 {
-                return format!("{:?}", res);
-            }
-            "No value".to_string()
-        }
-        _ => "Not implemented".to_string(),
-    }
 }

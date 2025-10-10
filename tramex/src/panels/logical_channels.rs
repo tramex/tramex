@@ -4,6 +4,7 @@ use eframe::egui;
 use tramex_tools::data::AdditionalInfos;
 use tramex_tools::data::Data;
 use tramex_tools::errors::TramexError;
+use tramex_tools::interface::parse_config::Technology;
 
 use super::functions_panels::LogicalChannelsEnum;
 use super::functions_panels::PhysicalChannelsEnum;
@@ -33,6 +34,9 @@ pub struct LogicalChannels {
 
     /// channel state : which logical channels to switch on
     state: Option<ChannelState>,
+    
+    /// Technology (LTE or NR)
+    technology: Technology,
 }
 
 impl LogicalChannels {
@@ -166,6 +170,10 @@ impl super::PanelController for LogicalChannels {
     }
 
     fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
+        // Update technology from data metadata
+        if self.technology != data.metadata.technology {
+            self.technology = data.metadata.technology;
+        }
         
         if data.is_different_index(self.current_index) {
             if let Some(one_trace) = data.get_current_trace() {
@@ -224,8 +232,8 @@ impl super::PanelView for LogicalChannels {
             print_on_grid(ui, "----");
             print_on_grid(ui, "----");
             print_on_grid(ui, "----");
-            print_on_grid(ui, "");
-            print_on_grid(ui, "");
+            print_on_grid(ui, "Techno: ");
+            print_on_grid(ui, &self.technology.to_string());
             print_on_grid(ui, "");
             print_on_grid(ui, "----");
             print_on_grid(ui, "Uplink");

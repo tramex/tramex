@@ -1,0 +1,33 @@
+// ASN.1 Value Notation Grammar
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ "--" ~ (!"\n" ~ ANY)* }
+
+// Main entry point
+asn1_value = { SOI ~ value ~ EOI }
+
+// Values
+value = { 
+    sequence 
+    | choice
+    | hex_string 
+    | bit_string
+    | null_value 
+    | number 
+    | identifier 
+}
+
+// Sequence (object with named fields or array)
+sequence = { "{" ~ element_list? ~ "}" }
+element_list = { element ~ ("," ~ element)* ~ ","? }
+element = { named_field | value }
+named_field = { identifier ~ (":")? ~ value }
+
+// Choice (tagged value)
+choice = { identifier ~ ":" ~ value }
+
+// Primitive values
+hex_string = @{ "'" ~ (ASCII_HEX_DIGIT)* ~ "'H" }
+bit_string = @{ "'" ~ ("0" | "1")* ~ "'B" }
+null_value = { "NULL" }
+number = @{ "-"? ~ ASCII_DIGIT+ }
+identifier = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }

@@ -80,7 +80,7 @@ impl RrcStateMachine {
 }
 
 /// Panel to display the RRC status
-pub struct LinkPanel {
+pub struct RRCStatusPanel {
     /// Canal
     canal: Option<String>,
 
@@ -106,13 +106,13 @@ pub struct LinkPanel {
     technology: Technology,
 }
 
-impl Default for LinkPanel {
+impl Default for RRCStatusPanel {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl LinkPanel {
+impl RRCStatusPanel {
     /// Create a new instance of the LinkPanel
     pub fn new() -> Self {
         Self {
@@ -189,7 +189,7 @@ impl LinkPanel {
     }
 }
 
-impl super::PanelController for LinkPanel {
+impl super::PanelController for RRCStatusPanel {
     fn name(&self) -> &'static str {
         "RRC Status"
     }
@@ -258,7 +258,7 @@ impl super::PanelController for LinkPanel {
     }
 }
 
-impl LinkPanel {
+impl RRCStatusPanel {
     /// Update connection state when moving forward in time
     fn update_connection_state_forward(&mut self, canal_msg: &str, state_machine: &RrcStateMachine) {
         // Connection request implies UE is in IDLE state
@@ -340,7 +340,7 @@ impl LinkPanel {
     }
 }
 
-impl super::PanelView for LinkPanel {
+impl super::PanelView for RRCStatusPanel {
     fn ui(&mut self, ui: &mut egui::Ui) {
         self.ui_new_layout(ui);
     }

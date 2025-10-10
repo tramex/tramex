@@ -41,16 +41,48 @@
 13:20:45.575 [PDCP] UL 003d DRB1 D/C=1 SN=157829
 13:20:45.575 [PDCP] UL 003d DRB1 D/C=1 SN=157830
 13:20:45.575 [MAC] DL 003d 01 LCID:4 len=3 PAD:len=45 
-13:20:45.717 [RRC] DL    - 01 BCCH-BCH-NR: MIB
-        0000:  5d 05 04                                          ]..
+13:21:07.039 [RRC] UL 0048 01 CCCH-NR: RRC setup request
+        0000:  00 2d d1 d9 0f e8                                 .-....
         {
-          coucou
+          message c1: rrcSetupRequest: {
+            rrcSetupRequest {
+              ue-Identity ng-5G-S-TMSI-Part1: '000000101101110100011101100100001111111'B,
+              establishmentCause mo-Data,
+              spare '0'B
+            }
+          }
         }
-13:20:45.797 [RRC] DL    - 01 BCCH-BCH-NR: MIB
-        0000:  5f 05 04                                          _..
+
+13:21:07.039 [RRC] DL 0048 01 CCCH-NR: RRC setup
+        0000:  20 40 04 08 f2 e0 04 80  20 c3 c0 00 f8 04 11 50   @...... ......P
+        0010:  7a d4 00 08 24 97 03 2a  00 05 fe 00 00 00 00 02  z...$..*........
+        0020:  0d c2 20 80 00 40 05 94  00 83 20 80 00 08 1a 60  .. ..@.... ....`
+        0030:  40 51 22 80 03 92 06 00  00 4c d5 59 21 07 00 04  @Q"......L.Y!...
+        0040:  10 30 81 43 07 23 10 24  50 b1 b8 01 90 00 8d 00  .0.C.#.$P.......
+        0050:  c0 8c 80 05 68 06 08 64  00 33 40 30 63 20 01 1a  ....h..d.3@0c ..
+        0060:  03 84 19 00 0a d0 1c 28  c8 00 66 80 e1 86 40 02  .......(..f...@.
+        0070:  34 0b 0e 32 00 15 a0 58  80 08 c5 04 31 20 11 8a  4..2...X....1 ..
+        0080:  09 62 80 23 14 14 c5 80  46 28 2d 8c 19 00 0c d0  .b.#....F(-.....
+        0090:  2c 68 04 62 83 10 24 21  81 44 0c d0 ec a9 97 34  ,h.b..$!.D.....4
+        00a0:  06 92 48 58 b8 30 43 80  00 00 06 3f f4 a5 27 39  ..HX.0C....?..'9
+        00b0:  cf ca 05 80 00 08 65 d8  00 00 00 00 00 01 4b c0  ......e.......K.
+        00c0:  19 02 12 2b 55 14 01 0c  00 44 00 18 80 03 88 32  ...+U....D.....2
+        00d0:  24 08 03 01 04 0a 40 00  e2 0c 89 02 00 c0 81 04  $.....@.........
+        00e0:  90 00 38 83 22 40 80 30  30 40 a4 00 0e 20 c8 90  ..8."@.00@... ..
+        00f0:  40 0c 10 10 49 00 03 88  32 24 10 00 40 00 00 04  @...I...2$..@...
+        0100:  10 c0 40 80 c1 00 e0 c8  00 0e 48 10 00 00 02 00  ..@.......H.....
+        0110:  40 00 80 60 00 80 90 02  20 0a 40 00 02 38 90 0d  @..`.... .@..8..
+        0120:  38 e4 00                                          8..
+        {
+          message c1: rrcSetup: {
+          }
+        }
+
+13:21:07.077 [RRC] DL    - 01 BCCH-BCH-NR: MIB
+        0000:  69 05 04                                          i..
         {
           message mib: {
-            systemFrameNumber '101111'B,
+            systemFrameNumber '110100'B,
             subCarrierSpacingCommon scs30or120,
             ssb-SubcarrierOffset 0,
             dmrs-TypeA-Position pos2,
@@ -61,5 +93,139 @@
             cellBarred notBarred,
             intraFreqReselection allowed,
             spare '0'B
+          }
+        }
+
+13:21:07.077 [RRC] DL    - 01 BCCH-NR: SIB1
+        0000:  74 81 01 70 10 40 04 06  00 00 ca 00 24 68 a0 38  t..p.@......$h.8
+        0010:  05 21 09 a0 30 00 00 46  4c 6b 6c 61 f3 70 40 20  .!..0..FLkla.p@ 
+        0020:  00 02 00 80 00 41 06 88  a0 72 48 40 00 00 23 27  .....A...rH@..#'
+        0030:  1a db 19 12 80 01 fa e2  55 8f 80 92 52 8e 37 10  ........U...R.7.
+        0040:  6e 10 db b5 6c 70 e8 04  16 03 b0 09 09 2d a3 0a  n...lp.......-..
+        {
+          message c1: systemInformationBlockType1: {}
+        }
+
+13:21:07.079 [RRC] UL 0048 01 DCCH-NR: RRC setup complete
+        0000:  10 10 0b 1f 80 53 cd 29  e4 82 df 80 13 05 40 01  .....S.)......@.
+        0010:  fd 00 40 5b a3 b2 1f dc  40 05 5f 80 13 05 40 01  ..@[....@._...@.
+        0020:  fd 00 40 5b a3 b2 1f d0  00 88 00 14 00 88 00 20  ..@[........... 
+        0030:  20                                                 
+        {
+          message c1: rrcSetupComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcSetupComplete: {
+              selectedPLMN-Identity 1,
+              dedicatedNAS-Message '7E014F34A7920B7E004C150007F401016E8EC87F7100157E004C150007F401016E8EC87F4002200050022000'H,
+              ng-5G-S-TMSI-Value ng-5G-S-TMSI-Part2: '000000010'B
+            }
+          }
+        }
+
+13:21:07.079 [NAS] UL 0048 5GMM: Service request
+        0000:  7e 01 4f 34 a7 92 0b 7e  00 4c 15 00 07 f4 01 01  ~.O4...~.L......
+        0010:  6e 8e c8 7f 71 00 15 7e  00 4c 15 00 07 f4 01 01  n...q..~.L......
+        0020:  6e 8e c8 7f 40 02 20 00  50 02 20 00              n...@. .P. .
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x1 (Integrity protected)
+        Auth code = 0x4f34a792
+        Sequence number = 0x0b
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x4c (Service request)
+        ngKSI:
+          TSC = 0
+          NAS key set identifier = 5
+        Service type = 0x01 (data)
+        5G-S-TMSI:
+          5G-S-TMSI
+            AMF Set ID = 4
+            AMF Pointer = 1
+            5G-TMSI = 0x6e8ec87f
+        NAS message container:
+          Protocol discriminator = 0x7e (5GS Mobility Management)
+          Security header = 0x0 (Plain 5GS NAS message, not security protected)
+          Message type = 0x4c (Service request)
+          ngKSI:
+            TSC = 0
+            NAS key set identifier = 5
+          Service type = 0x01 (data)
+          5G-S-TMSI:
+            5G-S-TMSI
+              AMF Set ID = 4
+              AMF Pointer = 1
+              5G-TMSI = 0x6e8ec87f
+          Uplink data status:
+            0x20 (PSI(7)=0, PSI(6)=0, PSI(5)=1, PSI(4)=0, PSI(3)=0, PSI(2)=0, PSI(1)=0, PSI(0)=0)
+            0x00 (PSI(15)=0, PSI(14)=0, PSI(13)=0, PSI(12)=0, PSI(11)=0, PSI(10)=0, PSI(9)=0, PSI(8)=0)
+          PDU session status:
+            0x20 (PSI(7)=0, PSI(6)=0, PSI(5)=1, PSI(4)=0, PSI(3)=0, PSI(2)=0, PSI(1)=0, PSI(0)=0)
+            0x00 (PSI(15)=0, PSI(14)=0, PSI(13)=0, PSI(12)=0, PSI(11)=0, PSI(10)=0, PSI(9)=0, PSI(8)=0)
+
+13:24:22.319 [RRC] UL 004e 01 CCCH-NR: RRC setup request
+        0000:  00 2d d1 d9 0f e4                                 .-....
+        {
+          message c1: rrcSetupRequest: {
+            rrcSetupRequest {
+              ue-Identity ng-5G-S-TMSI-Part1: '000000101101110100011101100100001111111'B,
+              establishmentCause mt-Access,
+              spare '0'B
+            }
+          }
+        }
+
+13:24:22.319 [RRC] DL 004e 01 CCCH-NR: RRC setup
+        0000:  20 40 04 08 f2 e0 04 80  20 c3 c0 00 f8 04 11 50   @...... ......P
+        0010:  7a d4 00 08 24 97 03 2a  00 05 fe 00 00 00 00 02  z...$..*........
+        0020:  0d c2 20 80 00 40 05 94  00 83 20 80 00 08 1a 60  .. ..@.... ....`
+        0030:  40 51 22 80 03 92 06 00  00 4c d5 59 21 07 00 04  @Q"......L.Y!...
+        0040:  10 30 81 43 07 23 10 24  50 b1 b8 01 90 00 8d 00  .0.C.#.$P.......
+        0050:  c0 8c 80 05 68 06 08 64  00 33 40 30 63 20 01 1a  ....h..d.3@0c ..
+        0060:  03 84 19 00 0a d0 1c 28  c8 00 66 80 e1 86 40 02  .......(..f...@.
+        0070:  34 0b 0e 32 00 15 a0 58  80 08 c5 04 31 20 11 8a  4..2...X....1 ..
+        0080:  09 62 80 23 14 14 c5 80  46 28 2d 8c 19 00 0c d0  .b.#....F(-.....
+        0090:  2c 68 04 62 83 10 24 21  81 44 0c d0 ec a9 97 34  ,h.b..$!.D.....4
+        00a0:  06 92 48 58 b8 30 43 80  00 00 06 3f f4 a5 27 39  ..HX.0C....?..'9
+        00b0:  cf ca 05 80 00 08 65 d8  00 00 00 00 00 01 4b c0  ......e.......K.
+        00c0:  19 02 12 2b 55 14 01 0c  00 44 00 18 80 03 88 32  ...+U....D.....2
+        00d0:  24 08 03 01 04 0a 40 00  e2 0c 89 02 00 c0 81 04  $.....@.........
+        00e0:  90 00 38 83 22 40 80 30  30 40 a4 00 0e 20 c8 90  ..8."@.00@... ..
+        00f0:  40 0c 10 10 49 00 03 88  32 24 10 00 40 00 00 04  @...I...2$..@...
+        0100:  10 c0 40 80 c1 00 e0 c8  00 0e 48 10 00 00 02 00  ..@.......H.....
+        0110:  40 00 80 60 00 80 90 02  20 0a 40 00 02 38 90 0d  @..`.... .@..8..
+        0120:  38 e4 00                                          8..
+        {
+          message c1: rrcSetup: {}
+        }
+13:24:22.357 [RRC] DL    - 01 BCCH-BCH-NR: MIB
+        0000:  71 05 04                                          q..
+        {
+          message mib: {
+            systemFrameNumber '111000'B,
+            subCarrierSpacingCommon scs30or120,
+            ssb-SubcarrierOffset 0,
+            dmrs-TypeA-Position pos2,
+            pdcch-ConfigSIB1 {
+              controlResourceSetZero 10,
+              searchSpaceZero 0
+            },
+            cellBarred notBarred,
+            intraFreqReselection allowed,
+            spare '0'B
+          }
+        }
+
+13:24:22.359 [RRC] UL 004e 01 DCCH-NR: RRC setup complete
+        0000:  10 10 0a 1f 80 75 50 69  ef c4 5f 80 13 09 40 01  .....uPi.._...@.
+        0010:  fd 00 40 5b a3 b2 1f dc  40 04 5f 80 13 09 40 01  ..@[....@._...@.
+        0020:  fd 00 40 5b a3 b2 1f d4  00 88 00 20 20           ..@[.......  
+        {
+          message c1: rrcSetupComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcSetupComplete: {
+              selectedPLMN-Identity 1,
+              dedicatedNAS-Message '7E01D541A7BF117E004C250007F401016E8EC87F7100117E004C250007F401016E8EC87F50022000'H,
+              ng-5G-S-TMSI-Value ng-5G-S-TMSI-Part2: '000000010'B
+            }
           }
         }
