@@ -46,6 +46,18 @@ pub struct FileMetadata {
 
     /// Rotated timestamp
     pub rotated_on: Option<String>,
+    
+    /// Physical Cell ID (PCI)
+    pub pci: Option<u16>,
+    
+    /// Mode (TDD or FDD)
+    pub mode: Option<String>,
+    
+    /// Frequency (ARFCN - nr_arfcn or earfcn)
+    pub arfcn: Option<u32>,
+    
+    /// IO mode ("SISO" if dl_mu=1, "MIMO" otherwise)
+    pub io_mode: Option<String>,
 }
 
 impl FileMetadata {
@@ -65,10 +77,37 @@ impl FileMetadata {
             if trimmed.starts_with("# Cell") {
                 metadata.cell_info = Some(trimmed.to_string());
                 
+                // Parse technology
                 if trimmed.contains("nr_arfcn") {
                     metadata.technology = Technology::NR;
                 } else if trimmed.contains("earfcn") {
                     metadata.technology = Technology::LTE;
+                }
+                
+                // Parse PCI
+                if let Some(pci_value) = Self::extract_value(trimmed, "pci=") {
+                    metadata.pci = pci_value.parse().ok();
+                }
+                
+                // Parse mode (TDD/FDD)
+                if let Some(mode_value) = Self::extract_value(trimmed, "mode=") {
+                    metadata.mode = Some(mode_value.to_uppercase());
+                }
+                
+                // Parse ARFCN (try nr_arfcn first, then earfcn)
+                if let Some(arfcn_value) = Self::extract_value(trimmed, "nr_arfcn=") {
+                    metadata.arfcn = arfcn_value.parse().ok();
+                } else if let Some(arfcn_value) = Self::extract_value(trimmed, "earfcn=") {
+                    metadata.arfcn = arfcn_value.parse().ok();
+                }
+                
+                // Parse IO mode
+                if let Some(dl_mu_value) = Self::extract_value(trimmed, "dl_mu=") {
+                    if let Some(ul_mu_value) = Self::extract_value(trimmed, "ul_mu=") {
+                        let input = if dl_mu_value == "1" { "SI" } else { "MI" };
+                        let output = if ul_mu_value == "1" { "SO" } else { "MO" };
+                        metadata.io_mode = Some(format!("{}{}", input, output));
+                    }
                 }
             }
             
@@ -90,6 +129,17 @@ impl FileMetadata {
         metadata
     }
     
+    /// Extract a value from a key=value pair in a string
+    fn extract_value<'a>(line: &'a str, key: &str) -> Option<&'a str> {
+        line.find(key).and_then(|start| {
+            let value_start = start + key.len();
+            let rest = &line[value_start..];
+            // Find the end of the value (space or end of string)
+            let end = rest.find(' ').unwrap_or(rest.len());
+            Some(&rest[..end])
+        })
+    }
+    
     /// Get a specific header value by key
     pub fn get_header_value(&self, key: &str) -> Option<String> {
         match key {
@@ -98,6 +148,10 @@ impl FileMetadata {
             "started_on" => self.started_on.clone(),
             "rotated_on" => self.rotated_on.clone(),
             "cell_info" => self.cell_info.clone(),
+            "pci" => self.pci.map(|v| v.to_string()),
+            "mode" => self.mode.clone(),
+            "arfcn" => self.arfcn.map(|v| v.to_string()),
+            "io_mode" => self.io_mode.clone(),
             _ => None,
         }
     }

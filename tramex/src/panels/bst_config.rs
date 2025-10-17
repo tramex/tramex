@@ -8,7 +8,7 @@ use serde_json::Value;
 use tramex_tools::{
     data::{AdditionalInfos, Data, Trace},
     errors::TramexError,
-    interface::layer::Layer,
+    interface::{layer::Layer, parse_config::FileMetadata},
 };
 
 /// Configuration for a field to extract and display
@@ -33,7 +33,7 @@ pub struct MessageConfig {
 
 /// RRC Field Viewer Panel
 #[derive(serde::Deserialize, serde::Serialize)]
-pub struct RrcFieldViewer {
+pub struct BstConfig {
     /// Current trace index
     #[serde(skip)]
     current_index: usize,
@@ -51,13 +51,13 @@ pub struct RrcFieldViewer {
     message_configs: Vec<MessageConfig>,
 }
 
-impl Default for RrcFieldViewer {
+impl Default for BstConfig {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RrcFieldViewer {
+impl BstConfig {
     /// Create a new RRC Field Viewer
     pub fn new() -> Self {
         let mut viewer = Self {
@@ -131,6 +131,31 @@ impl RrcFieldViewer {
                     json_path: "message.c1.systemInformationBlockType1.cellAccessRelatedInfo.plmn-IdentityInfoList[0].trackingAreaCode".to_string(),
                     unit: None,
                 },
+                FieldMapping {
+                    display_name: "DL frequencyBandIndicatorNR".to_string(),
+                    json_path: "message.c1.systemInformationBlockType1.servingCellConfigCommon.downlinkConfigCommon.frequencyInfoDL.frequencyBandList[0].freqBandIndicatorNR".to_string(),
+                    unit: None,
+                },
+                FieldMapping {
+                    display_name: "DL subcarrierSpacing".to_string(),
+                    json_path: "message.c1.systemInformationBlockType1.servingCellConfigCommon.downlinkConfigCommon.frequencyInfoDL.scs-SpecificCarrierList[0].subcarrierSpacing".to_string(),
+                    unit: None,
+                },
+                FieldMapping {
+                    display_name: "DL carrierBandwidth".to_string(),
+                    json_path: "message.c1.systemInformationBlockType1.servingCellConfigCommon.downlinkConfigCommon.frequencyInfoDL.scs-SpecificCarrierList[0].carrierBandwidth".to_string(),
+                    unit: Some("RB".to_string()),
+                },
+                FieldMapping {
+                    display_name: "UL subcarrierSpacing".to_string(),
+                    json_path: "message.c1.systemInformationBlockType1.servingCellConfigCommon.uplinkConfigCommon.frequencyInfoUL.scs-SpecificCarrierList[0].subcarrierSpacing".to_string(),
+                    unit: None,
+                },
+                FieldMapping {
+                    display_name: "UL carrierBandwidth".to_string(),
+                    json_path: "message.c1.systemInformationBlockType1.servingCellConfigCommon.uplinkConfigCommon.frequencyInfoUL.scs-SpecificCarrierList[0].carrierBandwidth".to_string(),
+                    unit: Some("RB".to_string()),
+                },
             ],
         });
     }
@@ -141,10 +166,8 @@ impl RrcFieldViewer {
     }
     
     /// Update displayed fields based on current trace
+    /// Only updates when a matching message type is found (persists previous values otherwise)
     fn update_fields(&mut self, trace: &Trace) {
-        self.current_fields.clear();
-        self.current_message_type = None;
-        
         // Only process RRC messages
         if !matches!(trace.layer, Layer::RRC) {
             return;
@@ -160,7 +183,10 @@ impl RrcFieldViewer {
         let config = self.message_configs.iter()
             .find(|c| c.canal_msg.eq_ignore_ascii_case(canal_msg));
         
+        // Only update if we found a matching configuration
         if let Some(config) = config {
+            // Clear previous fields only when updating with new data
+            self.current_fields.clear();
             self.current_message_type = Some(canal_msg.clone());
             
             // Parse ASN.1 to JSON
@@ -181,6 +207,7 @@ impl RrcFieldViewer {
                 }
             }
         }
+        // If no matching config found, keep the previous fields displayed
     }
     
     /// Extract a field from JSON using a dot-separated path
@@ -241,52 +268,92 @@ impl RrcFieldViewer {
         })
     }
     
-    /// UI for the panel
-    fn ui(&mut self, ui: &mut egui::Ui) {
-        if let Some(msg_type) = &self.current_message_type {
-            ui.heading(format!("Message Type: {}", msg_type));
+    /// UI for the panel with metadata
+    fn ui_with_metadata(&mut self, ui: &mut egui::Ui, metadata: &FileMetadata) {
+        // Display header metadata first
+        ui.heading("Base Station Information");
+        ui.separator();
+        
+        egui::Grid::new("bst_metadata_grid")
+            .spacing([20.0, 8.0])
+            .show(ui, |ui| {
+                // Technology
+                ui.label(RichText::new("Technology")
+                    .color(Color32::BLACK)
+                    .strong());
+                ui.label(RichText::new(format!("{}", metadata.technology))
+                    .color(Color32::DARK_GRAY));
+                ui.end_row();
+                
+                // PCI
+                if let Some(pci) = metadata.pci {
+                    ui.label(RichText::new("PCI")
+                        .color(Color32::BLACK)
+                        .strong());
+                    ui.label(RichText::new(format!("{}", pci))
+                        .color(Color32::DARK_GRAY));
+                    ui.end_row();
+                }
+                
+                // Mode
+                if let Some(ref mode) = metadata.mode {
+                    ui.label(RichText::new("Mode")
+                        .color(Color32::BLACK)
+                        .strong());
+                    ui.label(RichText::new(mode)
+                        .color(Color32::DARK_GRAY));
+                    ui.end_row();
+                }
+                
+                // ARFCN
+                if let Some(arfcn) = metadata.arfcn {
+                    ui.label(RichText::new("ARFCN")
+                        .color(Color32::BLACK)
+                        .strong());
+                    ui.label(RichText::new(format!("{}", arfcn))
+                        .color(Color32::DARK_GRAY));
+                    ui.end_row();
+                }
+                
+                // IO mode
+                if let Some(ref io_mode) = metadata.io_mode {
+                    ui.label(RichText::new("I/O mode")
+                        .color(Color32::BLACK)
+                        .strong());
+                    ui.label(RichText::new(io_mode)
+                        .color(Color32::DARK_GRAY));
+                    ui.end_row();
+                }
+            });
+        
+        // Display SIB1 fields if available
+        if !self.current_fields.is_empty() {
+            ui.add_space(10.0);
             ui.separator();
             
-            if self.current_fields.is_empty() {
-                ui.label(RichText::new("No fields configured for this message type")
-                    .color(Color32::GRAY));
-            } else {
-                // Display fields in a table-like format
-                egui::Grid::new("rrc_fields_grid")
-                    .spacing([20.0, 8.0])
-                    .show(ui, |ui| {
-                        for (name, value) in &self.current_fields {
-                            ui.label(RichText::new(name)
-                                .color(Color32::BLACK)
-                                .strong());
-                            ui.label(RichText::new(value)
-                                .color(Color32::DARK_GRAY));
-                            ui.end_row();
-                        }
-                    });
-            }
-        } else {
-            ui.label(RichText::new("No RRC message selected or message type not configured")
-                .color(Color32::GRAY));
-            // ui.add_space(10.0);
-            
-            // // Show configured message types
-            // ui.label(RichText::new("Configured message types:")
-            //     .color(Color32::from_rgb(200, 150, 255)));
-            // for config in &self.message_configs {
-            //     ui.label(format!("  • {} ({} fields)", config.canal_msg, config.fields.len()));
-            // }
+            egui::Grid::new("bst_fields_grid")
+                .spacing([20.0, 8.0])
+                .show(ui, |ui| {
+                    for (name, value) in &self.current_fields {
+                        ui.label(RichText::new(name)
+                            .color(Color32::BLACK)
+                            .strong());
+                        ui.label(RichText::new(value)
+                            .color(Color32::DARK_GRAY));
+                        ui.end_row();
+                    }
+                });
         }
     }
 }
 
-impl PanelController for RrcFieldViewer {
+impl PanelController for BstConfig {
     fn name(&self) -> &'static str {
-        "RRC Fields"
+        "Base Station configuration"
     }
     
     fn window_title(&self) -> &'static str {
-        "RRC Fields"
+        "Base Station configuration"
     }
 
     fn show(
@@ -307,7 +374,7 @@ impl PanelController for RrcFieldViewer {
             .open(open)
             .default_width(400.0)
             .show(ctx, |ui| {
-                self.ui(ui);
+                self.ui_with_metadata(ui, &data.metadata);
             });
         
         Ok(())

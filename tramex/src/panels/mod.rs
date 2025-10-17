@@ -4,7 +4,7 @@ pub mod logical_channels;
 pub mod navigation_panel;
 pub mod panel_message;
 pub mod rrc_status;
-pub mod rrc_field_viewer;
+pub mod bst_config;
 pub mod trame_manager;
 
 pub mod functions_panels;

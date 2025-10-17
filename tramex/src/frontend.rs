@@ -6,7 +6,7 @@ use crate::handlers::handler_ws::WsHandler;
 
 use crate::panels::{
     PanelController, logical_channels::LogicalChannels, navigation_panel::NavigationPanel,
-    panel_message::MessageBox, rrc_status::RRCStatusPanel, rrc_field_viewer::RrcFieldViewer,
+    panel_message::MessageBox, rrc_status::RRCStatusPanel, bst_config::BstConfig,
     trame_manager::TrameManager,
 };
 use crate::set_open;
@@ -80,12 +80,12 @@ impl FrontEnd {
         let mb = MessageBox::new();
         let lc = LogicalChannels::new();
         let status = RRCStatusPanel::new();
-        let rrc_fields = RrcFieldViewer::new();
+        let bst_config = BstConfig::new();
         let wins: Vec<Box<dyn PanelController>> = vec![
             Box::<MessageBox>::new(mb),
             Box::<LogicalChannels>::new(lc),
             Box::<RRCStatusPanel>::new(status),
-            Box::<RrcFieldViewer>::new(rrc_fields),
+            Box::<BstConfig>::new(bst_config),
         ];
         let mut open_windows = BTreeSet::new();
         for one_box in wins.iter() {

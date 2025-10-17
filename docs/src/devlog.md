@@ -319,7 +319,7 @@ Windows Menu:
 
 ### Solution: RRC Field Viewer + UI Enhancements
 
-#### New RRC Field Viewer Panel (`rrc_field_viewer.rs`)
+#### New RRC Field Viewer Panel (`bst_config.rs`)
 A dedicated panel for displaying extracted fields from RRC messages with configurable field mappings.
 
 **Key Features:**
@@ -409,10 +409,10 @@ Shows technology (LTE/NR) in the channel grid for quick reference.
 ### Files Modified
 
 **New Files:**
-- `tramex/src/panels/rrc_field_viewer.rs` - New RRC field viewer panel
+- `tramex/src/panels/bst_config.rs` - New RRC field viewer panel
 
 **Modified Files:**
-- `tramex/src/panels/mod.rs` - Added rrc_field_viewer module
+- `tramex/src/panels/mod.rs` - Added bst_config module
 - `tramex/src/frontend.rs` - Integrated RRC Field Viewer panel
 - `tramex/src/panels/panel_message.rs` - UI improvements, moved display_log function
 - `tramex/src/utils.rs` - Removed display_log (moved to panel_message.rs)
