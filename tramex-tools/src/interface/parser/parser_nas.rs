@@ -3,7 +3,7 @@ use super::ParsingError;
 use crate::data::{AdditionalInfos, Trace};
 use std::str::FromStr;
 
-use crate::interface::{functions::extract_hexe, layer::Layer, types::Direction};
+use crate::interface::{layer::Layer, types::Direction};
 
 use super::FileParser;
 
@@ -21,32 +21,8 @@ pub struct NASInfos {
 pub struct NASParser;
 
 impl NASParser {
-    /// Function that parses the hexadecimal part of a log
-    /// # Errors
-    /// Returns a ParsingError if the hexadecimal part could not be parsed
-    fn parse_lines(lines: &[String]) -> Result<(Vec<u8>, Vec<String>), ParsingError> {
-        let lines_len = lines.len();
-        let mut ix = 0;
-        let mut hex_str: Vec<&str> = vec![];
-        
-        // Parse hex lines
-        while ix < lines_len {
-            let line_trimmed = lines[ix].trim_start();
-            if line_trimmed.is_empty() || !line_trimmed.chars().next().unwrap_or(' ').is_ascii_hexdigit() {
-                break;
-            }
-            hex_str.push(&lines[ix]);
-            ix += 1;
-        }
-        
-        let hex = match extract_hexe(&hex_str) {
-            Ok(h) => h,
-            Err(e) => return Err(ParsingError::new(e.message, ix as u64)),
-        };
-
-        // Remaining lines are empty or additional text
-        let text = lines[ix..].iter().map(|s| s.to_string()).collect();
-        Ok((hex, text))
+    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
+        Ok(lines.to_vec())
     }
 }
 
@@ -93,8 +69,8 @@ impl FileParser for NASParser {
             }
         };
         
-        let (hexa, text) = match Self::parse_lines(&lines[1..]) {
-            Ok((h, t)) => (h, t),
+        let text = match Self::parse_lines(lines) {
+            Ok(t) => t,
             Err(e) => {
                 return Err(e);
             }
@@ -104,7 +80,6 @@ impl FileParser for NASParser {
             timestamp: 0,
             layer: Layer::NAS,
             additional_infos,
-            hexa,
             text: Some(text),
         };
         Ok(trace)

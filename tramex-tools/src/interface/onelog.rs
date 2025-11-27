@@ -11,6 +11,7 @@ use crate::tramex_error;
 
 use super::parser::parser_rrc::RRCInfos;
 use super::parser::parser_nas::NASInfos;
+use super::parser::parser_basic::BasicParser;
 use super::types::Direction; // to use the FileParser trait and implementations
 
 #[derive(serde::Deserialize, Debug)]
@@ -145,10 +146,17 @@ impl OneLog {
                 };
                 Ok(trace)
             }
-            _ => Err(tramex_error!(
-                format!("Layer {:?} not implemented", self.layer),
-                crate::errors::ErrorCode::ParsingLayerNotImplemented
-            )),
+            _ => {
+                // Use BasicParser for all other layers (PHY, RLC, MAC, PDCP, SDAP, etc.)
+                let mut trace = BasicParser::parse_with_layer(&self.data, self.layer.clone())
+                    .map_err(|e| tramex_error!(
+                        e.message,
+                        crate::errors::ErrorCode::ParsingLayerNotImplemented
+                    ))?;
+                // Set the timestamp from the WebSocket log
+                trace.timestamp = self.timestamp;
+                Ok(trace)
+            }
         }
     }
 }

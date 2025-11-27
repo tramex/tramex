@@ -3,7 +3,7 @@ use super::ParsingError;
 use crate::data::{AdditionalInfos, Trace};
 use std::str::FromStr;
 
-use crate::interface::{functions::extract_hexe, layer::Layer, types::Direction};
+use crate::interface::{layer::Layer, types::Direction};
 
 use super::FileParser;
 
@@ -24,56 +24,8 @@ pub struct RRCInfos {
 pub struct RRCParser;
 
 impl RRCParser {
-    /// Function that parses the hexadecimal part of a log
-    /// # Errors
-    /// Returns a ParsingError if the hexadecimal part could not be parsed
-    fn parse_lines(lines: &[String]) -> Result<(Vec<u8>, Vec<String>), ParsingError> {
-        let lines_len = lines.len();
-        let mut ix = 0;
-        let mut hex_str: Vec<&str> = vec![];
-        while ix < lines_len {
-            match lines[ix].trim_start().chars().next() {
-                Some(c) => {
-                    if c == '{' {
-                        break;
-                    }
-                }
-                None => {
-                    break;
-                }
-            }
-            hex_str.push(&lines[ix]);
-            ix += 1;
-        }
-        if ix >= lines_len {
-            return Err(ParsingError::new(
-                "Could not find the end of the hexadecimal".to_string(),
-                ix as u64,
-            ));
-        }
-        let hex = match extract_hexe(&hex_str) {
-            Ok(h) => h,
-            Err(e) => return Err(ParsingError::new(e.message, ix as u64)),
-        };
-
-        let mut end = false;
-        let mut brackets: i16 = 0;
-        let start_block = ix;
-        while (ix < lines_len) && !end {
-            brackets += count_brackets(&lines[ix]);
-            ix += 1;
-            if brackets == 0 {
-                end = true;
-            }
-        }
-        if ix >= lines_len && !end {
-            return Err(ParsingError::new(
-                "Could not parse the JSON like part, missing closing }".to_string(),
-                ix as u64,
-            ));
-        }
-        let text = lines[start_block..ix].iter().map(|s| s.to_string()).collect();
-        Ok((hex, text))
+    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
+        Ok(lines.to_vec())
     }
 }
 
@@ -116,8 +68,8 @@ impl FileParser for RRCParser {
                 return Err(e);
             }
         };
-        let (_hexa, text) = match Self::parse_lines(&lines[1..]) {
-            Ok((h, t)) => (h, t),
+        let text = match Self::parse_lines(lines) {
+            Ok(t) => t,
             Err(e) => {
                 return Err(e);
             }
