@@ -91,6 +91,7 @@ pub fn create_application_with_panels() -> Application {
     app.subscribe(Box::new(crate::panels::bst_config::BstConfig::new()));
     app.subscribe(Box::new(crate::panels::logical_channels::LogicalChannels::new()));
     app.subscribe(Box::new(crate::panels::panel_message::MessageBox::new()));
+    app.subscribe(Box::new(crate::panels::identity::Identity::new()));
     
     log::info!("Application created with {} subscribers", app.subscriber_count());
     app

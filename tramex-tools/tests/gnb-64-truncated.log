@@ -544,3 +544,111 @@
             }
           }
         }
+
+13:24:22.360 [NAS] UL 0048 5GSM: Registration accept
+        0000:  7e 02 33 c8 78 a9 f6 7e  00 42 01 09 77 00 0b f2  ~.3.x..~.B..w...
+        0010:  00 f1 10 80 01 01 19 e0  b5 fe 54 07 00 00 f1 10  ..........T.....
+        0020:  00 00 64 15 05 04 01 00  00 01 31 0c 04 01 00 00  ..d.......1.....
+        0030:  01 01 02 04 03 00 00 32  21 02 03 00 5e 01 be 34  .......2!...^..4
+        0040:  08 03 1f 19 f1 03 1f 11  f2                       .........
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x33c878a9
+        Sequence number = 0xf6
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x42 (Registration accept)
+        5GS registration result = 0x09 (Disaster roaming registration result=0, Emergency registered=0, NSSAA to be performed=0, SMS allowed=1, 3GPP access)
+        5G-GUTI:
+          5G-GUTI
+            MCC = 001
+            MNC = 01 
+            AMF Region ID = 128
+            AMF Set ID = 4
+            AMF Pointer = 1
+            5G-TMSI = 0x19e0b5fe
+        TAI list:
+          Length = 7
+          Data = 00 00 f1 10 00 00 64
+        Allowed NSSAI:
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+        Configured NSSAI:
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+          S-NSSAI
+            Length of S-NSSAI contents = 1 (SST)
+            SST = 0x02
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x03
+            SD = 0x000032
+        5GS network feature support:
+          0x03 (MPSI=0, IWK N26=0, EMF=not supported, EMC=not supported, IMS-VoPS-N3GPP=1, IMS-VoPS-3GPP=1)
+          0x00 (5G-UP CIoT=0, 5G-IPHC-CP CIoT=0, N3 data=0, 5G-CP CIoT=0, RestrictEC=both CE mode A and CE mode B are not restricted, MCSI=0, EMCN3=0)
+        T3512 value:
+          Value = 30
+          Unit = 5 (1 minute)
+        Emergency number list:
+          Length = 8
+          Data = 03 1f 19 f1 03 1f 11 f2
+
+
+13:24:22.360 [NAS] UL 0048 5GMM: PDU session establishment accept
+        0000:  2e 01 03 c2 11 00 09 01  00 06 31 3f 01 01 ff 01  ..........1?....
+        0010:  06 06 13 88 04 7a 12 29  05 01 c0 a8 03 02 22 04  .....z.)......".
+        0020:  01 00 00 01 81 79 00 06  01 20 41 01 01 06 7b 00  .....y... A...{.
+        0030:  18 80 80 21 0a 03 00 00  0a 81 06 08 08 08 08 00  ...!............
+        0040:  0d 04 08 08 08 08 00 11  00 25 1c 08 69 6e 74 65  .........%..inte
+        0050:  72 6e 65 74 06 6d 6e 63  30 30 31 06 6d 63 63 30  rnet.mnc001.mcc0
+        0060:  30 31 04 67 70 72 73                              01.gprs
+        Protocol discriminator = 0x2e (5GS Session Management)
+        PDU session identity = 1
+        Procedure transaction identity = 3
+        Message type = 0xc2 (PDU session establishment accept)
+        Selected PDU session type = 0x1 (IPv4)
+        Selected SSC mode = 0x1 (1)
+        Authorized QoS rules:
+          QoS rule 1:
+            QoS rule identifier = 1
+            Rule operation code = 1 (create new QoS rule)
+            DQR = 1 (the QoS rule is the default QoS rule)
+            Number of packet filters = 1
+            Packet filter identifier = 15
+              Packet filter direction = 3 (bidirectional)
+              Match-all
+            QoS rule precedence = 255
+            QFI = 1
+        Session AMBR:
+          Session-AMBR for downlink = 5000 Mbps
+          Session-AMBR for uplink = 2000000 kbps
+        PDU address:
+          SI6LLA = 0
+          PDU session type = 1 (IPv4)
+          IPv4 = 192.168.3.2
+        S-NSSAI:
+          Length of S-NSSAI contents = 4 (SST and SD)
+          SST = 0x01
+          SD = 0x000001
+        Always-on PDU session indication = 1
+        Authorized QoS flow descriptions:
+          QoS flow description 1:
+            QFI = 1
+            Operation code = 1 (create new QoS flow description)
+            E = 1 (parameters list is included)
+            Number of parameters = 1
+            5QI = 6
+        Extended protocol configuration options:
+          Ext = 1
+          Configuration protocol = 0
+          Protocol ID = 0x8021 (IPCP)
+          Data = 03 00 00 0a 81 06 08 08 08 08
+          Protocol ID = 0x000d (DNS Server IPv4 Address)
+          Data = 8.8.8.8
+          Protocol ID = 0x0011 (Network support of Local address in TFT indicator)
+          Data =
+        DNN = "internet.mnc001.mcc001.gprs"
