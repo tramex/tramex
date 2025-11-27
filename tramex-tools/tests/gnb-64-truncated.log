@@ -96,6 +96,77 @@
           }
         }
 
+13:21:07.115 [NGAP] TO 0081 0048 127.0.1.100:38412 Initial context setup response
+        0000:  20 0e 00 24 00 00 03 00  0a 40 02 00 81 00 55 40   ..$.....@....U@
+        0010:  02 00 48 00 48 40 11 00  00 05 0d 00 03 e0 7f 00  ..H.H@..........
+        0020:  01 01 1b 55 07 41 00 01                           ...U.A..
+        successfulOutcome: {
+          procedureCode id-InitialContextSetup,
+          criticality reject,
+          value {
+            protocolIEs {
+              {
+                id id-AMF-UE-NGAP-ID,
+                criticality ignore,
+                value 129
+              },
+              {
+                id id-RAN-UE-NGAP-ID,
+                criticality ignore,
+                value 72
+              },
+              {
+                id id-PDUSessionResourceSetupListCxtRes,
+                criticality ignore,
+                value {
+                  {
+                    pDUSessionID 5,
+                    pDUSessionResourceSetupResponseTransfer {
+                      dLQosFlowPerTNLInformation {
+                        uPTransportLayerInformation gTPTunnel: {
+                          transportLayerAddress '7F000101'H,
+                          gTP-TEID '1B550741'H
+                        },
+                        associatedQosFlowList {
+                          {
+                            qosFlowIdentifier 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+
+13:20:58.310 [NGAP] FROM 0080 003d 127.0.1.100:38412 UE context release command
+        0000:  00 29 00 11 00 00 02 00  72 00 04 00 80 00 3d 00  .)......r.....=.
+        0010:  0f 40 02 05 00                                    .@...
+        initiatingMessage: {
+          procedureCode id-UEContextRelease,
+          criticality reject,
+          value {
+            protocolIEs {
+              {
+                id id-UE-NGAP-IDs,
+                criticality reject,
+                value uE-NGAP-ID-pair: {
+                  aMF-UE-NGAP-ID 128,
+                  rAN-UE-NGAP-ID 61
+                }
+              },
+              {
+                id id-Cause,
+                criticality ignore,
+                value radioNetwork: user-inactivity
+              }
+            }
+          }
+        }
+          
 13:21:07.077 [RRC] DL    - 01 BCCH-NR: SIB1
         0000:  74 81 01 70 10 40 04 06  00 00 ca 00 24 68 a0 38  t..p.@......$h.8
         0010:  05 21 09 a0 30 00 00 46  4c 6b 6c 61 f3 70 40 20  .!..0..FLkla.p@ 
@@ -103,14 +174,258 @@
         0030:  1a db 19 12 80 01 fa e2  55 8f 80 92 52 8e 37 10  ........U...R.7.
         0040:  6e 10 db b5 6c 70 e8 04  16 03 b0 09 09 2d a3 0a  n...lp.......-..
         {
-          message c1: systemInformationBlockType1: {}
+          message c1: systemInformationBlockType1: {
+            cellSelectionInfo {
+              q-RxLevMin -70,
+              q-QualMin -20
+            },
+            cellAccessRelatedInfo {
+              plmn-IdentityInfoList {
+                {
+                  plmn-IdentityList {
+                    {
+                      mcc {
+                        0,
+                        0,
+                        1
+                      },
+                      mnc {
+                        0,
+                        3
+                      }
+                    }
+                  },
+                  trackingAreaCode '000065'H,
+                  cellIdentity '001234501'H,
+                  cellReservedForOperatorUse notReserved
+                }
+              }
+            },
+            connEstFailureControl {
+              connEstFailCount n1,
+              connEstFailOffsetValidity s30,
+              connEstFailOffset 1
+            },
+            servingCellConfigCommon {
+              downlinkConfigCommon {
+                frequencyInfoDL {
+                  frequencyBandList {
+                    {
+                      freqBandIndicatorNR 78
+                    }
+                  },
+                  offsetToPointA 24,
+                  scs-SpecificCarrierList {
+                    {
+                      offsetToCarrier 0,
+                      subcarrierSpacing kHz30,
+                      carrierBandwidth 51
+                    }
+                  }
+                },
+                initialDownlinkBWP {
+                  genericParameters {
+                    locationAndBandwidth 13750,
+                    subcarrierSpacing kHz30
+                  },
+                  pdcch-ConfigCommon setup: {
+                    commonSearchSpaceList {
+                      {
+                        searchSpaceId 1,
+                        controlResourceSetId 0,
+                        monitoringSlotPeriodicityAndOffset sl1: NULL,
+                        monitoringSymbolsWithinSlot '10000000000000'B,
+                        nrofCandidates {
+                          aggregationLevel1 n0,
+                          aggregationLevel2 n0,
+                          aggregationLevel4 n4,
+                          aggregationLevel8 n0,
+                          aggregationLevel16 n0
+                        },
+                        searchSpaceType common: {
+                          dci-Format0-0-AndFormat1-0 {
+                          }
+                        }
+                      }
+                    },
+                    searchSpaceSIB1 0,
+                    searchSpaceOtherSystemInformation 1,
+                    pagingSearchSpace 1,
+                    ra-SearchSpace 1
+                  },
+                  pdsch-ConfigCommon setup: {
+                    pdsch-TimeDomainAllocationList {
+                      {
+                        mappingType typeA,
+                        startSymbolAndLength 40
+                      },
+                      {
+                        mappingType typeA,
+                        startSymbolAndLength 57
+                      }
+                    }
+                  }
+                },
+                bcch-Config {
+                  modificationPeriodCoeff n4
+                },
+                pcch-Config {
+                  defaultPagingCycle rf128,
+                  nAndPagingFrameOffset oneT: NULL,
+                  ns one
+                }
+              },
+              uplinkConfigCommon {
+                frequencyInfoUL {
+                  scs-SpecificCarrierList {
+                    {
+                      offsetToCarrier 0,
+                      subcarrierSpacing kHz30,
+                      carrierBandwidth 51
+                    }
+                  }
+                },
+                initialUplinkBWP {
+                  genericParameters {
+                    locationAndBandwidth 13750,
+                    subcarrierSpacing kHz30
+                  },
+                  rach-ConfigCommon setup: {
+                    rach-ConfigGeneric {
+                      prach-ConfigurationIndex 160,
+                      msg1-FDM one,
+                      msg1-FrequencyStart 3,
+                      zeroCorrelationZoneConfig 15,
+                      preambleReceivedTargetPower -110,
+                      preambleTransMax n7,
+                      powerRampingStep dB4,
+                      ra-ResponseWindow sl20
+                    },
+                    ssb-perRACH-OccasionAndCB-PreamblesPerSSB one: n8,
+                    ra-ContentionResolutionTimer sf64,
+                    prach-RootSequenceIndex l139: 1,
+                    msg1-SubcarrierSpacing kHz30,
+                    restrictedSetConfig unrestrictedSet
+                  },
+                  pusch-ConfigCommon setup: {
+                    pusch-TimeDomainAllocationList {
+                      {
+                        k2 7,
+                        mappingType typeA,
+                        startSymbolAndLength 27
+                      },
+                      {
+                        k2 4,
+                        mappingType typeA,
+                        startSymbolAndLength 27
+                      },
+                      {
+                        k2 2,
+                        mappingType typeA,
+                        startSymbolAndLength 27
+                      }
+                    },
+                    p0-NominalWithGrant -84
+                  },
+                  pucch-ConfigCommon setup: {
+                    pucch-ResourceCommon 11,
+                    pucch-GroupHopping neither,
+                    p0-nominal -90
+                  }
+                },
+                timeAlignmentTimerCommon infinity
+              },
+              ssb-PositionsInBurst {
+                inOneGroup '80'H
+              },
+              ssb-PeriodicityServingCell ms20,
+              tdd-UL-DL-ConfigurationCommon {
+                referenceSubcarrierSpacing kHz30,
+                pattern1 {
+                  dl-UL-TransmissionPeriodicity ms5,
+                  nrofDownlinkSlots 7,
+                  nrofDownlinkSymbols 6,
+                  nrofUplinkSlots 2,
+                  nrofUplinkSymbols 4
+                }
+              },
+              ss-PBCH-BlockPower -42
+            },
+            ue-TimersAndConstants {
+              t300 ms1000,
+              t301 ms1000,
+              t310 ms1000,
+              n310 n1,
+              t311 ms30000,
+              n311 n1,
+              t319 ms1000
+            }
+          }
+        }
+
+13:21:07.077 [RRC] DL    - 01 BCCH-NR: SIB2
+        0000:  74 81 01 70 10 40 04 06  00 00 ca 00 24 68 a0 38  t..p.@......$h.8
+        0010:  05 21 09 a0 30 00 00 46  4c 6b 6c 61 f3 70 40 20  .!..0..FLkla.p@ 
+        0020:  00 02 00 80 00 41 06 88  a0 72 48 40 00 00 23 27  .....A...rH@..#'
+        0030:  1a db 19 12 80 01 fa e2  55 8f 80 92 52 8e 37 10  ........U...R.7.
+        0040:  6e 10 db b5 6c 70 e8 04  16 03 b0 09 09 2d a3 0a  n...lp.......-..
+        {
+          message c1: systemInformation: {
+            criticalExtensions systemInformation: {
+              sib-TypeAndInfo {
+                sib2: {
+                  cellReselectionInfoCommon {
+                    q-Hyst dB3
+                  },
+                  cellReselectionServingFreqInfo {
+                    threshServingLowP 0,
+                    cellReselectionPriority 6
+                  },
+                  intraFreqCellReselectionInfo {
+                    q-RxLevMin -70,
+                    s-IntraSearchP 31,
+                    t-ReselectionNR 1,
+                    smtc {
+                      periodicityAndOffset sf20: 0,
+                      duration sf1
+                    },
+                    ssb-ToMeasure mediumBitmap: '10000000'B,
+                    deriveSSB-IndexFromCell TRUE
+                  }
+                }
+              }
+            }
+          }
+        }
+
+
+13:21:07.077 [RRC] DL    - 01 BCCH-NR: SIB3
+        0000:  74 81 01 70 10 40 04 06  00 00 ca 00 24 68 a0 38  t..p.@......$h.8
+        0010:  05 21 09 a0 30 00 00 46  4c 6b 6c 61 f3 70 40 20  .!..0..FLkla.p@ 
+        0020:  00 02 00 80 00 41 06 88  a0 72 48 40 00 00 23 27  .....A...rH@..#'
+        0030:  1a db 19 12 80 01 fa e2  55 8f 80 92 52 8e 37 10  ........U...R.7.
+        0040:  6e 10 db b5 6c 70 e8 04  16 03 b0 09 09 2d a3 0a  n...lp.......-..
+        {
+          message c1: systemInformation: {
+            criticalExtensions systemInformation: {
+              sib-TypeAndInfo {
+                sib3: {
+                  intraFreqNeighCellList {
+                    {
+                      physCellId 501,
+                      q-OffsetCell dB0
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
 
 13:21:07.079 [RRC] UL 0048 01 DCCH-NR: RRC setup complete
         0000:  10 10 0b 1f 80 53 cd 29  e4 82 df 80 13 05 40 01  .....S.)......@.
         0010:  fd 00 40 5b a3 b2 1f dc  40 05 5f 80 13 05 40 01  ..@[....@._...@.
-        0020:  fd 00 40 5b a3 b2 1f d0  00 88 00 14 00 88 00 20  ..@[........... 
-        0030:  20                                                 
+        0020:  fd 00 40 5b a3 b2 1f d0  00 88 00 14 00 88 00 20  ..@[...........
         {
           message c1: rrcSetupComplete: {
             rrc-TransactionIdentifier 0,

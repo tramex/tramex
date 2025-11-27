@@ -1,10 +1,12 @@
 //! Message panel
 use eframe::egui;
+use crate::event_system::{EventSubscriber, EventContext};
+use crate::panels::PanelView;
 
 use tramex_tools::{
-    data::{Data, Trace},
+    data::Trace,
     errors::TramexError,
-    interface::{layer::Layer, parse_config::Technology},
+    interface::{layer::Layer},
 };
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::{
@@ -14,9 +16,6 @@ use types_lte_3gpp::{
 /// Message box
 #[derive(Default)]
 pub struct MessageBox {
-    /// technology (LTE or NR)
-    technology: Technology,
-
     /// current trace
     current_trace: Option<Trace>,
 
@@ -40,69 +39,9 @@ impl MessageBox {
     }
 }
 
-impl super::PanelController for MessageBox {
-    fn name(&self) -> &'static str {
-        "Messages"
-    }
-
-    fn window_title(&self) -> &'static str {
-        "Current Message"
-    }
-
-    fn clear(&mut self) {
-        self.current_trace = None;
-        self.events_len = 0;
-        self.current_index = 0;
-        self.save_text = Vec::new();
-    }
-
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
-        // Update technology from data metadata
-        self.technology = data.metadata.technology;
-        if data.is_different_index(self.current_index) {
-            if let Some(trace) = data.get_current_trace() {
-                self.current_trace = Some(trace.clone());
-                #[cfg(feature = "types_lte_3gpp")]
-                {
-                    let mut count = 0;
-                    use crate::hexe_decoding;
-                    self.save_text = hexe_decoding(trace)
-                        .replace('{', "{\n")
-                        .replace(',', ",\n")
-                        .split('\n')
-                        .map(|x| {
-                            if x.contains('{') {
-                                count += 1;
-                            } else if x.contains('}') {
-                                count -= 1;
-                            }
-                            format!("{} {}", " ".repeat(count * 4), x)
-                        })
-                        .collect();
-                }
-            }
-            self.current_index = data.current_index;
-        }
-        self.events_len = data.events.len();
-        self.current_index = data.current_index;
-        egui::Window::new(self.window_title())
-            .default_width(320.0)
-            .default_height(480.0)
-            .resizable(true)
-            .open(open)
-            .show(ctx, |ui| {
-                use super::PanelView as _;
-                self.ui(ui);
-            });
-        Ok(())
-    }
-}
 
 impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        ui.heading(format!("Technology : {}", self.technology));
-        ui.separator();
-
         if let Some(one_trace) = &self.current_trace {
             display_log(ui, one_trace, &mut self.show_full, &self.save_text);
         }
@@ -129,11 +68,6 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
             .max_height(250.0)
             .auto_shrink([false, true])
             .show(ui, |ui| {
-                // Display hex in full message zone
-                if curr_trace.layer == Layer::RRC {
-                    ui.label(format!("Hex: {:?}", &curr_trace.hexa));
-                }
-                
                 match &curr_trace.text {
                     Some(vec_text) => {
                         for elem in vec_text {
@@ -162,20 +96,57 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
 }
 
 /// Decode the hexa value with types_lte_3gpp
+/// NOTE: This function is deprecated since hexa field was removed from Trace
 #[cfg(feature = "types_lte_3gpp")]
-pub fn hexe_decoding(curr_trace: &Trace) -> String {
-    use tramex_tools::interface::layer::Layer;
+#[allow(dead_code)]
+pub fn hexe_decoding(_curr_trace: &Trace) -> String {
+    // Hexa field no longer exists in Trace
+    "Hexe decoding not available".to_string()
+}
 
-    let mut codec_data = PerCodecData::from_slice_uper(&curr_trace.hexa);
-    match curr_trace.layer {
-        Layer::RRC => {
-            // we should check the type of the message before decoding (TODO)
-            let sib1 = spec_rrc::BCCH_BCH_Message::uper_decode(&mut codec_data);
-            if let Ok(res) = sib1 {
-                return format!("{:?}", res);
-            }
-            "No value".to_string()
+// EventSubscriber implementation for new event system
+impl EventSubscriber for MessageBox {
+    fn on_event_added(&mut self, _event: &Trace, _index: usize, _context: &EventContext) {
+        // MessageBox doesn't need to process every event as it arrives
+        // It only displays the currently focused event
+        // So this can be a no-op
+        self.events_len = _context.all_events.len();
+    }
+    
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+        // When user navigates to an event, update the displayed message
+        self.current_index = index;
+        self.current_trace = Some(event.clone());
+        self.events_len = _context.all_events.len();
+        
+        // Hexe decoding removed since hexa field no longer exists
+        #[cfg(feature = "types_lte_3gpp")]
+        {
+            self.save_text = vec![];
         }
-        _ => "Not implemented".to_string(),
+    }
+    
+    fn on_events_cleared(&mut self) {
+        log::debug!("MessageBox: Clearing all state");
+        self.current_trace = None;
+        self.events_len = 0;
+        self.current_index = 0;
+        self.save_text.clear();
+    }
+    
+    fn name(&self) -> &'static str {
+        "Messages"
+    }
+    
+    fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+        egui::Window::new("Messages")
+            .resizable(true)
+            .default_width(600.0)
+            .default_height(400.0)
+            .open(open)
+            .show(ctx, |ui| {
+                self.ui(ui);
+            });
+        Ok(())
     }
 }

@@ -1,8 +1,9 @@
 //! Logical Channels panel
 
 use eframe::egui;
-use tramex_tools::data::AdditionalInfos;
-use tramex_tools::data::Data;
+use crate::event_system::{EventSubscriber, EventContext};
+use crate::panels::PanelView;
+use tramex_tools::data::{AdditionalInfos, Trace};
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::parse_config::Technology;
 
@@ -119,7 +120,8 @@ impl LogicalChannels {
                 });
             }
             _ => {
-                log::info!("Unknown message");
+                // log::debug!("Unknown message : {}", self.canal_msg);
+                self.state = None;
             }
         }
     }
@@ -154,52 +156,6 @@ impl LogicalChannels {
     }
 }
 
-impl super::PanelController for LogicalChannels {
-    fn name(&self) -> &'static str {
-        "Logical channels"
-    }
-    fn window_title(&self) -> &'static str {
-        "Mobile Phone - Logical channels (layer 3)"
-    }
-
-    fn clear(&mut self) {
-        self.canal = String::new();
-        self.canal_msg = String::new();
-        self.current_index = 0;
-        self.state = None;
-    }
-
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
-        // Update technology from data metadata
-        if self.technology != data.metadata.technology {
-            self.technology = data.metadata.technology;
-        }
-        
-        if data.is_different_index(self.current_index) {
-            if let Some(one_trace) = data.get_current_trace() {
-                match &one_trace.additional_infos {
-                    AdditionalInfos::RRCInfos(infos) => {
-                        self.canal = infos.canal.to_owned();
-                        self.canal_msg = infos.canal_msg.to_owned();
-                    },
-                    _ => {}
-                }
-            }
-            self.current_index = data.current_index;
-            self.handle_logic();
-        }
-        egui::Window::new(self.window_title())
-            .default_width(320.0)
-            .default_height(480.0)
-            .open(open)
-            .resizable([true, true])
-            .show(ctx, |ui| {
-                use super::PanelView as _;
-                self.ui(ui);
-            });
-        Ok(())
-    }
-}
 
 /// Print a label on the grid
 #[inline]
@@ -284,5 +240,61 @@ impl super::PanelView for LogicalChannels {
             self.make_label_hover_physical(ui, PhysicalChannelsEnum::PUCCH);
             ui.end_row();
         });
+    }
+}
+
+// EventSubscriber implementation for new event system
+impl EventSubscriber for LogicalChannels {
+    fn on_event_added(&mut self, event: &Trace, _index: usize, context: &EventContext) {
+        // Update technology from context metadata
+        if self.technology != context.metadata.technology {
+            self.technology = context.metadata.technology;
+        }
+        
+        // Extract RRC info from the event
+        if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+            self.canal = infos.canal.to_owned();
+            self.canal_msg = infos.canal_msg.to_owned();
+            self.handle_logic();
+        }
+    }
+    
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+        // When user navigates, update the displayed channels
+        self.current_index = index;
+        if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+            // log::debug!("Logical Channels: RRC message");
+            self.canal = infos.canal.to_owned();
+            self.canal_msg = infos.canal_msg.to_owned();
+            self.handle_logic();
+        } else {
+            // Not an RRC message - clear the channel highlights
+            // log::debug!("Logical Channels: Not an RRC message");
+            self.state = None;
+        }
+    }
+    
+    fn on_events_cleared(&mut self) {
+        log::debug!("Logical Channels: Clearing all state");
+        self.canal.clear();
+        self.canal_msg.clear();
+        self.state = None;
+        self.current_index = 0;
+    }
+    
+    fn name(&self) -> &'static str {
+        "Logical Channels"
+    }
+    
+    fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+        egui::Window::new("Logical Channels")
+            .resizable(true)
+            .default_width(800.0)
+            .default_height(600.0)
+            .open(open)
+            .show(ctx, |ui| {
+                self.ui(ui);
+            });
+        Ok(())
     }
 }

@@ -116,7 +116,7 @@ impl FileParser for RRCParser {
                 return Err(e);
             }
         };
-        let (hexa, text) = match Self::parse_lines(&lines[1..]) {
+        let (_hexa, text) = match Self::parse_lines(&lines[1..]) {
             Ok((h, t)) => (h, t),
             Err(e) => {
                 return Err(e);
@@ -126,7 +126,6 @@ impl FileParser for RRCParser {
             timestamp: 0,
             layer: Layer::RRC,
             additional_infos: mtype,
-            hexa,
             text: Some(text),
         };
         Ok(trace)

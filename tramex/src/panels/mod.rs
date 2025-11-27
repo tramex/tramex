@@ -5,6 +5,7 @@ pub mod navigation_panel;
 pub mod panel_message;
 pub mod rrc_status;
 pub mod bst_config;
+pub mod chronograph;
 pub mod trame_manager;
 
 pub mod functions_panels;

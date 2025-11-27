@@ -5,3 +5,8 @@
 # as well as by the wasm32-backend of the wgpu crate.
 # https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.Clipboard.html
 # https://rustwasm.github.io/docs/wasm-bindgen/web-sys/unstable-apis.html
+
+
+[env]
+TRAMEX_USE_NEW_EVENT_SYSTEM = "1"
+RUST_LOG = "debug"

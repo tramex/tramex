@@ -67,7 +67,8 @@ impl TrameManager {
     }
     
     /// Public method to go to previous enabled event
-    pub fn go_to_previous(&mut self, data: &mut Data) {
+    pub fn go_to_previous_enabled(&mut self, data: &mut Data) {
+        log::debug!("Going to previous enabled event from index {}", data.current_index);
         self.go_to_previous_enabled_event(data);
     }
     
@@ -127,6 +128,7 @@ impl TrameManager {
                 if let Some(trace) = data.events.get(data.current_index) {
                     if self.layers_list.is_layer_enabled(&trace.layer) {
                         // Found an enabled event
+                        log::debug!("Found enabled event at index {}", data.current_index);
                         break;
                     }
                     // Continue to previous event

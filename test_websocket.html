@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Amarisoft WebSocket Tester</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            background: #005a9e;
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        #log {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            padding: 15px;
+            margin-top: 20px;
+            height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007acc;
+            padding-left: 10px;
+        }
+
+        .sent {
+            border-left-color: #4ec9b0;
+        }
+
+        .received {
+            border-left-color: #ce9178;
+        }
+
+        .error {
+            border-left-color: #f48771;
+        }
+
+        .success {
+            border-left-color: #89d185;
+        }
+
+        input {
+            padding: 8px;
+            font-size: 14px;
+            width: 400px;
+            background: #3c3c3c;
+            border: 1px solid #3e3e42;
+            color: #d4d4d4;
+        }
+
+        label {
+            display: inline-block;
+            width: 150px;
+            margin-right: 10px;
+        }
+
+        .control-group {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔌 Amarisoft WebSocket Tester</h1>
+
+        <div class="control-group">
+            <label>WebSocket URL:</label>
+            <input type="text" id="wsUrl" value="ws://137.194.194.36:9001" />
+        </div>
+
+        <div class="control-group">
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            <button id="sendRequestBtn" onclick="sendLogGetRequest()" disabled>Send log_get Request</button>
+            <button id="clearBtn" onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="control-group">
+            <label>Max Frame Size:</label>
+            <input type="number" id="maxSize" value="1024" min="64" max="4096" />
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageId = 1;
+
+        function log(message, type = 'message') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `message ${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateButtons(connected) {
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('sendRequestBtn').disabled = !connected;
+        }
+
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            log(`🔌 Connecting to ${url}...`, 'message');
+
+            try {
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    log('✅ WebSocket connection opened', 'success');
+                    log('💡 Waiting for "ready" message from server...', 'message');
+                    updateButtons(true);
+                };
+
+                ws.onmessage = (event) => {
+                    log('📨 Received message:', 'received');
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(JSON.stringify(data, null, 2), 'received');
+
+                        if (data.message === 'ready') {
+                            log('✅ Server is ready! You can now send log_get requests.', 'success');
+                            log(`📋 Server name: ${data.name}`, 'message');
+                            log(`📋 Server version: ${data.version}`, 'message');
+                        } else if (data.message === 'log_get' && data.logs) {
+                            log(`✅ Received ${data.logs.length} log entries`, 'success');
+                        }
+                    } catch (e) {
+                        log(`Raw message: ${event.data}`, 'received');
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    log('❌ WebSocket error occurred', 'error');
+                    console.error('WebSocket error:', error);
+                };
+
+                ws.onclose = (event) => {
+                    log(`🔌 WebSocket closed (code: ${event.code}, reason: ${event.reason || 'none'})`, 'message');
+                    updateButtons(false);
+                    ws = null;
+                };
+
+            } catch (error) {
+                log(`❌ Failed to connect: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                log('🔌 Disconnecting...', 'message');
+                ws.close();
+            }
+        }
+
+        function sendLogGetRequest() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ WebSocket is not connected', 'error');
+                return;
+            }
+
+            const maxSize = parseInt(document.getElementById('maxSize').value);
+
+            const request = {
+                message: "log_get",
+                message_id: messageId++,
+                timeout: 1,
+                min: 64,
+                max: maxSize,
+                layers: { 
+                    "PHY": "debug", 
+                    "MAC": "debug", 
+                    "RLC": "debug", 
+                    "PDCP": "debug", 
+                    "RRC": "debug", 
+                    "NAS": "debug", 
+                    "S72": "debug", 
+                    "S1AP": "debug", 
+                    "NGAP": "debug", 
+                    "GTPU": "debug", 
+                    "X2AP": "debug", 
+                    "XnAP": "debug", 
+                    "M2AP": "debug", 
+                    "LPPa": "debug", 
+                    "NRPPa": "debug", 
+                    "TRX": "debug", 
+                    "SDAP": "debug" 
+                },
+                headers: false
+            };
+
+            log('📤 Sending log_get request:', 'sent');
+            log(JSON.stringify(request, null, 2), 'sent');
+
+            ws.send(JSON.stringify(request));
+        }
+
+        // Auto-connect on load
+        window.onload = () => {
+            log('🚀 WebSocket Tester Ready', 'message');
+            log('💡 Click "Connect" to start, then "Send log_get Request" to request logs', 'message');
+        };
+    </script>
+</body>
+
+</html>

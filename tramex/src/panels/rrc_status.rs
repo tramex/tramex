@@ -4,8 +4,9 @@ use super::functions_panels::ArrowDirection;
 use super::functions_panels::CustomLabelColor;
 use super::functions_panels::make_arrow;
 use super::functions_panels::make_label;
-use tramex_tools::data::AdditionalInfos;
-use tramex_tools::data::Data;
+use crate::event_system::{EventSubscriber, EventContext};
+use crate::panels::PanelView;
+use tramex_tools::data::{AdditionalInfos, Trace};
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::types::Direction;
 use tramex_tools::interface::parse_config::Technology;
@@ -79,6 +80,16 @@ impl RrcStateMachine {
     }
 }
 
+/// State change record for history
+#[derive(Debug, Clone)]
+struct StateChange {
+    index: usize,
+    state: RrcState,
+    canal: Option<String>,
+    canal_msg: Option<String>,
+    direction: Option<Direction>,
+}
+
 /// Panel to display the RRC status
 pub struct RRCStatusPanel {
     /// Canal
@@ -96,7 +107,7 @@ pub struct RRCStatusPanel {
     /// Font id for arrows
     arrow_font_id: egui::FontId,
 
-    /// Font id for labels
+    #[allow(dead_code)]
     label_font_id: egui::FontId,
 
     /// Current RRC state
@@ -104,6 +115,9 @@ pub struct RRCStatusPanel {
 
     /// Current technology
     technology: Technology,
+    
+    /// History of state changes (for bidirectional navigation)
+    state_history: Vec<StateChange>,
 }
 
 impl Default for RRCStatusPanel {
@@ -124,6 +138,44 @@ impl RRCStatusPanel {
             current_index: 0,
             rrc_state: RrcState::Idle,
             technology: Technology::Unknown,
+            state_history: Vec::new(),
+        }
+    }
+    
+    /// Process an RRC event and update state
+    fn process_rrc_event(&mut self, event: &Trace, index: usize, technology: Technology) {
+        if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+            let state_machine = RrcStateMachine::for_technology(technology);
+            
+            // Calculate new state based on message
+            self.update_connection_state_forward(
+                infos.canal_msg.as_str(),
+                &state_machine
+            );
+            
+            // Record state change in history
+            self.state_history.push(StateChange {
+                index,
+                state: self.rrc_state,
+                canal: Some(infos.canal.to_owned()),
+                canal_msg: Some(infos.canal_msg.to_owned()),
+                direction: Some(infos.direction.clone()),
+            });
+        }
+    }
+    
+    /// Navigate to a specific event by index
+    fn navigate_to_index(&mut self, target_index: usize) {
+        // Find the most recent state change at or before this index
+        if let Some(state_change) = self.state_history
+            .iter()
+            .filter(|sc| sc.index <= target_index)
+            .last()
+        {
+            self.rrc_state = state_change.state;
+            self.canal = state_change.canal.clone();
+            self.canal_msg = state_change.canal_msg.clone();
+            self.direction = state_change.direction.clone();
         }
     }
 
@@ -189,77 +241,66 @@ impl RRCStatusPanel {
     }
 }
 
-impl super::PanelController for RRCStatusPanel {
-    fn name(&self) -> &'static str {
-        "RRC Status"
+// EventSubscriber implementation for new event system
+impl EventSubscriber for RRCStatusPanel {
+    fn on_event_added(&mut self, event: &Trace, index: usize, context: &EventContext) {
+        // Update technology from context metadata
+        if self.technology != context.metadata.technology {
+            self.technology = context.metadata.technology;
+            log::info!("RRC Status: Updated technology from context to {:?}", self.technology);
+        }
+        
+        self.process_rrc_event(event, index, self.technology);
     }
-
-    fn window_title(&self) -> &'static str {
-        "RRC Status"
+    
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+        // When user navigates, restore state at that point in time
+        self.current_index = index;
+        self.navigate_to_index(index);
+        
+        // If the focused event is not an RRC message, clear the direction
+        // to show neutral (black) arrows
+        if !matches!(event.additional_infos, AdditionalInfos::RRCInfos(_)) {
+            self.direction = None;
+        } else {
+            // If it IS an RRC message, update direction from this specific event
+            if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+                self.direction = Some(infos.direction.clone());
+            }
+        }
     }
-
-    fn clear(&mut self) {
+    
+    fn on_events_cleared(&mut self) {
+        log::debug!("RRC Status: Clearing all state history");
         self.canal = None;
         self.canal_msg = None;
         self.direction = None;
         self.current_index = 0;
         self.rrc_state = RrcState::Idle;
         self.technology = Technology::Unknown;
+        self.state_history.clear();
     }
-
-    fn show(&mut self, ctx: &egui::Context, open: &mut bool, data: &mut Data) -> Result<(), TramexError> {
-        // Update technology from data metadata
-        if self.technology != data.metadata.technology {
-            self.technology = data.metadata.technology;
-        }
-
-        if data.is_different_index(self.current_index) {
-            if let Some(one_trace) = data.get_current_trace() {
-                match &one_trace.additional_infos {
-                    AdditionalInfos::RRCInfos(infos) => {
-                        // Get state machine for current technology
-                        let state_machine = RrcStateMachine::for_technology(self.technology);
-                        
-                        // Update RRC connection state based on direction (forward/backward)
-                        if self.current_index < data.current_index {
-                            // Moving forward in time
-                            self.update_connection_state_forward(
-                                infos.canal_msg.as_str(),
-                                &state_machine
-                            );
-                        } else {
-                            // Moving backward in time (reverse state transitions)
-                            self.update_connection_state_backward(
-                                infos.canal_msg.as_str(),
-                                &state_machine
-                            );
-                        }
-
-                        self.canal = Some(infos.canal.to_owned());
-                        self.canal_msg = Some(infos.canal_msg.to_owned());
-                        self.direction = Some(infos.direction.clone());
-                    },
-                    _ => {}
-                }
-            }
-
-            self.current_index = data.current_index;
-        }
-        egui::Window::new(self.window_title())
-            .default_width(160.0)
-            .default_height(160.0)
+    
+    fn name(&self) -> &'static str {
+        "RRC Status"
+    }
+    
+    fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+        egui::Window::new("RRC Status")
+            .resizable(true)
+            .default_width(600.0)
+            .default_height(400.0)
             .open(open)
-            .resizable([true, true])
             .show(ctx, |ui| {
-                use super::PanelView as _;
-                self.ui(ui)
+                self.ui(ui);
             });
         Ok(())
     }
 }
 
+
 impl RRCStatusPanel {
-    /// Update connection state when moving forward in time
+    /// Update connection state based on RRC message
     fn update_connection_state_forward(&mut self, canal_msg: &str, state_machine: &RrcStateMachine) {
         // Connection request implies UE is in IDLE state
         if canal_msg == state_machine.connection_request_msg {
@@ -299,45 +340,6 @@ impl RRCStatusPanel {
         }
     }
 
-    /// Update connection state when moving backward in time (reverse transitions)
-    fn update_connection_state_backward(&mut self, canal_msg: &str, state_machine: &RrcStateMachine) {
-        // Reverse: when going back and seeing a connection request, we were CONNECTED before it
-        if canal_msg == state_machine.connection_request_msg {
-            self.rrc_state = RrcState::Connected;
-            return;
-        }
-        
-        // Reverse: CONNECTED -> IDLE (when seeing setup complete)
-        if self.rrc_state == RrcState::Connected && canal_msg == state_machine.idle_to_connected_msg {
-            self.rrc_state = RrcState::Idle;
-            return;
-        }
-        
-        // Reverse: IDLE -> CONNECTED (when seeing release)
-        if self.rrc_state == RrcState::Idle && canal_msg == state_machine.connected_to_idle_msg {
-            self.rrc_state = RrcState::Connected;
-            return;
-        }
-        
-        // NR-specific reverse transitions
-        if self.technology == Technology::NR {
-            // Reverse: INACTIVE -> CONNECTED (when seeing suspend)
-            if let Some(suspend_msg) = state_machine.to_inactive_msg {
-                if self.rrc_state == RrcState::Inactive && canal_msg == suspend_msg {
-                    self.rrc_state = RrcState::Connected;
-                    return;
-                }
-            }
-            
-            // Reverse: CONNECTED -> INACTIVE (when seeing resume)
-            if let Some(resume_msg) = state_machine.inactive_to_connected_msg {
-                if self.rrc_state == RrcState::Connected && canal_msg == resume_msg {
-                    self.rrc_state = RrcState::Inactive;
-                    return;
-                }
-            }
-        }
-    }
 }
 
 impl super::PanelView for RRCStatusPanel {

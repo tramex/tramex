@@ -479,3 +479,367 @@ if data.metadata.technology == Technology::Unknown {
 6. **Comparison view**: Compare fields across multiple messages
 
 ---
+
+# WebSocket Connection Debugging Guide
+
+## Current Situation
+
+You're receiving the initial "ready" message from the Amarisoft server but not seeing subsequent log messages.
+
+## Root Cause
+
+**The Amarisoft WebSocket server uses a REQUEST-RESPONSE pattern**, not a push model:
+
+1. ✅ Server sends "ready" message when you connect
+2. ❌ **You must send `log_get` requests to receive logs** (this is not happening automatically)
+3. ❌ Server only sends log data in response to your `log_get` requests
+
+## How Your Application Works
+
+### Message Flow:
+```
+1. Connect → Server sends "ready" message
+2. User navigates (clicks Next) → Triggers `should_get_more_log = true`
+3. `get_more_data()` is called → Sends `log_get` request to server
+4. Server responds → `try_recv()` receives the log data
+```
+
+### The Problem:
+- `try_recv()` is called every frame to check for incoming messages ✅
+- `get_more_data()` sends the request to the server ✅
+- **BUT** `get_more_data()` is only called when:
+  - You click the "Next" navigation button
+  - You're near the end of loaded events (preloading)
+  - `should_get_more_log` is set to `true`
+
+## Debugging Steps
+
+### Step 1: Check the Logs
+
+I've added comprehensive logging to help you debug. Run your application and look for these log messages:
+
+```
+✅ WebSocket connection opened successfully
+✅ Received 'ready' message from server: ENB
+💡 Server is ready. You need to click 'Load More' or enable auto-loading to request logs.
+```
+
+### Step 2: Trigger a Request
+
+After connecting, you need to trigger a `log_get` request. Try one of these:
+
+**Option A: Click the Navigation Button**
+- Click the "Next" button in your navigation panel
+- This should trigger `get_more_data()` and you'll see:
+  ```
+  📤 Sending log_get request: ...
+  📤 JSON request: {"timeout":1,"min":64,"max":1024,...}
+  ```
+
+**Option B: Check if Auto-Loading Works**
+- The code has preloading logic that should automatically request more data
+- But it only works if you have some events already loaded
+
+### Step 3: Watch for Server Response
+
+After sending a request, you should see:
+```
+🔵 WebSocket event received: Message(...)
+📨 Raw WebSocket text message: {"message":"log_get","logs":[...]}
+```
+
+If you DON'T see the server response, the problem is with the server or network.
+
+## Common Issues
+
+### Issue 1: "Screens" on Amarisoft Server
+
+Amarisoft servers often require you to enable "screens" to receive log data:
+
+**Check if screens are enabled:**
+```bash
+# Connect to your Amarisoft VM
+ssh user@137.194.194.36
+
+# Check screen configuration
+# Look for screen settings in your ENB configuration file
+```
+
+**Typical screen configuration in `enb.cfg` or `mme.cfg`:**
+```
+log_options: {
+    // Enable screens
+    screens: [
+        {
+            name: "ENB",
+            layers: ["rrc", "nas", "s1ap"],  // Specify which layers to log
+        }
+    ],
+}
+```
+
+### Issue 2: Layer Filters
+
+Your `log_get` request includes layer filters. Make sure:
+1. The layers you're requesting are enabled on the server
+2. The layers match what the server is configured to send
+
+**Check your layer configuration:**
+- Open the Options panel in your app
+- Make sure at least one layer is enabled (e.g., RRC, NAS, S1AP)
+
+### Issue 3: Server Not Sending Data
+
+The server might not have any data to send if:
+- No UE (User Equipment) is connected
+- No traffic is being generated
+- The layers you're requesting have no activity
+
+## Testing with a Simple Request
+
+You can test the WebSocket connection manually using a WebSocket client:
+
+```javascript
+// Connect to the server
+const ws = new WebSocket('ws://137.194.194.36:9001');
+
+ws.onopen = () => {
+    console.log('Connected');
+    
+    // Wait for ready message, then send a log_get request
+    setTimeout(() => {
+        const request = {
+            message: "log_get",
+            message_id: 1,
+            timeout: 1,
+            min: 64,
+            max: 1024,
+            layers: {
+                rrc: "Debug",
+                nas: "Debug",
+                s1ap: "Debug"
+            },
+            headers: false
+        };
+        ws.send(JSON.stringify(request));
+        console.log('Sent log_get request');
+    }, 1000);
+};
+
+ws.onmessage = (event) => {
+    console.log('Received:', event.data);
+};
+```
+
+## Next Steps
+
+1. **Run your application** and check the logs for the emoji indicators (🔵 📨 📤 ✅)
+2. **Click the Next button** to trigger a `log_get` request
+3. **Check if you see the request being sent** (📤 messages)
+4. **Check if you receive a response** (🔵 and 📨 messages)
+5. **If no response**, check the Amarisoft server configuration for screen settings
+
+## Files Modified
+
+I've added logging to:
+- `tramex-tools/src/interface/websocket/ws_connection.rs`
+  - Line 115: Log all WebSocket events
+  - Line 122: Log all raw text messages
+  - Line 74-77: Log all outgoing requests
+  - Line 148-149: Log ready message with helpful hint
+
+All logs use `log::info!()` so they'll be visible by default.
+
+---
+
+## 6. Event-Driven Architecture (Observer Pattern)
+
+### Implementation Date
+2025-11-09
+
+### Overview
+Refactored the application to use an event-driven architecture with the Observer pattern, replacing the legacy polling-based system with a reactive, notification-based approach.
+
+### Architecture
+
+**Core Components:**
+
+1. **Application Controller** - Central orchestrator
+   - Owns `EventStore` (all event data)
+   - Owns `EventBus` (notification dispatcher)
+   - Owns `DataSource` (File/WebSocket I/O)
+   - Coordinates event flow and navigation
+
+2. **EventStore** - Event data management
+   - Single source of truth for all events
+   - Maintains current index for navigation
+   - Provides O(1) access to events
+
+3. **EventBus** - Observer pattern implementation
+   - Dispatches notifications to all subscribers
+   - Three notification types:
+     - `on_event_added` - New event received
+     - `on_event_focused` - User navigated to event
+     - `on_events_cleared` - Data cleared
+
+4. **EventSubscriber Trait** - Panel interface
+   - All panels implement this trait
+   - Receive notifications automatically
+   - No manual polling required
+
+### Data Flow
+
+**Loading Events:**
+```
+DataSource → Application.update()
+          → EventStore.add_events()
+          → EventBus.notify_event_added()
+          → All panels' on_event_added()
+```
+
+**Navigation:**
+```
+User clicks Next → Application.navigate_next()
+                → EventStore.go_next()
+                → EventBus.notify_event_focused()
+                → All panels' on_event_focused()
+```
+
+**Auto-Loading (WebSocket):**
+```
+Frame loop → Application.update()
+          → DataSource.poll()
+          → New events processed
+          → Auto-navigate to latest
+```
+
+### Key Benefits
+
+| Aspect | Old System | New System |
+|--------|-----------|------------|
+| **Event Processing** | Loop through all events on navigation | Process once when added |
+| **Data Ownership** | Scattered across Data, TrameManager, panels | Single EventStore |
+| **Navigation** | Coupled with processing | Separate: data vs. UI focus |
+| **Adding Panels** | Manually wire in multiple places | Implement EventSubscriber trait |
+| **Testing** | Hard to test individual parts | Easy to mock components |
+
+### API Examples
+
+**Basic Usage:**
+```rust
+// Create application
+let mut app = Application::new();
+
+// Register panels
+app.subscribe(Box::new(Chronograph::new()));
+app.subscribe(Box::new(RRCStatusPanel::new()));
+
+// Set data source (File or WebSocket)
+app.set_data_source(Box::new(file_source));
+
+// Main loop
+loop {
+    app.update()?;  // Poll data, process events, notify panels
+    
+    // Navigation
+    if next_clicked {
+        app.navigate_next();
+    }
+}
+```
+
+**File Loading Strategies:**
+```rust
+// Load entire file immediately
+FileSource::new(path, FileLoadingStrategy::Immediate)
+
+// Load in batches on demand
+FileSource::new(path, FileLoadingStrategy::OnDemand { batch_size: 1000 })
+
+// Progressive loading with delays
+FileSource::new(path, FileLoadingStrategy::Progressive { 
+    batch_size: 500, 
+    delay_ms: 100 
+})
+```
+
+### Panel Implementation
+
+Panels implement `EventSubscriber`:
+
+```rust
+impl EventSubscriber for Chronograph {
+    fn on_event_added(&mut self, event: &Trace, index: usize, context: &EventContext) {
+        // Process event data (extract info, update state)
+        if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+            self.add_arrow(infos, index);
+        }
+    }
+    
+    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
+        // Update UI (scroll, highlight)
+        self.current_index = index;
+        self.should_scroll = true;
+    }
+    
+    fn on_events_cleared(&mut self) {
+        // Clean up
+        self.arrows.clear();
+    }
+}
+```
+
+### Performance Characteristics
+
+**Memory:**
+- Single copy of events in EventStore
+- No duplication across panels
+- Bounded collections (e.g., max 500 arrows in Chronograph)
+
+**CPU:**
+- O(1) event addition to store
+- O(n) notification where n = number of subscribers
+- O(1) navigation between events
+
+**I/O:**
+- File: Configurable batch size (1-4096 events)
+- WebSocket: Server-controlled with timeout
+- Non-blocking: poll() never blocks main thread
+
+### Files Modified
+
+**New Files:**
+- `tramex/src/event_system/mod.rs` - Module exports
+- `tramex/src/event_system/application.rs` - Application controller
+- `tramex/src/event_system/event_bus.rs` - Observer pattern dispatcher
+- `tramex/src/event_system/event_store.rs` - Event data management
+- `tramex/src/event_system/event_subscriber.rs` - Subscriber trait
+- `tramex/src/event_system/data_source.rs` - DataSource trait + FileSource
+- `tramex/src/event_system/websocket_source.rs` - WebSocket DataSource
+- `tramex/src/event_system/integration.rs` - Helper functions
+
+**Modified Files:**
+- `tramex/src/frontend.rs` - Integrated Application controller
+- `tramex/src/panels/*.rs` - All panels implement EventSubscriber
+- `tramex/src/lib.rs` - Added event_system module
+
+### Migration Notes
+
+The migration preserved backward compatibility by:
+1. Keeping legacy `Data` structure for file/WebSocket handlers
+2. Transferring events from `Data` to `Application` as bridge
+3. Panels implement both old (`PanelController`) and new (`EventSubscriber`) traits
+4. Gradual removal of legacy code paths
+
+### Future Enhancements
+
+1. **Complete DataSource migration**: Replace legacy file/WebSocket handlers
+2. **Remove Data bridge**: Direct DataSource → Application flow
+3. **Panel UI separation**: Remove legacy `show()` method, use only `EventSubscriber`
+4. **Advanced features**:
+   - Event filtering at Application level
+   - Event search and bookmarks
+   - Timeline visualization
+   - Export/import event sets
+
+---

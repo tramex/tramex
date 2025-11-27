@@ -15,6 +15,7 @@ pub use app::TramexApp;
 mod frontend;
 pub mod handlers;
 pub mod panels;
+pub mod event_system;
 
 mod utils;
 pub use utils::*;

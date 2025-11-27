@@ -161,7 +161,10 @@ impl FileHandler {
             },
             None => Ok(None),
         };
-        log::debug!("Result: {res:?}");
+        match &res {
+            Ok(_) => log::debug!("File parsed successfully"),
+            Err(e) => log::debug!("File parsing failed: {:?}", e),
+        }
         if should_clean {
             log::debug!("Cleaning file upload");
             self.clear();

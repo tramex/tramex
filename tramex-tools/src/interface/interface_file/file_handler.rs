@@ -16,9 +16,6 @@ use super::file_index::{FileIndex};
 /// The default number of log processed by batch
 const DEFAULT_NB: usize = 50;
 
-/// The number of logs to preload ahead
-const PRELOAD_COUNT: usize = 50;
-
 #[derive(Debug, Clone)]
 /// Data structure to store the file.
 pub struct File {

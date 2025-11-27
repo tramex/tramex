@@ -25,7 +25,6 @@ impl BasicParser {
             timestamp: 0,
             layer,
             additional_infos: AdditionalInfos::None,
-            hexa: vec![], // No hexadecimal data for simple logs
             text: Some(text),
         };
         Ok(trace)

@@ -53,4 +53,24 @@ pub trait Handler {
     fn get_total_event_count(&self) -> Option<usize> {
         None
     }
+    
+    /// Check if this is a WebSocket handler
+    fn is_websocket(&self) -> bool {
+        false
+    }
+    
+    /// Toggle auto-loading for WebSocket (only applicable for WebSocket handlers)
+    fn toggle_ws_auto_loading(&mut self) {
+        // Default: do nothing for non-WebSocket handlers
+    }
+    
+    /// Check if WebSocket auto-loading is enabled
+    fn is_ws_auto_loading(&self) -> bool {
+        false
+    }
+    
+    /// Check if WebSocket should request more data (throttling check)
+    fn should_ws_request_more(&self) -> bool {
+        false
+    }
 }

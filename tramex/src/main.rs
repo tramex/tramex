@@ -5,7 +5,10 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+    // Initialize logger with millisecond precision
+    env_logger::Builder::from_default_env()
+        .format_timestamp_millis()
+        .init();
 
     let native_options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()

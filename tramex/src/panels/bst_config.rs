@@ -2,17 +2,18 @@
 //! 
 //! Displays parsed ASN.1 fields from RRC messages based on configurable field mappings.
 
-use super::PanelController;
+use crate::event_system::{EventSubscriber, EventContext};
 use egui::{self, Color32, RichText};
 use serde_json::Value;
 use tramex_tools::{
-    data::{AdditionalInfos, Data, Trace},
+    data::{AdditionalInfos, Trace},
     errors::TramexError,
     interface::{layer::Layer, parse_config::FileMetadata},
 };
+use crate::panels::PanelView;
 
 /// Configuration for a field to extract and display
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct FieldMapping {
     /// Display name for the field
     pub display_name: String,
@@ -23,7 +24,7 @@ pub struct FieldMapping {
 }
 
 /// Configuration for parsing a specific message type
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct MessageConfig {
     /// Canal message name to match (e.g., "SIB1", "MIB")
     pub canal_msg: String,
@@ -34,17 +35,25 @@ pub struct MessageConfig {
 /// RRC Field Viewer Panel
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct BstConfig {
-    /// Current trace index
+    /// Current index
     #[serde(skip)]
     current_index: usize,
     
-    /// Parsed fields from current message
+    /// Cached metadata for UI rendering
     #[serde(skip)]
-    current_fields: Vec<(String, String)>, // (display_name, value)
+    metadata: FileMetadata,
     
-    /// Current message type
+    /// Parsed fields from SIB1
     #[serde(skip)]
-    current_message_type: Option<String>,
+    sib1_fields: Vec<(String, String)>,
+    
+    /// Parsed fields from SIB2
+    #[serde(skip)]
+    sib2_fields: Vec<(String, String)>,
+    
+    /// Parsed fields from SIB3
+    #[serde(skip)]
+    sib3_fields: Vec<(String, String)>,
     
     /// Message configurations (not serialized, will be initialized)
     #[serde(skip)]
@@ -60,16 +69,14 @@ impl Default for BstConfig {
 impl BstConfig {
     /// Create a new RRC Field Viewer
     pub fn new() -> Self {
-        let mut viewer = Self {
+        Self {
             current_index: 0,
-            current_fields: Vec::new(),
-            current_message_type: None,
+            metadata: FileMetadata::default(),
+            sib1_fields: Vec::new(),
+            sib2_fields: Vec::new(),
+            sib3_fields: Vec::new(),
             message_configs: Vec::new(),
-        };
-        
-        // Initialize default configurations
-        viewer.init_default_configs();
-        viewer
+        }
     }
     
     /// Initialize default field configurations
@@ -158,6 +165,47 @@ impl BstConfig {
                 },
             ],
         });
+        
+        // SIB2 Configuration
+        self.message_configs.push(MessageConfig {
+            canal_msg: "SIB2".to_string(),
+            fields: vec![
+                FieldMapping {
+                    display_name: "q-Hyst".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.cellReselectionInfoCommon.q-Hyst".to_string(),
+                    unit: Some("dB".to_string()),
+                },
+                FieldMapping {
+                    display_name: "q-RxLevelMin".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.intraFreqCellReselectionInfo.q-RxLevelMin".to_string(),
+                    unit: Some("dB".to_string()),
+                },
+                FieldMapping {
+                    display_name: "s-IntraSearchP".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.intraFreqCellReselectionInfo.s-IntraSearchP".to_string(),
+                    unit: None,
+                },
+                FieldMapping {
+                    display_name: "t-ReselectionNR".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.intraFreqCellReselectionInfo.q-RxLevelMin".to_string(),
+                    unit: None,
+                },
+                // Add more SIB2 fields as needed
+            ],
+        });
+        
+        // SIB3 Configuration
+        self.message_configs.push(MessageConfig {
+            canal_msg: "SIB3".to_string(),
+            fields: vec![
+                FieldMapping {
+                    display_name: "intraFreqNeighCellList".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib3.intraFreqNeighCellList".to_string(),
+                    unit: None,
+                },
+                // Add more SIB3 fields as needed
+            ],
+        });
     }
     
     /// Add a new message configuration
@@ -185,12 +233,10 @@ impl BstConfig {
         
         // Only update if we found a matching configuration
         if let Some(config) = config {
-            // Clear previous fields only when updating with new data
-            self.current_fields.clear();
-            self.current_message_type = Some(canal_msg.clone());
-            
             // Parse ASN.1 to JSON
-            if let Some(json) = trace.parse_asn1_to_json() {                
+            if let Some(json) = trace.parse_asn1_to_json() {
+                let mut fields = Vec::new();
+                
                 // Extract each configured field
                 for field_mapping in &config.fields {
                     if let Some(value) = self.extract_field(&json, &field_mapping.json_path) {
@@ -199,11 +245,19 @@ impl BstConfig {
                         } else {
                             value
                         };
-                        self.current_fields.push((
+                        fields.push((
                             field_mapping.display_name.clone(),
                             display_value,
                         ));
                     }
+                }
+                
+                // Store in the appropriate section based on message type
+                match canal_msg.to_uppercase().as_str() {
+                    "SIB1" => self.sib1_fields = fields,
+                    "SIB2" => self.sib2_fields = fields,
+                    "SIB3" => self.sib3_fields = fields,
+                    _ => {} // Unknown SIB type, ignore
                 }
             }
         }
@@ -239,7 +293,15 @@ impl BstConfig {
         
         // Convert value to string
         Some(match current {
-            Value::String(s) => s.clone(),
+            Value::String(s) => {
+                // Handle ASN.1 enum values like "dB3" -> "3"
+                // This allows the unit to be added separately as "3 dB"
+                if s.starts_with("dB") && s.len() > 2 {
+                    s[2..].to_string()
+                } else {
+                    s.clone()
+                }
+            },
             Value::Number(n) => n.to_string(),
             Value::Bool(b) => b.to_string(),
             Value::Object(obj) => {
@@ -270,119 +332,174 @@ impl BstConfig {
     
     /// UI for the panel with metadata
     fn ui_with_metadata(&mut self, ui: &mut egui::Ui, metadata: &FileMetadata) {
-        // Display header metadata first
-        ui.heading("Base Station Information");
-        ui.separator();
-        
-        egui::Grid::new("bst_metadata_grid")
-            .spacing([20.0, 8.0])
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
             .show(ui, |ui| {
-                // Technology
-                ui.label(RichText::new("Technology")
-                    .color(Color32::BLACK)
-                    .strong());
-                ui.label(RichText::new(format!("{}", metadata.technology))
-                    .color(Color32::DARK_GRAY));
-                ui.end_row();
+                // === GENERAL SECTION ===
+                ui.heading("General");
+                ui.separator();
                 
-                // PCI
-                if let Some(pci) = metadata.pci {
-                    ui.label(RichText::new("PCI")
-                        .color(Color32::BLACK)
-                        .strong());
-                    ui.label(RichText::new(format!("{}", pci))
-                        .color(Color32::DARK_GRAY));
-                    ui.end_row();
-                }
-                
-                // Mode
-                if let Some(ref mode) = metadata.mode {
-                    ui.label(RichText::new("Mode")
-                        .color(Color32::BLACK)
-                        .strong());
-                    ui.label(RichText::new(mode)
-                        .color(Color32::DARK_GRAY));
-                    ui.end_row();
-                }
-                
-                // ARFCN
-                if let Some(arfcn) = metadata.arfcn {
-                    ui.label(RichText::new("ARFCN")
-                        .color(Color32::BLACK)
-                        .strong());
-                    ui.label(RichText::new(format!("{}", arfcn))
-                        .color(Color32::DARK_GRAY));
-                    ui.end_row();
-                }
-                
-                // IO mode
-                if let Some(ref io_mode) = metadata.io_mode {
-                    ui.label(RichText::new("I/O mode")
-                        .color(Color32::BLACK)
-                        .strong());
-                    ui.label(RichText::new(io_mode)
-                        .color(Color32::DARK_GRAY));
-                    ui.end_row();
-                }
-            });
-        
-        // Display SIB1 fields if available
-        if !self.current_fields.is_empty() {
-            ui.add_space(10.0);
-            ui.separator();
-            
-            egui::Grid::new("bst_fields_grid")
-                .spacing([20.0, 8.0])
-                .show(ui, |ui| {
-                    for (name, value) in &self.current_fields {
-                        ui.label(RichText::new(name)
+                egui::Grid::new("bst_general_grid")
+                    .spacing([20.0, 8.0])
+                    .show(ui, |ui| {
+                        // Technology
+                        ui.label(RichText::new("Technology")
                             .color(Color32::BLACK)
                             .strong());
-                        ui.label(RichText::new(value)
+                        ui.label(RichText::new(format!("{}", metadata.technology))
                             .color(Color32::DARK_GRAY));
                         ui.end_row();
-                    }
-                });
-        }
+                        
+                        // PCI
+                        if let Some(pci) = metadata.pci {
+                            ui.label(RichText::new("PCI")
+                                .color(Color32::BLACK)
+                                .strong());
+                            ui.label(RichText::new(format!("{}", pci))
+                                .color(Color32::DARK_GRAY));
+                            ui.end_row();
+                        }
+                        
+                        // Mode
+                        if let Some(ref mode) = metadata.mode {
+                            ui.label(RichText::new("Mode")
+                                .color(Color32::BLACK)
+                                .strong());
+                            ui.label(RichText::new(mode)
+                                .color(Color32::DARK_GRAY));
+                            ui.end_row();
+                        }
+                        
+                        // ARFCN
+                        if let Some(arfcn) = metadata.arfcn {
+                            ui.label(RichText::new("ARFCN")
+                                .color(Color32::BLACK)
+                                .strong());
+                            ui.label(RichText::new(format!("{}", arfcn))
+                                .color(Color32::DARK_GRAY));
+                            ui.end_row();
+                        }
+                        
+                        // IO Mode (MIMO/SISO)
+                        if let Some(ref io_mode) = metadata.io_mode {
+                            ui.label(RichText::new("I/O Mode")
+                                .color(Color32::BLACK)
+                                .strong());
+                            ui.label(RichText::new(io_mode)
+                                .color(Color32::DARK_GRAY));
+                            ui.end_row();
+                        }
+                    });
+                
+                // === SIB1 SECTION ===
+                if !self.sib1_fields.is_empty() {
+                    ui.add_space(15.0);
+                    ui.heading("SIB1");
+                    ui.separator();
+                    
+                    egui::Grid::new("bst_sib1_grid")
+                        .spacing([20.0, 8.0])
+                        .show(ui, |ui| {
+                            for (name, value) in &self.sib1_fields {
+                                ui.label(RichText::new(name)
+                                    .color(Color32::BLACK)
+                                    .strong());
+                                ui.label(RichText::new(value)
+                                    .color(Color32::DARK_GRAY));
+                                ui.end_row();
+                            }
+                        });
+                }
+                
+                // === SIB2 SECTION ===
+                if !self.sib2_fields.is_empty() {
+                    ui.add_space(15.0);
+                    ui.heading("SIB2");
+                    ui.separator();
+                    
+                    egui::Grid::new("bst_sib2_grid")
+                        .spacing([20.0, 8.0])
+                        .show(ui, |ui| {
+                            for (name, value) in &self.sib2_fields {
+                                ui.label(RichText::new(name)
+                                    .color(Color32::BLACK)
+                                    .strong());
+                                ui.label(RichText::new(value)
+                                    .color(Color32::DARK_GRAY));
+                                ui.end_row();
+                            }
+                        });
+                }
+                
+                // === SIB3 SECTION ===
+                if !self.sib3_fields.is_empty() {
+                    ui.add_space(15.0);
+                    ui.heading("SIB3");
+                    ui.separator();
+                    
+                    egui::Grid::new("bst_sib3_grid")
+                        .spacing([20.0, 8.0])
+                        .show(ui, |ui| {
+                            for (name, value) in &self.sib3_fields {
+                                ui.label(RichText::new(name)
+                                    .color(Color32::BLACK)
+                                    .strong());
+                                ui.label(RichText::new(value)
+                                    .color(Color32::DARK_GRAY));
+                                ui.end_row();
+                            }
+                        });
+                }
+            });
     }
 }
 
-impl PanelController for BstConfig {
-    fn name(&self) -> &'static str {
-        "Base Station configuration"
+// EventSubscriber implementation for new event system
+impl EventSubscriber for BstConfig {
+    fn on_event_added(&mut self, _event: &Trace, _index: usize, context: &EventContext) {
+        // Update cached metadata
+        self.metadata = context.metadata.clone();
     }
     
-    fn window_title(&self) -> &'static str {
-        "Base Station configuration"
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+        // When user navigates to an event, extract fields from it
+        self.current_index = index;
+        self.update_fields(event);
     }
-
-    fn show(
-        &mut self,
-        ctx: &egui::Context,
-        open: &mut bool,
-        data: &mut Data,
-    ) -> Result<(), TramexError> {
-        // Update fields if trace changed
-        if data.is_different_index(self.current_index) {
-            self.current_index = data.current_index;
-            if let Some(trace) = data.get_current_trace() {
-                self.update_fields(trace);
-            }
-        }
-        
-        egui::Window::new(self.name())
+    
+    fn on_events_cleared(&mut self) {
+        log::debug!("BST Config: Clearing all fields");
+        self.current_index = 0;
+        self.sib1_fields.clear();
+        self.sib2_fields.clear();
+        self.sib3_fields.clear();
+    }
+    
+    fn name(&self) -> &'static str {
+        "BST Config"
+    }
+    
+    fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
+        // Clone metadata to avoid borrow checker issues
+        let metadata = self.metadata.clone();
+        egui::Window::new("BST Config")
+            .resizable(true)
+            .default_width(800.0)
+            .default_height(600.0)
             .open(open)
-            .default_width(400.0)
             .show(ctx, |ui| {
-                self.ui_with_metadata(ui, &data.metadata);
+                self.ui_with_metadata(ui, &metadata);
             });
-        
         Ok(())
     }
+}
 
-    fn clear(&mut self) {
-        self.current_index = 0;
-        self.current_fields.clear();
-        self.current_message_type = None;
+
+// PanelView implementation for rendering UI
+impl super::PanelView for BstConfig {
+    fn ui(&mut self, ui: &mut egui::Ui) {
+        // Clone metadata to avoid borrow checker issues
+        let metadata = self.metadata.clone();
+        self.ui_with_metadata(ui, &metadata);
     }
 }

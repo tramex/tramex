@@ -84,17 +84,21 @@ pub enum Direction {
 
     /// To direction
     TO,
+
+    /// Not available direction
+    NA,
 }
 
 impl FromStr for Direction {
     type Err = ();
 
     fn from_str(input_string: &str) -> Result<Self, Self::Err> {
-        match input_string {
+        match input_string.trim() {
             "UL" => Ok(Direction::UL),
             "DL" => Ok(Direction::DL),
             "FROM" => Ok(Direction::FROM),
             "TO" => Ok(Direction::TO),
+            "" | "-" => Ok(Direction::NA),
             _ => Err(()),
         }
     }

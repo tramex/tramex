@@ -10,6 +10,7 @@ use crate::interface::{layer::Layer, types::SourceLog};
 use crate::tramex_error;
 
 use super::parser::parser_rrc::RRCInfos;
+use super::parser::parser_nas::NASInfos;
 use super::types::Direction; // to use the FileParser trait and implementations
 
 #[derive(serde::Deserialize, Debug)]
@@ -58,10 +59,12 @@ impl OneLog {
     pub fn extract_data(&self) -> Result<Trace, TramexError> {
         match self.layer {
             Layer::RRC => {
+                // log::debug!("self: {:?}", self);
                 let dir = match &self.dir {
                     Some(opt_dir) => match Direction::from_str(opt_dir) {
                         Ok(d) => d,
                         Err(_) => {
+                            log::debug!("Direction: {:?}", self.dir);
                             return Err(tramex_error!(
                                 format!("Can't format direction {}", opt_dir),
                                 crate::errors::ErrorCode::WebSocketErrorDecodingMessage
@@ -92,7 +95,52 @@ impl OneLog {
                     timestamp: self.timestamp,
                     layer: Layer::RRC,
                     additional_infos: infos,
-                    hexa: self.extract_hexe().unwrap_or_default(),
+                    text: Some(self.data[1..].iter().map(|x| x.to_string()).collect()),
+                };
+                Ok(trace)
+            }
+            Layer::NAS => {
+                let dir = match &self.dir {
+                    Some(opt_dir) => match Direction::from_str(opt_dir) {
+                        Ok(d) => d,
+                        Err(_) => {
+                            return Err(tramex_error!(
+                                format!("Can't format direction {}", opt_dir),
+                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                            ));
+                        }
+                    },
+                    None => {
+                        return Err(tramex_error!(
+                            "Direction not found".to_owned(),
+                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage
+                        ));
+                    }
+                };
+                
+                // First line contains the message type
+                // Example: "5GMM: Service request" or just "Service request"
+                let message_type = if self.data.is_empty() {
+                    "Unknown".to_string()
+                } else {
+                    // Remove protocol prefix if present (e.g., "5GMM: ")
+                    let first_line = &self.data[0];
+                    if let Some(colon_pos) = first_line.find(':') {
+                        first_line[colon_pos + 1..].trim().to_string()
+                    } else {
+                        first_line.trim().to_string()
+                    }
+                };
+                
+                let nas = NASInfos {
+                    direction: dir,
+                    message_type,
+                };
+                let infos = AdditionalInfos::NASInfos(nas);
+                let trace = Trace {
+                    timestamp: self.timestamp,
+                    layer: Layer::NAS,
+                    additional_infos: infos,
                     text: Some(self.data[1..].iter().map(|x| x.to_string()).collect()),
                 };
                 Ok(trace)

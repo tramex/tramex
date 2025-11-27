@@ -1,5 +1,10 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::interface::{parse_config::FileMetadata, layer::Layer, parser::parser_rrc::RRCInfos};
+use crate::interface::{
+    parse_config::FileMetadata, 
+    layer::Layer, 
+    parser::{parser_rrc::RRCInfos, parser_nas::NASInfos, parser_ngap::NGAPInfos},
+    types::Direction,
+};
 use core::fmt::Debug;
 use crate::asn1_parser::parse_asn1_to_json;
 
@@ -60,9 +65,6 @@ pub struct Trace {
     /// Message type.
     pub additional_infos: AdditionalInfos,
 
-    /// Hexadecimal representation of the message.
-    pub hexa: Vec<u8>,
-
     /// Text representation of the message from the API
     pub text: Option<Vec<String>>,
 }
@@ -91,7 +93,7 @@ impl Trace {
         // Parse ASN.1 to JSON
         match parse_asn1_to_json(&asn1_text) {
             Ok(json) => {
-                log::debug!("Parsed ASN.1 to JSON: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
+                // log::debug!("Parsed ASN.1 to JSON: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
                 Some(json)
             }
             Err(e) => {
@@ -107,6 +109,32 @@ impl Trace {
 pub enum AdditionalInfos {
     /// RRC message
     RRCInfos(RRCInfos),
+    /// NAS message
+    NASInfos(NASInfos),
+    /// NGAP message
+    NGAPInfos(NGAPInfos),
     /// No additional info (for simple log entries like PHY, MAC, etc.)
     None,
+}
+
+impl AdditionalInfos {
+    /// Get direction from additional infos
+    pub fn get_direction(&self) -> Option<Direction> {
+        match self {
+            AdditionalInfos::RRCInfos(info) => Some(info.direction.clone()),
+            AdditionalInfos::NASInfos(info) => Some(info.direction.clone()),
+            AdditionalInfos::NGAPInfos(info) => Some(info.direction.clone()),
+            AdditionalInfos::None => None,
+        }
+    }
+    
+    /// Get message name from additional infos
+    pub fn get_message_name(&self) -> Option<String> {
+        match self {
+            AdditionalInfos::RRCInfos(info) => Some(info.canal_msg.clone()),
+            AdditionalInfos::NASInfos(info) => Some(info.message_type.clone()),
+            AdditionalInfos::NGAPInfos(info) => Some(info.message_type.clone()),
+            AdditionalInfos::None => None,
+        }
+    }
 }

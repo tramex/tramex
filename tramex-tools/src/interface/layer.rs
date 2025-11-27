@@ -92,6 +92,13 @@ pub enum LayerLogLevel {
     Warn,
 }
 
+impl LayerLogLevel {
+    /// Check if this is the Warn level (used for skip_serializing_if)
+    pub fn is_warn(&self) -> bool {
+        matches!(self, LayerLogLevel::Warn)
+    }
+}
+
 impl serde::Serialize for LayerLogLevel {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -180,8 +187,8 @@ pub struct Layers {
     /// TRX layer
     pub trx: LayerLogLevel,
 
-    #[serde(rename(serialize = "SDAP"))]
-    /// SDAP layer
+    #[serde(rename(serialize = "SDAP"), skip_serializing_if = "LayerLogLevel::is_warn")]
+    /// SDAP layer (not supported by all servers, skipped if warn)
     pub sdap: LayerLogLevel,
 }
 

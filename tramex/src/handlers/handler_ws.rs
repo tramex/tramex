@@ -28,7 +28,7 @@ impl WsHandler {
     /// Create a new ws handler
     pub fn new() -> Self {
         Self {
-            url: "ws://127.0.0.1:9001".to_owned(),
+            url: "ws://137.194.194.36:9001".to_owned(), // TODO: change to default ws url (127.0.0.1:9001)
             inner: None,
         }
     }
@@ -71,18 +71,11 @@ impl WsHandler {
 }
 
 impl Handler for WsHandler {
-    fn ui_options(&mut self, ui: &mut egui::Ui) {
-        ui.label("Websocket Options");
-        if let Some(interface_ws) = &mut self.inner {
-            ui.horizontal(|ui| {
-                ui.label("Max incoming frame size: ");
-                ui.add(
-                    egui::DragValue::new(&mut interface_ws.asking_size_max)
-                        .speed(2.0)
-                        .range(64.0..=4096.0),
-                );
-            });
-        }
+    fn ui_options(&mut self, _ui: &mut egui::Ui) {
+        // ui.label("Websocket Options");
+        // if let Some(interface_ws) = &mut self.inner {
+            
+        // }
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _data: &mut Data, new_ctx: egui::Context) -> Result<bool, TramexError> {
@@ -163,6 +156,31 @@ impl Handler for WsHandler {
     fn is_interface_available(&self) -> bool {
         if let Some(interface_ws) = &self.inner {
             return interface_ws.available;
+        }
+        false
+    }
+    
+    fn is_websocket(&self) -> bool {
+        true
+    }
+    
+    fn toggle_ws_auto_loading(&mut self) {
+        if let Some(interface_ws) = &mut self.inner {
+            interface_ws.auto_loading = !interface_ws.auto_loading;
+            log::info!("WebSocket auto-loading: {}", if interface_ws.auto_loading { "▶ Resumed" } else { "⏸ Paused" });
+        }
+    }
+    
+    fn is_ws_auto_loading(&self) -> bool {
+        if let Some(interface_ws) = &self.inner {
+            return interface_ws.auto_loading;
+        }
+        false
+    }
+    
+    fn should_ws_request_more(&self) -> bool {
+        if let Some(interface_ws) = &self.inner {
+            return interface_ws.should_request_more();
         }
         false
     }
