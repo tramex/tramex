@@ -10,6 +10,32 @@ use tramex_tools::{
 };
 use crate::panels::PanelView;
 
+/// QoS Rule information
+#[derive(Clone, Debug, Default)]
+pub struct QosRule {
+    /// QoS rule identifier
+    pub identifier: Option<String>,
+    /// DQR (Default QoS Rule indicator)
+    pub dqr: Option<String>,
+    /// QoS rule precedence
+    pub precedence: Option<String>,
+    /// QoS Flow Identifier
+    pub qfi: Option<String>,
+}
+
+/// Decoded TAI information
+#[derive(Clone, Debug, Default)]
+pub struct TaiInfo {
+    /// Mobile Country Code
+    pub mcc: Option<String>,
+    /// Mobile Network Code
+    pub mnc: Option<String>,
+    /// Tracking Area Codes
+    pub tacs: Vec<String>,
+    /// Raw data (for undecoded types)
+    pub raw_data: Option<String>,
+}
+
 /// Identity Panel - displays NAS identity information
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct Identity {
@@ -60,6 +86,30 @@ pub struct Identity {
     /// 5G-GUTI 5G-TMSI
     #[serde(skip)]
     guti_5g_tmsi: Option<String>,
+    
+    /// QoS Rules list
+    #[serde(skip)]
+    qos_rules: Vec<QosRule>,
+    
+    /// 5QI (from QoS flow descriptions)
+    #[serde(skip)]
+    fiveqi: Option<String>,
+    
+    /// DNS Server IPv4 Address
+    #[serde(skip)]
+    dns_ipv4: Option<String>,
+    
+    /// TAI information
+    #[serde(skip)]
+    tai_info: TaiInfo,
+    
+    /// Session AMBR downlink
+    #[serde(skip)]
+    session_ambr_dl: Option<String>,
+    
+    /// Session AMBR uplink
+    #[serde(skip)]
+    session_ambr_ul: Option<String>,
 }
 
 impl Default for Identity {
@@ -84,6 +134,101 @@ impl Identity {
             guti_amf_set_id: None,
             guti_amf_pointer: None,
             guti_5g_tmsi: None,
+            qos_rules: Vec::new(),
+            fiveqi: None,
+            dns_ipv4: None,
+            tai_info: TaiInfo::default(),
+            session_ambr_dl: None,
+            session_ambr_ul: None,
+        }
+    }
+    
+    /// Decode TAI list from hex data string
+    /// Format: first byte is type (00, 01, 10, 11)
+    /// For 00 & 01: bytes 2-4 are MCC/MNC in BCD, then TACs
+    fn decode_tai_list(data: &str) -> TaiInfo {
+        let bytes: Vec<u8> = data
+            .split_whitespace()
+            .filter_map(|s| u8::from_str_radix(s, 16).ok())
+            .collect();
+        
+        if bytes.is_empty() {
+            return TaiInfo {
+                raw_data: Some(data.to_string()),
+                ..Default::default()
+            };
+        }
+        
+        let list_type = bytes[0] & 0x03; // First 2 bits
+        
+        // Only decode for type 00 and 01
+        if list_type == 0b10 {
+            // Type 10: not decoded, return raw
+            return TaiInfo {
+                raw_data: Some(data.to_string()),
+                ..Default::default()
+            };
+        }
+        
+        if bytes.len() < 4 {
+            return TaiInfo {
+                raw_data: Some(data.to_string()),
+                ..Default::default()
+            };
+        }
+        
+        // Decode MCC/MNC from bytes 2-4 (indices 1-3) in BCD format
+        // Byte 1: MCC2 (high nibble), MCC1 (low nibble)
+        // Byte 2: MNC3 (high nibble, F if 2-digit MNC), MCC3 (low nibble)
+        // Byte 3: MNC2 (high nibble), MNC1 (low nibble)
+        let mcc1 = bytes[1] & 0x0F;
+        let mcc2 = (bytes[1] >> 4) & 0x0F;
+        let mcc3 = bytes[2] & 0x0F;
+        let mnc3 = (bytes[2] >> 4) & 0x0F;
+        let mnc1 = bytes[3] & 0x0F;
+        let mnc2 = (bytes[3] >> 4) & 0x0F;
+        
+        let mcc = format!("{}{}{}", mcc1, mcc2, mcc3);
+        let mnc = if mnc3 == 0x0F {
+            format!("{}{}", mnc1, mnc2)
+        } else {
+            format!("{}{}{}", mnc1, mnc2, mnc3)
+        };
+        
+        // Decode TACs based on type
+        let mut tacs = Vec::new();
+        let tac_start = 4; // TACs start after MCC/MNC
+        
+        match list_type {
+            0b00 => {
+                // Type 00: single TAC (3 bytes)
+                if bytes.len() >= tac_start + 3 {
+                    let tac = format!("{:02X}{:02X}{:02X}", 
+                        bytes[tac_start], bytes[tac_start + 1], bytes[tac_start + 2]);
+                    tacs.push(tac);
+                }
+            }
+            0b01 => {
+                // Type 01: list of TACs (3 bytes each)
+                let mut i = tac_start;
+                while i + 3 <= bytes.len() {
+                    let tac = format!("{:02X}{:02X}{:02X}", 
+                        bytes[i], bytes[i + 1], bytes[i + 2]);
+                    tacs.push(tac);
+                    i += 3;
+                }
+            }
+            0b11 => {
+                // Type 11: 0 TACs, just MCC/MNC
+            }
+            _ => {}
+        }
+        
+        TaiInfo {
+            mcc: Some(mcc),
+            mnc: Some(mnc),
+            tacs,
+            raw_data: None,
         }
     }
     
@@ -110,9 +255,10 @@ impl Identity {
         }
     }
     
-    /// Parse Registration accept message for 5G-GUTI
+    /// Parse Registration accept message for 5G-GUTI and TAI list
     fn parse_registration_accept(&mut self, text: &[String]) {
         let mut in_guti = false;
+        let mut in_tai = false;
         
         for line in text {
             let trimmed = line.trim();
@@ -120,14 +266,22 @@ impl Identity {
             // 5G-GUTI section
             if trimmed.starts_with("5G-GUTI:") {
                 in_guti = true;
+                in_tai = false;
                 continue;
             }
             
-            // Reset section flag when we hit a new top-level section
-            if !trimmed.is_empty() && !trimmed.starts_with(' ') && trimmed.contains(':') {
-                if !trimmed.starts_with("5G-GUTI:") {
-                    in_guti = false;
-                }
+            // TAI list section
+            if trimmed.starts_with("TAI list:") {
+                in_tai = true;
+                in_guti = false;
+                continue;
+            }
+            
+            // Reset section flags when we hit a new top-level section
+            if !trimmed.is_empty() && !trimmed.starts_with(' ') && trimmed.contains(':') 
+                && !trimmed.starts_with("5G-GUTI:") && !trimmed.starts_with("TAI list:") {
+                in_guti = false;
+                in_tai = false;
             }
             
             // Parse 5G-GUTI fields
@@ -146,26 +300,100 @@ impl Identity {
                     self.guti_5g_tmsi = Some(value);
                 }
             }
+            
+            // Parse TAI list
+            if in_tai {
+                if let Some(value) = Self::extract_field(trimmed, "Data =") {
+                    self.tai_info = Self::decode_tai_list(&value);
+                }
+            }
         }
     }
     
-    /// Parse PDU session establishment accept message for PDU address and DNN
+    /// Parse PDU session establishment accept message
     fn parse_pdu_session_accept(&mut self, text: &[String]) {
         let mut in_pdu_address = false;
+        let mut in_qos_rules = false;
+        let mut in_qos_flow = false;
+        let mut in_session_ambr = false;
+        let mut in_epco = false;
+        let mut saw_dns_protocol = false;
+        let mut current_qos_rule: Option<QosRule> = None;
+        
+        // Clear QoS rules for this message
+        self.qos_rules.clear();
         
         for line in text {
             let trimmed = line.trim();
             
-            // PDU address section
+            // Section detection
             if trimmed.starts_with("PDU address:") {
                 in_pdu_address = true;
+                in_qos_rules = false;
+                in_qos_flow = false;
+                in_session_ambr = false;
+                in_epco = false;
+                continue;
+            }
+            if trimmed.starts_with("Authorized QoS rules:") {
+                in_qos_rules = true;
+                in_pdu_address = false;
+                in_qos_flow = false;
+                in_session_ambr = false;
+                in_epco = false;
+                continue;
+            }
+            if trimmed.starts_with("Authorized QoS flow descriptions:") {
+                in_qos_flow = true;
+                in_qos_rules = false;
+                in_pdu_address = false;
+                in_session_ambr = false;
+                in_epco = false;
+                // Save any pending QoS rule
+                if let Some(rule) = current_qos_rule.take() {
+                    self.qos_rules.push(rule);
+                }
+                continue;
+            }
+            if trimmed.starts_with("Session AMBR:") {
+                in_session_ambr = true;
+                in_qos_rules = false;
+                in_pdu_address = false;
+                in_qos_flow = false;
+                in_epco = false;
+                // Save any pending QoS rule
+                if let Some(rule) = current_qos_rule.take() {
+                    self.qos_rules.push(rule);
+                }
+                continue;
+            }
+            if trimmed.starts_with("Extended protocol configuration options:") {
+                in_epco = true;
+                in_qos_rules = false;
+                in_pdu_address = false;
+                in_qos_flow = false;
+                in_session_ambr = false;
                 continue;
             }
             
-            // Reset section flag when we hit a new top-level section
+            // Reset section flags for other top-level sections
             if !trimmed.is_empty() && !trimmed.starts_with(' ') && trimmed.contains(':') {
-                if !trimmed.starts_with("PDU address:") {
+                if !trimmed.starts_with("PDU address:") 
+                    && !trimmed.starts_with("Authorized QoS rules:")
+                    && !trimmed.starts_with("Authorized QoS flow descriptions:")
+                    && !trimmed.starts_with("Session AMBR:")
+                    && !trimmed.starts_with("Extended protocol configuration options:")
+                    && !trimmed.starts_with("QoS rule")
+                    && !trimmed.starts_with("QoS flow") {
                     in_pdu_address = false;
+                    in_qos_rules = false;
+                    in_qos_flow = false;
+                    in_session_ambr = false;
+                    in_epco = false;
+                    // Save any pending QoS rule
+                    if let Some(rule) = current_qos_rule.take() {
+                        self.qos_rules.push(rule);
+                    }
                 }
             }
             
@@ -180,11 +408,79 @@ impl Identity {
                 }
             }
             
+            // Parse QoS rules
+            if in_qos_rules {
+                // New QoS rule starts
+                if trimmed.starts_with("QoS rule") && trimmed.contains(':') {
+                    // Save previous rule if any
+                    if let Some(rule) = current_qos_rule.take() {
+                        self.qos_rules.push(rule);
+                    }
+                    current_qos_rule = Some(QosRule::default());
+                }
+                
+                if let Some(ref mut rule) = current_qos_rule {
+                    if let Some(value) = Self::extract_field(trimmed, "QoS rule identifier =") {
+                        rule.identifier = Some(value);
+                    } else if let Some(value) = Self::extract_field(trimmed, "DQR =") {
+                        rule.dqr = Some(value);
+                    } else if let Some(value) = Self::extract_field(trimmed, "QoS rule precedence =") {
+                        rule.precedence = Some(value);
+                    } else if let Some(value) = Self::extract_field(trimmed, "QFI =") {
+                        rule.qfi = Some(value);
+                    }
+                }
+            }
+            
+            // Parse QoS flow descriptions for 5QI
+            if in_qos_flow {
+                if let Some(value) = Self::extract_field(trimmed, "5QI =") {
+                    self.fiveqi = Some(value);
+                }
+            }
+            
+            // Parse Session AMBR
+            if in_session_ambr {
+                if let Some(value) = Self::extract_field(trimmed, "Session-AMBR for downlink =") {
+                    self.session_ambr_dl = Some(value);
+                } else if let Some(value) = Self::extract_field(trimmed, "Session-AMBR for uplink =") {
+                    self.session_ambr_ul = Some(value);
+                }
+            }
+            
+            // Parse Extended Protocol Configuration Options for DNS
+            if in_epco {
+                // Look for DNS Server IPv4 Address protocol
+                if trimmed.contains("DNS Server IPv4 Address") {
+                    saw_dns_protocol = true;
+                    continue;
+                }
+                // Check if previous line was DNS and this is the data
+                if saw_dns_protocol {
+                    if let Some(value) = Self::extract_field(trimmed, "Data =") {
+                        // Only set if it looks like an IP address
+                        if value.contains('.') && !value.is_empty() {
+                            self.dns_ipv4 = Some(value);
+                        }
+                    }
+                    saw_dns_protocol = false;
+                }
+                // Reset flag if we see a new Protocol ID
+                if trimmed.starts_with("Protocol ID =") {
+                    saw_dns_protocol = false;
+                }
+            }
+            
             // Parse DNN (can appear anywhere)
             if let Some(value) = Self::extract_field(trimmed, "DNN =") {
                 // Remove quotes if present
                 self.dnn = Some(value.trim_matches('"').to_string());
             }
+        }
+        
+        // Save any remaining QoS rule
+        if let Some(rule) = current_qos_rule.take() {
+            self.qos_rules.push(rule);
         }
     }
     
@@ -200,11 +496,20 @@ impl Identity {
         None
     }
     
-    /// Render a field row
+    /// Render a field row with light-mode friendly colors
     fn render_field(ui: &mut egui::Ui, label: &str, value: &Option<String>) {
         ui.horizontal(|ui| {
-            ui.label(RichText::new(label).color(Color32::LIGHT_BLUE).strong());
-            ui.label(value.as_ref().map(|s| s.as_str()).unwrap_or("N/A"));
+            ui.label(RichText::new(label).color(Color32::from_rgb(60, 60, 60)).strong());
+            ui.label(RichText::new(value.as_ref().map(|s| s.as_str()).unwrap_or("N/A"))
+                .color(Color32::from_rgb(30, 30, 30)));
+        });
+    }
+    
+    /// Render a field row with a specific value (not Option)
+    fn render_field_value(ui: &mut egui::Ui, label: &str, value: &str) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(label).color(Color32::from_rgb(60, 60, 60)).strong());
+            ui.label(RichText::new(value).color(Color32::from_rgb(30, 30, 30)));
         });
     }
 }
@@ -254,6 +559,12 @@ impl EventSubscriber for Identity {
         self.guti_amf_set_id = None;
         self.guti_amf_pointer = None;
         self.guti_5g_tmsi = None;
+        self.qos_rules.clear();
+        self.fiveqi = None;
+        self.dns_ipv4 = None;
+        self.tai_info = TaiInfo::default();
+        self.session_ambr_dl = None;
+        self.session_ambr_ul = None;
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), tramex_tools::errors::TramexError> {
@@ -270,36 +581,92 @@ impl EventSubscriber for Identity {
 
 impl PanelView for Identity {
     fn ui(&mut self, ui: &mut egui::Ui) {
-        ui.heading("NAS Identity Information");
-        ui.separator();
-        
-        // PDU Address section
-        ui.group(|ui| {
-            ui.label(RichText::new("PDU Address").strong().color(Color32::YELLOW));
-            Self::render_field(ui, "Session Type:", &self.pdu_session_type);
-            Self::render_field(ui, "IPv4:", &self.pdu_ipv4);
-            Self::render_field(ui, "IPv6:", &self.pdu_ipv6);
-        });
-        
-        ui.add_space(5.0);
-        
-        // Network section
-        ui.group(|ui| {
-            ui.label(RichText::new("Network").strong().color(Color32::YELLOW));
-            Self::render_field(ui, "DNN:", &self.dnn);
-        });
-        
-        ui.add_space(5.0);
-        
-        // 5G-GUTI section
-        ui.group(|ui| {
-            ui.label(RichText::new("5G-GUTI").strong().color(Color32::YELLOW));
-            Self::render_field(ui, "MCC:", &self.guti_mcc);
-            Self::render_field(ui, "MNC:", &self.guti_mnc);
-            Self::render_field(ui, "AMF Region ID:", &self.guti_amf_region_id);
-            Self::render_field(ui, "AMF Set ID:", &self.guti_amf_set_id);
-            Self::render_field(ui, "AMF Pointer:", &self.guti_amf_pointer);
-            Self::render_field(ui, "5G-TMSI:", &self.guti_5g_tmsi);
-        });
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                ui.heading("NAS Identity Information");
+                ui.separator();
+                
+                // PDU Address section
+                ui.group(|ui| {
+                    ui.label(RichText::new("PDU Address").strong().color(Color32::from_rgb(0, 100, 150)));
+                    Self::render_field(ui, "Session Type:", &self.pdu_session_type);
+                    Self::render_field(ui, "IPv4:", &self.pdu_ipv4);
+                    Self::render_field(ui, "IPv6:", &self.pdu_ipv6);
+                });
+                
+                ui.add_space(5.0);
+                
+                // Network section
+                ui.group(|ui| {
+                    ui.label(RichText::new("Network").strong().color(Color32::from_rgb(0, 100, 150)));
+                    Self::render_field(ui, "DNN:", &self.dnn);
+                    Self::render_field(ui, "DNS IPv4:", &self.dns_ipv4);
+                });
+                
+                ui.add_space(5.0);
+                
+                // 5G-GUTI section
+                ui.group(|ui| {
+                    ui.label(RichText::new("5G-GUTI").strong().color(Color32::from_rgb(0, 100, 150)));
+                    Self::render_field(ui, "MCC:", &self.guti_mcc);
+                    Self::render_field(ui, "MNC:", &self.guti_mnc);
+                    Self::render_field(ui, "AMF Region ID:", &self.guti_amf_region_id);
+                    Self::render_field(ui, "AMF Set ID:", &self.guti_amf_set_id);
+                    Self::render_field(ui, "AMF Pointer:", &self.guti_amf_pointer);
+                    Self::render_field(ui, "5G-TMSI:", &self.guti_5g_tmsi);
+                });
+                
+                ui.add_space(5.0);
+                
+                // TAI List section
+                ui.group(|ui| {
+                    ui.label(RichText::new("TAI List").strong().color(Color32::from_rgb(0, 100, 150)));
+                    if let Some(raw) = &self.tai_info.raw_data {
+                        Self::render_field_value(ui, "Raw Data:", raw);
+                    } else {
+                        Self::render_field(ui, "MCC:", &self.tai_info.mcc);
+                        Self::render_field(ui, "MNC:", &self.tai_info.mnc);
+                        if !self.tai_info.tacs.is_empty() {
+                            let tacs_str = self.tai_info.tacs.join(", ");
+                            Self::render_field_value(ui, "TAC(s):", &tacs_str);
+                        } else {
+                            Self::render_field_value(ui, "TAC(s):", "N/A");
+                        }
+                    }
+                });
+                
+                ui.add_space(5.0);
+                
+                // Session AMBR section
+                ui.group(|ui| {
+                    ui.label(RichText::new("Session AMBR").strong().color(Color32::from_rgb(0, 100, 150)));
+                    Self::render_field(ui, "Downlink:", &self.session_ambr_dl);
+                    Self::render_field(ui, "Uplink:", &self.session_ambr_ul);
+                });
+                
+                ui.add_space(5.0);
+                
+                // QoS Rules section
+                ui.group(|ui| {
+                    ui.label(RichText::new("QoS Rules").strong().color(Color32::from_rgb(0, 100, 150)));
+                    Self::render_field(ui, "5QI:", &self.fiveqi);
+                    
+                    if self.qos_rules.is_empty() {
+                        Self::render_field_value(ui, "Rules:", "N/A");
+                    } else {
+                        for (i, rule) in self.qos_rules.iter().enumerate() {
+                            ui.add_space(3.0);
+                            ui.label(RichText::new(format!("Rule {}:", i + 1))
+                                .color(Color32::from_rgb(80, 80, 80))
+                                .italics());
+                            Self::render_field(ui, "  Identifier:", &rule.identifier);
+                            Self::render_field(ui, "  DQR:", &rule.dqr);
+                            Self::render_field(ui, "  QoS rule precedence:", &rule.precedence);
+                            Self::render_field(ui, "  QFI:", &rule.qfi);
+                        }
+                    }
+                });
+            });
     }
 }

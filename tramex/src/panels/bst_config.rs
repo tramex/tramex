@@ -32,6 +32,15 @@ pub struct MessageConfig {
     pub fields: Vec<FieldMapping>,
 }
 
+/// S-NSSAI (Single Network Slice Selection Assistance Information)
+#[derive(Clone, Debug, Default)]
+pub struct Nssai {
+    /// Slice/Service Type
+    pub sst: Option<String>,
+    /// Slice Differentiator
+    pub sd: Option<String>,
+}
+
 /// RRC Field Viewer Panel
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct BstConfig {
@@ -58,6 +67,14 @@ pub struct BstConfig {
     /// Message configurations (not serialized, will be initialized)
     #[serde(skip)]
     message_configs: Vec<MessageConfig>,
+    
+    /// Allowed NSSAI list (from NAS Registration accept)
+    #[serde(skip)]
+    allowed_nssai: Vec<Nssai>,
+    
+    /// Configured NSSAI list (from NAS Registration accept)
+    #[serde(skip)]
+    configured_nssai: Vec<Nssai>,
 }
 
 impl Default for BstConfig {
@@ -69,13 +86,164 @@ impl Default for BstConfig {
 impl BstConfig {
     /// Create a new RRC Field Viewer
     pub fn new() -> Self {
-        Self {
+        let mut instance = Self {
             current_index: 0,
             metadata: FileMetadata::default(),
             sib1_fields: Vec::new(),
             sib2_fields: Vec::new(),
             sib3_fields: Vec::new(),
             message_configs: Vec::new(),
+            allowed_nssai: Vec::new(),
+            configured_nssai: Vec::new(),
+        };
+        instance.init_default_configs();
+        instance
+    }
+    
+    /// Convert hex string (0x01) to decimal
+    fn hex_to_decimal(hex_str: &str) -> Option<u32> {
+        let hex_str = hex_str.trim();
+        if hex_str.starts_with("0x") || hex_str.starts_with("0X") {
+            u32::from_str_radix(&hex_str[2..], 16).ok()
+        } else {
+            hex_str.parse().ok()
+        }
+    }
+    
+    /// Get SST description
+    fn sst_description(sst: u32) -> &'static str {
+        match sst {
+            1 => "eMBB",
+            2 => "URLLC", 
+            3 => "mMTC",
+            4 => "V2X",
+            _ => "Unknown",
+        }
+    }
+    
+    /// Parse NAS message for NSSAI information
+    fn parse_nas_nssai(&mut self, text: &[String]) {
+        // Check if this is a Registration accept message
+        let is_registration_accept = text.iter()
+            .any(|line| line.contains("Message type") && line.contains("Registration accept"));
+        
+        if !is_registration_accept {
+            return;
+        }
+        
+        let mut in_allowed_nssai = false;
+        let mut in_configured_nssai = false;
+        let mut in_snssai = false;
+        let mut current_nssai = Nssai::default();
+        let mut current_section_is_allowed = false;
+        
+        // Clear previous values
+        self.allowed_nssai.clear();
+        self.configured_nssai.clear();
+        
+        for line in text {
+            let trimmed = line.trim();
+            
+            // Section detection - save previous NSSAI before switching sections
+            if trimmed.starts_with("Allowed NSSAI:") {
+                // Save any pending NSSAI from previous section
+                if in_snssai && current_nssai.sst.is_some() {
+                    if current_section_is_allowed {
+                        self.allowed_nssai.push(current_nssai.clone());
+                    } else if in_configured_nssai {
+                        self.configured_nssai.push(current_nssai.clone());
+                    }
+                }
+                in_allowed_nssai = true;
+                in_configured_nssai = false;
+                in_snssai = false;
+                current_section_is_allowed = true;
+                current_nssai = Nssai::default();
+                continue;
+            }
+            if trimmed.starts_with("Configured NSSAI:") {
+                // Save any pending NSSAI from previous section
+                if in_snssai && current_nssai.sst.is_some() {
+                    if current_section_is_allowed {
+                        self.allowed_nssai.push(current_nssai.clone());
+                    }
+                }
+                in_configured_nssai = true;
+                in_allowed_nssai = false;
+                in_snssai = false;
+                current_section_is_allowed = false;
+                current_nssai = Nssai::default();
+                continue;
+            }
+            
+            // Reset when hitting other top-level sections (not indented, has colon, not NSSAI related)
+            if !trimmed.is_empty() 
+                && !line.starts_with("        ") // Check original line indentation
+                && trimmed.contains(':') 
+                && !trimmed.starts_with("S-NSSAI")
+                && !trimmed.contains("SST")
+                && !trimmed.contains("SD")
+                && !trimmed.contains("Length") {
+                // Save any pending NSSAI before leaving section
+                if in_snssai && current_nssai.sst.is_some() {
+                    if current_section_is_allowed {
+                        self.allowed_nssai.push(current_nssai.clone());
+                    } else if in_configured_nssai {
+                        self.configured_nssai.push(current_nssai.clone());
+                    }
+                }
+                in_allowed_nssai = false;
+                in_configured_nssai = false;
+                in_snssai = false;
+                current_nssai = Nssai::default();
+            }
+            
+            // Parse S-NSSAI entries
+            if in_allowed_nssai || in_configured_nssai {
+                if trimmed.starts_with("S-NSSAI") && !trimmed.contains("=") {
+                    // Save previous NSSAI if exists
+                    if in_snssai && current_nssai.sst.is_some() {
+                        if current_section_is_allowed {
+                            self.allowed_nssai.push(current_nssai.clone());
+                        } else {
+                            self.configured_nssai.push(current_nssai.clone());
+                        }
+                    }
+                    current_nssai = Nssai::default();
+                    in_snssai = true;
+                    continue;
+                }
+                
+                if in_snssai {
+                    if let Some(pos) = trimmed.find("SST =") {
+                        let value = trimmed[pos + 5..].trim();
+                        // Convert hex to decimal and add description
+                        if let Some(decimal) = Self::hex_to_decimal(value) {
+                            let desc = Self::sst_description(decimal);
+                            current_nssai.sst = Some(format!("{} ({})", decimal, desc));
+                        } else {
+                            current_nssai.sst = Some(value.to_string());
+                        }
+                    } else if let Some(pos) = trimmed.find("SD =") {
+                        let value = trimmed[pos + 4..].trim();
+                        // Convert hex to decimal
+                        if let Some(decimal) = Self::hex_to_decimal(value) {
+                            current_nssai.sd = Some(decimal.to_string());
+                        } else {
+                            current_nssai.sd = Some(value.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Save last NSSAI if exists
+        if in_snssai && current_nssai.sst.is_some() {
+            if current_section_is_allowed {
+                self.allowed_nssai.push(current_nssai);
+            } else if in_configured_nssai {
+                self.configured_nssai.push(current_nssai);
+            }
         }
     }
     
@@ -227,14 +395,18 @@ impl BstConfig {
             _ => return,
         };
         
+        log::debug!("BstConfig: Processing RRC message: {}", canal_msg);
+        
         // Find matching configuration
         let config = self.message_configs.iter()
             .find(|c| c.canal_msg.eq_ignore_ascii_case(canal_msg));
         
         // Only update if we found a matching configuration
         if let Some(config) = config {
+            log::debug!("BstConfig: Found config for {}", canal_msg);
             // Parse ASN.1 to JSON
             if let Some(json) = trace.parse_asn1_to_json() {
+                log::debug!("BstConfig: JSON structure: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
                 let mut fields = Vec::new();
                 
                 // Extract each configured field
@@ -249,17 +421,32 @@ impl BstConfig {
                             field_mapping.display_name.clone(),
                             display_value,
                         ));
+                    } else {
+                        log::debug!("BstConfig: Field not found: {} at path {}", field_mapping.display_name, field_mapping.json_path);
                     }
                 }
                 
                 // Store in the appropriate section based on message type
                 match canal_msg.to_uppercase().as_str() {
-                    "SIB1" => self.sib1_fields = fields,
-                    "SIB2" => self.sib2_fields = fields,
-                    "SIB3" => self.sib3_fields = fields,
+                    "SIB1" => {
+                        log::debug!("BstConfig: Updating SIB1 with {} fields", fields.len());
+                        self.sib1_fields = fields;
+                    }
+                    "SIB2" => {
+                        log::debug!("BstConfig: Updating SIB2 with {} fields", fields.len());
+                        self.sib2_fields = fields;
+                    }
+                    "SIB3" => {
+                        log::debug!("BstConfig: Updating SIB3 with {} fields", fields.len());
+                        self.sib3_fields = fields;
+                    }
                     _ => {} // Unknown SIB type, ignore
                 }
+            } else {
+                log::warn!("BstConfig: Failed to parse ASN.1 to JSON for {}", canal_msg);
             }
+        } else {
+            log::debug!("BstConfig: No config found for message: {}", canal_msg);
         }
         // If no matching config found, keep the previous fields displayed
     }
@@ -315,16 +502,22 @@ impl BstConfig {
                 }
             }
             Value::Array(arr) => {
-                // Display array contents
-                let items: Vec<String> = arr.iter()
-                    .map(|v| match v {
-                        Value::Number(n) => n.to_string(),
-                        Value::String(s) => s.clone(),
-                        Value::Bool(b) => b.to_string(),
-                        _ => "?".to_string(),
-                    })
-                    .collect();
-                format!("[{}]", items.join(", "))
+                // Check if it's a simple array of numbers (like MCC/MNC)
+                let is_simple_array = arr.iter().all(|v| v.is_number() || v.is_string());
+                if is_simple_array && arr.len() <= 10 {
+                    // Compact format: [0, 0, 1]
+                    let values: Vec<String> = arr.iter()
+                        .map(|v| match v {
+                            Value::Number(n) => n.to_string(),
+                            Value::String(s) => s.clone(),
+                            _ => "?".to_string(),
+                        })
+                        .collect();
+                    format!("[{}]", values.join(", "))
+                } else {
+                    // Pretty format for complex arrays
+                    serde_json::to_string_pretty(arr).unwrap_or_else(|_| "[]".to_string())
+                }
             }
             Value::Null => "null".to_string(),
         })
@@ -437,15 +630,55 @@ impl BstConfig {
                     ui.heading("SIB3");
                     ui.separator();
                     
-                    egui::Grid::new("bst_sib3_grid")
-                        .spacing([20.0, 8.0])
+                    // Use vertical layout for fields that may contain multi-line values
+                    for (name, value) in &self.sib3_fields {
+                        ui.add_space(8.0);
+                        ui.label(RichText::new(name)
+                            .color(Color32::BLACK)
+                            .strong());
+                        
+                        // Check if value contains newlines (multi-line structure)
+                        if value.contains('\n') {
+                            // Use monospace font for structured data
+                            ui.label(RichText::new(value)
+                                .color(Color32::DARK_GRAY)
+                                .family(egui::FontFamily::Monospace));
+                        } else {
+                            ui.label(RichText::new(value)
+                                .color(Color32::DARK_GRAY));
+                        }
+                    }
+                }
+                
+                // === NSSAI SECTION ===
+                if !self.configured_nssai.is_empty() {
+                    ui.add_space(15.0);
+                    ui.heading("NSSAI");
+                    ui.separator();
+                    
+                    // Build set of allowed SST values for quick lookup
+                    let allowed_ssts: std::collections::HashSet<_> = self.allowed_nssai.iter()
+                        .filter_map(|n| n.sst.as_ref())
+                        .collect();
+                    
+                    egui::Grid::new("nssai_grid")
+                        .spacing([20.0, 4.0])
                         .show(ui, |ui| {
-                            for (name, value) in &self.sib3_fields {
-                                ui.label(RichText::new(name)
-                                    .color(Color32::BLACK)
-                                    .strong());
-                                ui.label(RichText::new(value)
-                                    .color(Color32::DARK_GRAY));
+                            for nssai in &self.configured_nssai {
+                                let sst = nssai.sst.as_deref().unwrap_or("N/A");
+                                let sd = nssai.sd.as_deref().unwrap_or("-");
+                                
+                                // Check if this SST is in allowed list
+                                let is_allowed = nssai.sst.as_ref()
+                                    .map(|s| allowed_ssts.contains(s))
+                                    .unwrap_or(false);
+                                
+                                let label = if is_allowed {
+                                    format!("SST={}, SD={} (allowed)", sst, sd)
+                                } else {
+                                    format!("SST={}, SD={}", sst, sd)
+                                };
+                                ui.label(label);
                                 ui.end_row();
                             }
                         });
@@ -456,15 +689,30 @@ impl BstConfig {
 
 // EventSubscriber implementation for new event system
 impl EventSubscriber for BstConfig {
-    fn on_event_added(&mut self, _event: &Trace, _index: usize, context: &EventContext) {
+    fn on_event_added(&mut self, event: &Trace, _index: usize, context: &EventContext) {
         // Update cached metadata
         self.metadata = context.metadata.clone();
+        // Update RRC fields
+        self.update_fields(event);
+        // Parse NAS messages for NSSAI
+        if event.layer == Layer::NAS {
+            if let Some(text) = &event.text {
+                self.parse_nas_nssai(text);
+            }
+        }
     }
     
-    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
         // When user navigates to an event, extract fields from it
         self.current_index = index;
+        self.metadata = context.metadata.clone();
         self.update_fields(event);
+        // Parse NAS messages for NSSAI
+        if event.layer == Layer::NAS {
+            if let Some(text) = &event.text {
+                self.parse_nas_nssai(text);
+            }
+        }
     }
     
     fn on_events_cleared(&mut self) {
@@ -473,16 +721,18 @@ impl EventSubscriber for BstConfig {
         self.sib1_fields.clear();
         self.sib2_fields.clear();
         self.sib3_fields.clear();
+        self.allowed_nssai.clear();
+        self.configured_nssai.clear();
     }
     
     fn name(&self) -> &'static str {
-        "BST Config"
+        "RAN Config"
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         // Clone metadata to avoid borrow checker issues
         let metadata = self.metadata.clone();
-        egui::Window::new("BST Config")
+        egui::Window::new("RAN Config")
             .resizable(true)
             .default_width(800.0)
             .default_height(600.0)

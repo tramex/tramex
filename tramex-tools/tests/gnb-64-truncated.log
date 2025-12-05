@@ -2,7 +2,7 @@
 # Licensed to 'Télécom ParisTech ' [8a6a4cbd5be14f9b18453920b31dbc669779fc827a1d128fca]
 # SMP C=10 P=normal bandwidth=20.0/40 PRACH=1 DRBs=1 RF0=1/1
 # Log file format:
-# time layer dir ue_id {cell_id rnti sfn channel:} message
+# time layer dir ue_id {cell_id    sfn channel:} message
 # global_ran_node_id=00103.74565
 # Cell 0x01: nr_arfcn=623028 ul_nr_arfcn=623028 pci=200 mode=TDD rat=nr n_rb_dl=51 n_rb_ul=51 dl_mu=1 ul_mu=1 ssb_mu=1 ssb_arfcn=622944 coreset0_prb=0:48 coreset0_idx=10
 # GBR limits: DL=9.400 Mre/s UL=2.742 Mre/s
@@ -595,7 +595,7 @@
           Unit = 5 (1 minute)
         Emergency number list:
           Length = 8
-          Data = 03 1f 19 f1 03 1f 11 f2
+          Data = 03 1f 19 f1 03 1f 11 f2ss
 
 
 13:24:22.360 [NAS] UL 0048 5GMM: PDU session establishment accept
@@ -615,6 +615,16 @@
         Authorized QoS rules:
           QoS rule 1:
             QoS rule identifier = 1
+            Rule operation code = 1 (create new QoS rule)
+            DQR = 1 (the QoS rule is the default QoS rule)
+            Number of packet filters = 1
+            Packet filter identifier = 15
+              Packet filter direction = 3 (bidirectional)
+              Match-all
+            QoS rule precedence = 255
+            QFI = 1
+          QoS rule 2:
+            QoS rule identifier = 2
             Rule operation code = 1 (create new QoS rule)
             DQR = 1 (the QoS rule is the default QoS rule)
             Number of packet filters = 1

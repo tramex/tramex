@@ -87,8 +87,26 @@ impl Trace {
         // Check if we have text to parse
         let text = self.text.as_ref()?;
         
-        // Join all text lines into a single string
-        let asn1_text = text.join("\n");
+        // Find the start of ASN.1 structure (first line starting with '{')
+        // Skip header lines and hex dump
+        let asn1_lines: Vec<&String> = text.iter()
+            .skip_while(|line| {
+                let trimmed = line.trim();
+                // Skip until we find a line that starts with '{'
+                !trimmed.starts_with('{')
+            })
+            .collect();
+        
+        if asn1_lines.is_empty() {
+            log::debug!("No ASN.1 structure found in text");
+            return None;
+        }
+        
+        // Join the ASN.1 lines
+        let asn1_text: String = asn1_lines.iter()
+            .map(|s| s.as_str())
+            .collect::<Vec<&str>>()
+            .join("\n");
         
         // Parse ASN.1 to JSON
         match parse_asn1_to_json(&asn1_text) {

@@ -128,11 +128,12 @@ impl FrontEnd {
         if self.open_menu_connector {
             egui::SidePanel::left("backend_panel")
                 .resizable(false)
+                .exact_width(240.0)
                 .show_animated(ctx, self.open_menu_connector, |ui| {
                     ui.vertical_centered(|ui| {
                         ui.heading("Connector");
                         let save = self.radio_choice.clone();
-                        ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
                             let enabled = if let Some(handle) = &self.handler {
                                 !handle.is_interface()
                             } else {
@@ -163,10 +164,12 @@ impl FrontEnd {
                                 match handle.ui(ui, &mut self.data, ctx.clone()) {
                                     Ok(true) => {
                                         self.handler = None;
-                                        // No longer need to clear old panel instances
                                         // Reset transfer counter when clearing
                                         self.last_transferred_count = 0;
                                         self.initial_load_done = false;  // Reset for next file
+                                        
+                                        // Clear legacy data
+                                        self.data.clear();
                                         
                                         // Clear Application (which notifies all panels)
                                         self.application.clear_all();
@@ -190,11 +193,14 @@ impl FrontEnd {
                                 }
                             }
                         });
+                        // Show file options only in File mode (under the Open File button)
+                        if matches!(self.radio_choice, Choice::File) {
+                            if let Some(handle) = &mut self.handler {
+                                handle.ui_options(ui);
+                            }
+                        }
                     });
                     ui.separator();
-                    if let Some(handle) = &mut self.handler {
-                        handle.ui_options(ui);
-                    }
                     
                     // Show layer options
                     self.show_layer_options(ui);

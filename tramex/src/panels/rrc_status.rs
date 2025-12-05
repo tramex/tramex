@@ -78,6 +78,21 @@ impl RrcStateMachine {
             Technology::Unknown => Self::lte(), // Default to LTE for unknown
         }
     }
+    
+    /// Check if a message is pertinent (affects RRC state)
+    fn is_pertinent_message(&self, canal_msg: &str) -> bool {
+        let msg_lower = canal_msg.to_lowercase();
+        
+        // Check all state-changing messages
+        msg_lower.contains(&self.connection_request_msg.to_lowercase())
+            || msg_lower.contains(&self.idle_to_connected_msg.to_lowercase())
+            || msg_lower.contains(&self.connected_to_idle_msg.to_lowercase())
+            || self.to_inactive_msg.map(|m| msg_lower.contains(&m.to_lowercase())).unwrap_or(false)
+            || self.inactive_to_connected_msg.map(|m| msg_lower.contains(&m.to_lowercase())).unwrap_or(false)
+            || msg_lower.contains("rrc setup")
+            || msg_lower.contains("rrc connection setup")
+
+    }
 }
 
 /// State change record for history
@@ -253,20 +268,25 @@ impl EventSubscriber for RRCStatusPanel {
         self.process_rrc_event(event, index, self.technology);
     }
     
-    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
         // When user navigates, restore state at that point in time
         self.current_index = index;
         self.navigate_to_index(index);
         
-        // If the focused event is not an RRC message, clear the direction
-        // to show neutral (black) arrows
-        if !matches!(event.additional_infos, AdditionalInfos::RRCInfos(_)) {
-            self.direction = None;
-        } else {
-            // If it IS an RRC message, update direction from this specific event
-            if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+        // Check if the focused event is a pertinent RRC message
+        if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
+            let state_machine = RrcStateMachine::for_technology(context.metadata.technology);
+            
+            // Only show direction arrow if this is a pertinent message (affects RRC state)
+            if state_machine.is_pertinent_message(&infos.canal_msg) {
                 self.direction = Some(infos.direction.clone());
+            } else {
+                // Non-pertinent RRC message (e.g., SIB1, SIB2) - clear direction
+                self.direction = None;
             }
+        } else {
+            // Not an RRC message - clear direction
+            self.direction = None;
         }
     }
     

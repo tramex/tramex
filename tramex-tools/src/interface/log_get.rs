@@ -42,8 +42,7 @@ impl LogGet {
             timeout: 1,
             min: 64,
             max: max_size,
-            // layers: Layers::all_debug(), // Always request all layers
-            layers: layers_list,
+            layers: Layers::all_debug(), // Always request all layers
             headers: false,
             start_timestamp: chrono::Utc::now().timestamp() - HOURS_TO_FETCH*3600, // only fetch last 12h
         }

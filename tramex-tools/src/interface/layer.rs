@@ -228,7 +228,7 @@ impl Layers {
         }
     }
 
-    /// Create new Layers struct with all debug
+    /// Create new Layers struct with all debug (except SDAP which causes issues with some servers)
     pub fn all_debug() -> Self {
         Self {
             phy: LayerLogLevel::Debug,
@@ -247,7 +247,7 @@ impl Layers {
             lppa: LayerLogLevel::Debug,
             nrppa: LayerLogLevel::Debug,
             trx: LayerLogLevel::Debug,
-            sdap: LayerLogLevel::Debug,
+            sdap: LayerLogLevel::Warn, // Keep Warn - SDAP causes issues with some servers
         }
     }
 }
