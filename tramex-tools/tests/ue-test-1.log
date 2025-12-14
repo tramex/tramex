@@ -1,0 +1,2106 @@
+# Logs exported on Fri Dec 12 2025 10:38:08 GMT+0100 (heure normale d’Europe centrale) from GUI version 2024-03-15
+# lteue version 2024-03-15, gcc 9.2.1
+# Licensed to 'Télécom ParisTech ' [71914c13f5e15b8f1882fe202a84bc8c7d79c7b97a5e518f58]
+# Log file format:
+# time layer dir ue_id {cell_id rnti sfn channel:} message
+# SMP DRBs=1 RF0=4/1
+# CFG=eJxdUtuO2yAQ/RWLZ+JgO84FaR/2+lL1C6IIERg7SBgQ4GzaaP+9Y2fT7tZI1szonJkzl6v1vfAhG+8SJ9La0sIZ7IOG49jTyR/kRSTzGx4qQidwZyw4OQAnyzyE5QisxDChyg9Cah052XN+4DvGakJjJ3Q0Z4j8euMkHQmVscdiGs7sYYn/JQYxebwI6TI4JzmJF0I703mRLyIbJLbsg6LdS+Mw9YSdzTWjCqwVffRjSHx/nQ2RfwWs5bDUMNpsxAi8kzbBDJ5gqCv4mDmjR+n0u9H5xOubwzdbqq1wUcjYKSzRsKbe0pSO32PNmqbxqGSMBqJIQSrjet4w6u5tCG15/cUdLa8+DjRopU5Cg/IaptF/Svs/LPIpQjp5qzkrJ94IwpqUUb0ZkuGEsQrf/cMB/phjVV03zWrVtuv1ZrPd7naPj09Pz88vL6+vb2+EJoNrsr3nZJgX2QOhPqiJitlq1rAVa9mabdiW7dgje2LP7IW9MqTKJCJYkAl41U5ylMzQ+/jrNmoZHCcGe40OMro5S2woaPe5DhPOK0I1dBJ3gvFRJEgJD08kl5I0/Jqwu4omjWOiecQ4ZFxmUtHglMgIC9ON4V+KG2v/lXaY+8MLdnla82xwEvw7rsg77D7LmG8XhQd1vUkeEqHfZZ7X36AVo/dMCFPeOVCZIP8rpr1j4JKFDKgzRN//dct0+jz8PZaA2BULVVS7uqzW27Ipq2JhCvyNxeJY1OxnscjFqiWHj+n9AbKCPps=
+# Started on 2025-12-12 10:32:19
+# Metadata:{"model":"UE","version":"2024-03-15","cells":{"0":{"type":"NR","dl_earfcn":630328,"mode":"TDD","uldl_config":0,"sp_config":0,"n_rb_dl":51,"n_rb_ul":51,"ul_earfcn":630328,"ul_carrier_freq_offset":0,"counters":{"messages":{},"errors":{}},"cell_id":0,"rat":"nr"}},"info":"137.194.194.36:9002","src":"UE"}
+10:31:59.307 [NAS] -  0001 New state : 5GMM-NULL   CM-IDLE
+10:32:20.240 [RRC] DL 0001 00 BCCH-NR: SIB1
+        {
+          message c1: systemInformationBlockType1: {
+            cellSelectionInfo {
+              q-RxLevMin -70,
+              q-QualMin -20
+            },
+            cellAccessRelatedInfo {
+              plmn-IdentityInfoList {
+                {
+                  plmn-IdentityList {
+                    {
+                      mcc {
+                        0,
+                        0,
+                        1
+                      },
+                      mnc {
+                        0,
+                        1
+                      }
+                    }
+                  },
+                  trackingAreaCode '000064'H,
+                  cellIdentity '001234501'H,
+                  cellReservedForOperatorUse notReserved
+                }
+              }
+            },
+            connEstFailureControl {
+              connEstFailCount n1,
+              connEstFailOffsetValidity s30,
+              connEstFailOffset 1
+            },
+            servingCellConfigCommon {
+              downlinkConfigCommon {
+                frequencyInfoDL {
+                  frequencyBandList {
+                    {
+                      freqBandIndicatorNR 78
+                    }
+                  },
+                  offsetToPointA 30,
+                  scs-SpecificCarrierList {
+                    {
+                      offsetToCarrier 0,
+                      subcarrierSpacing kHz30,
+                      carrierBandwidth 51
+                    }
+                  }
+                },
+                initialDownlinkBWP {
+                  genericParameters {
+                    locationAndBandwidth 13750,
+                    subcarrierSpacing kHz30
+                  },
+                  pdcch-ConfigCommon setup: {
+                    commonSearchSpaceList {
+                      {
+                        searchSpaceId 1,
+                        controlResourceSetId 0,
+                        monitoringSlotPeriodicityAndOffset sl1: NULL,
+                        monitoringSymbolsWithinSlot '10000000000000'B,
+                        nrofCandidates {
+                          aggregationLevel1 n0,
+                          aggregationLevel2 n0,
+                          aggregationLevel4 n4,
+                          aggregationLevel8 n0,
+                          aggregationLevel16 n0
+                        },
+                        searchSpaceType common: {
+                          dci-Format0-0-AndFormat1-0 {
+                          }
+                        }
+                      }
+                    },
+                    searchSpaceSIB1 0,
+                    searchSpaceOtherSystemInformation 1,
+                    pagingSearchSpace 1,
+                    ra-SearchSpace 1
+                  },
+                  pdsch-ConfigCommon setup: {
+                    pdsch-TimeDomainAllocationList {
+                      {
+                        mappingType typeA,
+                        startSymbolAndLength 40
+                      },
+                      {
+                        mappingType typeA,
+                        startSymbolAndLength 57
+                      }
+                    }
+                  }
+                },
+                bcch-Config {
+                  modificationPeriodCoeff n4
+                },
+                pcch-Config {
+                  defaultPagingCycle rf128,
+                  nAndPagingFrameOffset oneT: NULL,
+                  ns one
+                }
+              },
+              uplinkConfigCommon {
+                frequencyInfoUL {
+                  scs-SpecificCarrierList {
+                    {
+                      offsetToCarrier 0,
+                      subcarrierSpacing kHz30,
+                      carrierBandwidth 51
+                    }
+                  }
+                },
+                initialUplinkBWP {
+                  genericParameters {
+                    locationAndBandwidth 13750,
+                    subcarrierSpacing kHz30
+                  },
+                  rach-ConfigCommon setup: {
+                    rach-ConfigGeneric {
+                      prach-ConfigurationIndex 160,
+                      msg1-FDM one,
+                      msg1-FrequencyStart 3,
+                      zeroCorrelationZoneConfig 15,
+                      preambleReceivedTargetPower -110,
+                      preambleTransMax n7,
+                      powerRampingStep dB4,
+                      ra-ResponseWindow sl20
+                    },
+                    ssb-perRACH-OccasionAndCB-PreamblesPerSSB one: n8,
+                    ra-ContentionResolutionTimer sf64,
+                    prach-RootSequenceIndex l139: 1,
+                    msg1-SubcarrierSpacing kHz30,
+                    restrictedSetConfig unrestrictedSet
+                  },
+                  pusch-ConfigCommon setup: {
+                    pusch-TimeDomainAllocationList {
+                      {
+                        k2 7,
+                        mappingType typeA,
+                        startSymbolAndLength 27
+                      },
+                      {
+                        k2 4,
+                        mappingType typeA,
+                        startSymbolAndLength 27
+                      },
+                      {
+                        k2 2,
+                        mappingType typeA,
+                        startSymbolAndLength 27
+                      }
+                    },
+                    p0-NominalWithGrant -84
+                  },
+                  pucch-ConfigCommon setup: {
+                    pucch-ResourceCommon 11,
+                    pucch-GroupHopping neither,
+                    p0-nominal -90
+                  }
+                },
+                timeAlignmentTimerCommon infinity
+              },
+              ssb-PositionsInBurst {
+                inOneGroup '80'H
+              },
+              ssb-PeriodicityServingCell ms20,
+              tdd-UL-DL-ConfigurationCommon {
+                referenceSubcarrierSpacing kHz30,
+                pattern1 {
+                  dl-UL-TransmissionPeriodicity ms5,
+                  nrofDownlinkSlots 7,
+                  nrofDownlinkSymbols 6,
+                  nrofUplinkSlots 2,
+                  nrofUplinkSymbols 4
+                }
+              },
+              ss-PBCH-BlockPower -25
+            },
+            ue-TimersAndConstants {
+              t300 ms1000,
+              t301 ms1000,
+              t310 ms1000,
+              n310 n1,
+              t311 ms30000,
+              n311 n1,
+              t319 ms1000
+            }
+          }
+        }
+
+10:32:20.240 [NAS] UL 0001 5GMM: Registration request
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x41 (Registration request)
+        5GS registration type:
+          Follow-on request bit = 1
+          Value = 1 (initial registration)
+        ngKSI:
+          TSC = 0
+          NAS key set identifier = 7
+        5GS mobile identity:
+          SUCI
+            SUPI format = 0 (IMSI)
+            MCC = 001
+            MNC = 01 
+            Routing indicator = 0
+            Protection scheme id = 0 (Null scheme)
+            Home network public key identifier = 0
+            MSIN = 0000000001
+        UE security capability:
+          0xe0 (5G-EA0=1, 128-5G-EA1=1, 128-5G-EA2=1, 128-5G-EA3=0, 5G-EA4=0, 5G-EA5=0, 5G-EA6=0, 5G-EA7=0)
+          0xe0 (5G-IA0=1, 128-5G-IA1=1, 128-5G-IA2=1, 128-5G-IA3=0, 5G-IA4=0, 5G-IA5=0, 5G-IA6=0, 5G-IA7=0)
+10:32:20.240 [NAS] -  0001 New state : 5GMM-REGISTERED-INITIATED   CM-IDLE
+10:32:20.242 [RRC] UL 0001 00 CCCH-NR: RRC setup request
+        {
+          message c1: rrcSetupRequest: {
+            rrcSetupRequest {
+              ue-Identity randomValue: '101100001000101101101001111000101011100'B,
+              establishmentCause mo-Signalling,
+              spare '0'B
+            }
+          }
+        }
+
+10:32:20.263 [RRC] DL 0001 00 CCCH-NR: RRC setup
+        {
+          message c1: rrcSetup: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcSetup: {
+              radioBearerConfig {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 1
+                  }
+                }
+              },
+              masterCellGroup {
+                cellGroupId 0,
+                rlc-BearerToAddModList {
+                  {
+                    logicalChannelIdentity 1,
+                    servedRadioBearer srb-Identity: 1,
+                    mac-LogicalChannelConfig {
+                      ul-SpecificParameters {
+                        priority 1,
+                        prioritisedBitRate infinity,
+                        bucketSizeDuration ms5,
+                        logicalChannelGroup 0,
+                        schedulingRequestID 0,
+                        logicalChannelSR-Mask FALSE,
+                        logicalChannelSR-DelayTimerApplied FALSE
+                      }
+                    }
+                  }
+                },
+                mac-CellGroupConfig {
+                  schedulingRequestConfig {
+                    schedulingRequestToAddModList {
+                      {
+                        schedulingRequestId 0,
+                        sr-TransMax n64
+                      }
+                    }
+                  },
+                  bsr-Config {
+                    periodicBSR-Timer sf20,
+                    retxBSR-Timer sf320
+                  },
+                  tag-Config {
+                    tag-ToAddModList {
+                      {
+                        tag-Id 0,
+                        timeAlignmentTimer infinity
+                      }
+                    }
+                  },
+                  phr-Config setup: {
+                    phr-PeriodicTimer sf500,
+                    phr-ProhibitTimer sf200,
+                    phr-Tx-PowerFactorChange dB3,
+                    multiplePHR FALSE,
+                    dummy FALSE,
+                    phr-Type2OtherCell FALSE,
+                    phr-ModeOtherCG real
+                  },
+                  skipUplinkTxDynamic FALSE
+                },
+                physicalCellGroupConfig {
+                  pdsch-HARQ-ACK-Codebook dynamic
+                },
+                spCellConfig {
+                  spCellConfigDedicated {
+                    initialDownlinkBWP {
+                      pdcch-Config setup: {
+                        controlResourceSetToAddModList {
+                          {
+                            controlResourceSetId 2,
+                            frequencyDomainResources '111111110000000000000000000000000000000000000'B,
+                            duration 1,
+                            cce-REG-MappingType nonInterleaved: NULL,
+                            precoderGranularity sameAsREG-bundle
+                          }
+                        },
+                        searchSpacesToAddModList {
+                          {
+                            searchSpaceId 2,
+                            controlResourceSetId 2,
+                            monitoringSlotPeriodicityAndOffset sl1: NULL,
+                            monitoringSymbolsWithinSlot '10000000000000'B,
+                            nrofCandidates {
+                              aggregationLevel1 n0,
+                              aggregationLevel2 n2,
+                              aggregationLevel4 n1,
+                              aggregationLevel8 n0,
+                              aggregationLevel16 n0
+                            },
+                            searchSpaceType ue-Specific: {
+                              dci-Formats formats0-1-And-1-1
+                            }
+                          }
+                        }
+                      },
+                      pdsch-Config setup: {
+                        dmrs-DownlinkForPDSCH-MappingTypeA setup: {
+                          dmrs-AdditionalPosition pos1
+                        },
+                        tci-StatesToAddModList {
+                          {
+                            tci-StateId 0,
+                            qcl-Type1 {
+                              referenceSignal ssb: 0,
+                              qcl-Type typeD
+                            }
+                          }
+                        },
+                        resourceAllocation resourceAllocationType1,
+                        rbg-Size config1,
+                        prb-BundlingType staticBundling: {
+                          bundleSize wideband
+                        },
+                        zp-CSI-RS-ResourceToAddModList {
+                          {
+                            zp-CSI-RS-ResourceId 0,
+                            resourceMapping {
+                              frequencyDomainAllocation row4: '100'B,
+                              nrofPorts p4,
+                              firstOFDMSymbolInTimeDomain 4,
+                              cdm-Type fd-CDM2,
+                              density one: NULL,
+                              freqBand {
+                                startingRB 0,
+                                nrofRBs 52
+                              }
+                            },
+                            periodicityAndOffset slots80: 1
+                          }
+                        },
+                        p-ZP-CSI-RS-ResourceSet setup: {
+                          zp-CSI-RS-ResourceSetId 0,
+                          zp-CSI-RS-ResourceIdList {
+                            0
+                          }
+                        }
+                      }
+                    },
+                    firstActiveDownlinkBWP-Id 0,
+                    uplinkConfig {
+                      initialUplinkBWP {
+                        pucch-Config setup: {
+                          resourceSetToAddModList {
+                            {
+                              pucch-ResourceSetId 0,
+                              resourceList {
+                                0,
+                                1,
+                                2,
+                                3,
+                                4,
+                                5,
+                                6,
+                                7
+                              }
+                            },
+                            {
+                              pucch-ResourceSetId 1,
+                              resourceList {
+                                8,
+                                9,
+                                10,
+                                11
+                              }
+                            }
+                          },
+                          resourceToAddModList {
+                            {
+                              pucch-ResourceId 0,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 1,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 0
+                              }
+                            },
+                            {
+                              pucch-ResourceId 1,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 5,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 0
+                              }
+                            },
+                            {
+                              pucch-ResourceId 2,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 9,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 0
+                              }
+                            },
+                            {
+                              pucch-ResourceId 3,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 1,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 1
+                              }
+                            },
+                            {
+                              pucch-ResourceId 4,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 5,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 1
+                              }
+                            },
+                            {
+                              pucch-ResourceId 5,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 9,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 1
+                              }
+                            },
+                            {
+                              pucch-ResourceId 6,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 1,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 2
+                              }
+                            },
+                            {
+                              pucch-ResourceId 7,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 5,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 2
+                              }
+                            },
+                            {
+                              pucch-ResourceId 8,
+                              startingPRB 1,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 49,
+                              format format2: {
+                                nrofPRBs 1,
+                                nrofSymbols 2,
+                                startingSymbolIndex 0
+                              }
+                            },
+                            {
+                              pucch-ResourceId 9,
+                              startingPRB 1,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 49,
+                              format format2: {
+                                nrofPRBs 1,
+                                nrofSymbols 2,
+                                startingSymbolIndex 2
+                              }
+                            },
+                            {
+                              pucch-ResourceId 10,
+                              startingPRB 1,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 49,
+                              format format2: {
+                                nrofPRBs 1,
+                                nrofSymbols 2,
+                                startingSymbolIndex 4
+                              }
+                            },
+                            {
+                              pucch-ResourceId 11,
+                              startingPRB 1,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 49,
+                              format format2: {
+                                nrofPRBs 1,
+                                nrofSymbols 2,
+                                startingSymbolIndex 6
+                              }
+                            },
+                            {
+                              pucch-ResourceId 12,
+                              startingPRB 50,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 0,
+                              format format1: {
+                                initialCyclicShift 9,
+                                nrofSymbols 14,
+                                startingSymbolIndex 0,
+                                timeDomainOCC 2
+                              }
+                            },
+                            {
+                              pucch-ResourceId 13,
+                              startingPRB 1,
+                              intraSlotFrequencyHopping enabled,
+                              secondHopPRB 49,
+                              format format2: {
+                                nrofPRBs 1,
+                                nrofSymbols 2,
+                                startingSymbolIndex 8
+                              }
+                            }
+                          },
+                          format1 setup: {
+                          },
+                          format2 setup: {
+                            maxCodeRate zeroDot25
+                          },
+                          schedulingRequestResourceToAddModList {
+                            {
+                              schedulingRequestResourceId 1,
+                              schedulingRequestID 0,
+                              periodicityAndOffset sl40: 8,
+                              resource 12
+                            }
+                          },
+                          dl-DataToUL-ACK {
+                            8,
+                            7,
+                            6,
+                            5,
+                            4,
+                            12,
+                            11
+                          }
+                        },
+                        pusch-Config setup: {
+                          txConfig codebook,
+                          dmrs-UplinkForPUSCH-MappingTypeA setup: {
+                            dmrs-AdditionalPosition pos1,
+                            transformPrecodingDisabled {
+                            }
+                          },
+                          pusch-PowerControl {
+                            msg3-Alpha alpha1,
+                            p0-AlphaSets {
+                              {
+                                p0-PUSCH-AlphaSetId 0,
+                                p0 0,
+                                alpha alpha1
+                              }
+                            },
+                            pathlossReferenceRSToAddModList {
+                              {
+                                pusch-PathlossReferenceRS-Id 0,
+                                referenceSignal ssb-Index: 0
+                              }
+                            },
+                            sri-PUSCH-MappingToAddModList {
+                              {
+                                sri-PUSCH-PowerControlId 0,
+                                sri-PUSCH-PathlossReferenceRS-Id 0,
+                                sri-P0-PUSCH-AlphaSetId 0,
+                                sri-PUSCH-ClosedLoopIndex i0
+                              }
+                            }
+                          },
+                          resourceAllocation resourceAllocationType1,
+                          codebookSubset nonCoherent,
+                          maxRank 1,
+                          uci-OnPUSCH setup: {
+                            betaOffsets semiStatic: {
+                              betaOffsetACK-Index1 9,
+                              betaOffsetACK-Index2 9,
+                              betaOffsetACK-Index3 9,
+                              betaOffsetCSI-Part1-Index1 7,
+                              betaOffsetCSI-Part1-Index2 7,
+                              betaOffsetCSI-Part2-Index1 7,
+                              betaOffsetCSI-Part2-Index2 7
+                            },
+                            scaling f1
+                          }
+                        },
+                        srs-Config setup: {
+                          srs-ResourceSetToAddModList {
+                            {
+                              srs-ResourceSetId 0,
+                              srs-ResourceIdList {
+                                0
+                              },
+                              resourceType aperiodic: {
+                                aperiodicSRS-ResourceTrigger 1,
+                                slotOffset 7
+                              },
+                              usage codebook,
+                              p0 -84,
+                              pathlossReferenceRS ssb-Index: 0
+                            }
+                          },
+                          srs-ResourceToAddModList {
+                            {
+                              srs-ResourceId 0,
+                              nrofSRS-Ports port1,
+                              transmissionComb n2: {
+                                combOffset-n2 0,
+                                cyclicShift-n2 0
+                              },
+                              resourceMapping {
+                                startPosition 0,
+                                nrofSymbols n1,
+                                repetitionFactor n1
+                              },
+                              freqDomainPosition 0,
+                              freqDomainShift 5,
+                              freqHopping {
+                                c-SRS 11,
+                                b-SRS 3,
+                                b-hop 0
+                              },
+                              groupOrSequenceHopping neither,
+                              resourceType aperiodic: {
+                              },
+                              sequenceId 500
+                            }
+                          }
+                        }
+                      },
+                      firstActiveUplinkBWP-Id 0,
+                      pusch-ServingCellConfig setup: {
+                      }
+                    },
+                    pdcch-ServingCellConfig setup: {
+                    },
+                    pdsch-ServingCellConfig setup: {
+                      nrofHARQ-ProcessesForPDSCH n16
+                    },
+                    csi-MeasConfig setup: {
+                      nzp-CSI-RS-ResourceToAddModList {
+                        {
+                          nzp-CSI-RS-ResourceId 0,
+                          resourceMapping {
+                            frequencyDomainAllocation other: '010000'B,
+                            nrofPorts p2,
+                            firstOFDMSymbolInTimeDomain 3,
+                            cdm-Type fd-CDM2,
+                            density one: NULL,
+                            freqBand {
+                              startingRB 0,
+                              nrofRBs 52
+                            }
+                          },
+                          powerControlOffset 0,
+                          scramblingID 500,
+                          periodicityAndOffset slots80: 1,
+                          qcl-InfoPeriodicCSI-RS 0
+                        },
+                        {
+                          nzp-CSI-RS-ResourceId 1,
+                          resourceMapping {
+                            frequencyDomainAllocation row1: '4'H,
+                            nrofPorts p1,
+                            firstOFDMSymbolInTimeDomain 5,
+                            cdm-Type noCDM,
+                            density three: NULL,
+                            freqBand {
+                              startingRB 0,
+                              nrofRBs 52
+                            }
+                          },
+                          powerControlOffset 0,
+                          scramblingID 500,
+                          periodicityAndOffset slots80: 1,
+                          qcl-InfoPeriodicCSI-RS 0
+                        },
+                        {
+                          nzp-CSI-RS-ResourceId 2,
+                          resourceMapping {
+                            frequencyDomainAllocation row1: '4'H,
+                            nrofPorts p1,
+                            firstOFDMSymbolInTimeDomain 9,
+                            cdm-Type noCDM,
+                            density three: NULL,
+                            freqBand {
+                              startingRB 0,
+                              nrofRBs 52
+                            }
+                          },
+                          powerControlOffset 0,
+                          scramblingID 500,
+                          periodicityAndOffset slots80: 1,
+                          qcl-InfoPeriodicCSI-RS 0
+                        },
+                        {
+                          nzp-CSI-RS-ResourceId 3,
+                          resourceMapping {
+                            frequencyDomainAllocation row1: '4'H,
+                            nrofPorts p1,
+                            firstOFDMSymbolInTimeDomain 5,
+                            cdm-Type noCDM,
+                            density three: NULL,
+                            freqBand {
+                              startingRB 0,
+                              nrofRBs 52
+                            }
+                          },
+                          powerControlOffset 0,
+                          scramblingID 500,
+                          periodicityAndOffset slots80: 2,
+                          qcl-InfoPeriodicCSI-RS 0
+                        },
+                        {
+                          nzp-CSI-RS-ResourceId 4,
+                          resourceMapping {
+                            frequencyDomainAllocation row1: '4'H,
+                            nrofPorts p1,
+                            firstOFDMSymbolInTimeDomain 9,
+                            cdm-Type noCDM,
+                            density three: NULL,
+                            freqBand {
+                              startingRB 0,
+                              nrofRBs 52
+                            }
+                          },
+                          powerControlOffset 0,
+                          scramblingID 500,
+                          periodicityAndOffset slots80: 2,
+                          qcl-InfoPeriodicCSI-RS 0
+                        }
+                      },
+                      nzp-CSI-RS-ResourceSetToAddModList {
+                        {
+                          nzp-CSI-ResourceSetId 0,
+                          nzp-CSI-RS-Resources {
+                            0
+                          }
+                        },
+                        {
+                          nzp-CSI-ResourceSetId 1,
+                          nzp-CSI-RS-Resources {
+                            1,
+                            2,
+                            3,
+                            4
+                          },
+                          trs-Info true
+                        }
+                      },
+                      csi-IM-ResourceToAddModList {
+                        {
+                          csi-IM-ResourceId 0,
+                          csi-IM-ResourceElementPattern pattern1: {
+                            subcarrierLocation-p1 s8,
+                            symbolLocation-p1 4
+                          },
+                          freqBand {
+                            startingRB 0,
+                            nrofRBs 52
+                          },
+                          periodicityAndOffset slots80: 1
+                        }
+                      },
+                      csi-IM-ResourceSetToAddModList {
+                        {
+                          csi-IM-ResourceSetId 0,
+                          csi-IM-Resources {
+                            0
+                          }
+                        }
+                      },
+                      csi-ResourceConfigToAddModList {
+                        {
+                          csi-ResourceConfigId 0,
+                          csi-RS-ResourceSetList nzp-CSI-RS-SSB: {
+                            nzp-CSI-RS-ResourceSetList {
+                              0
+                            }
+                          },
+                          bwp-Id 0,
+                          resourceType periodic
+                        },
+                        {
+                          csi-ResourceConfigId 1,
+                          csi-RS-ResourceSetList csi-IM-ResourceSetList: {
+                            0
+                          },
+                          bwp-Id 0,
+                          resourceType periodic
+                        },
+                        {
+                          csi-ResourceConfigId 2,
+                          csi-RS-ResourceSetList nzp-CSI-RS-SSB: {
+                            nzp-CSI-RS-ResourceSetList {
+                              1
+                            }
+                          },
+                          bwp-Id 0,
+                          resourceType periodic
+                        }
+                      },
+                      csi-ReportConfigToAddModList {
+                        {
+                          reportConfigId 0,
+                          resourcesForChannelMeasurement 0,
+                          csi-IM-ResourcesForInterference 1,
+                          reportConfigType periodic: {
+                            reportSlotConfig slots80: 9,
+                            pucch-CSI-ResourceList {
+                              {
+                                uplinkBandwidthPartId 0,
+                                pucch-Resource 13
+                              }
+                            }
+                          },
+                          reportQuantity cri-RI-PMI-CQI: NULL,
+                          reportFreqConfiguration {
+                            cqi-FormatIndicator widebandCQI,
+                            pmi-FormatIndicator widebandPMI
+                          },
+                          timeRestrictionForChannelMeasurements notConfigured,
+                          timeRestrictionForInterferenceMeasurements notConfigured,
+                          codebookConfig {
+                            codebookType type1: {
+                              subType typeI-SinglePanel: {
+                                nrOfAntennaPorts two: {
+                                  twoTX-CodebookSubsetRestriction '111111'B
+                                },
+                                typeI-SinglePanel-ri-Restriction '03'H
+                              },
+                              codebookMode 1
+                            }
+                          },
+                          groupBasedBeamReporting disabled: {
+                          },
+                          cqi-Table table2,
+                          subbandSize value1
+                        }
+                      }
+                    },
+                    tag-Id 0
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:32:20.263 [NAS] -  0001 New state : 5GMM-REGISTERED-INITIATED   CM-CONNECTED
+10:32:20.263 [RRC] UL 0001 00 DCCH-NR: RRC setup complete
+        {
+          message c1: rrcSetupComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcSetupComplete: {
+              selectedPLMN-Identity 1,
+              dedicatedNAS-Message '7E004179000D0100F110F0FF000000000000102E02E0E0'H
+            }
+          }
+        }
+
+10:32:20.295 [RRC] DL 0001 00 DCCH-NR: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions dlInformationTransfer: {
+              dedicatedNAS-Message '7E00560002000021FD01328C5B09D7209467D1A3720B534C20106CCE4DE4348890013758AF63723B373B'H
+            }
+          }
+        }
+
+10:32:20.295 [NAS] DL 0001 5GMM: Authentication request
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x56 (Authentication request)
+        ngKSI:
+          TSC = 0
+          NAS key set identifier = 0
+        ABBA:
+          Length = 2
+          Data = 00 00
+        Authentication parameter RAND:
+          Data = fd 01 32 8c 5b 09 d7 20 94 67 d1 a3 72 0b 53 4c
+        Authentication parameter AUTN:
+          Length = 16
+          Data = 6c ce 4d e4 34 88 90 01 37 58 af 63 72 3b 37 3b
+10:32:20.295 [NAS] UL 0001 5GMM: Authentication response
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x57 (Authentication response)
+        Authentication response parameter:
+          Length = 16
+          Data = bf 4a c1 9b cd c3 f0 a9 b3 b2 85 d9 99 bb b6 ae
+10:32:20.295 [RRC] UL 0001 00 DCCH-NR: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions ulInformationTransfer: {
+              dedicatedNAS-Message '7E00572D10BF4AC19BCDC3F0A9B3B285D999BBB6AE'H
+            }
+          }
+        }
+
+10:32:20.313 [RRC] DL 0001 00 DCCH-NR: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions dlInformationTransfer: {
+              dedicatedNAS-Message '7E03CF4257C1007E005D020002E0E0E1360102'H
+            }
+          }
+        }
+
+10:32:20.313 [NAS] DL 0001 5GMM: Security mode command
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x3 (Integrity protected with new 5G NAS security context)
+        Auth code = 0xcf4257c1
+        Sequence number = 0x00
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x5d (Security mode command)
+        Selected NAS security algorithms = 0x02 (5G-EA0, 5G-IA2)
+        ngKSI:
+          TSC = 0
+          NAS key set identifier = 0
+        Replayed UE security capabilities:
+          0xe0 (5G-EA0=1, 128-5G-EA1=1, 128-5G-EA2=1, 128-5G-EA3=0, 5G-EA4=0, 5G-EA5=0, 5G-EA6=0, 5G-EA7=0)
+          0xe0 (5G-IA0=1, 128-5G-IA1=1, 128-5G-IA2=1, 128-5G-IA3=0, 5G-IA4=0, 5G-IA5=0, 5G-IA6=0, 5G-IA7=0)
+        IMEISV request = 1
+        Additional 5G security information = 0x02 (RINMR=1, HDP=0)
+10:32:20.313 [NAS] UL 0001 5GMM: Security mode complete
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x4 (Integrity protected and ciphered with new 5G NAS security context)
+        Auth code = 0xe1690ebb
+        Sequence number = 0x00
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x5e (Security mode complete)
+        IMEISV:
+          IMEISV = 0123456700000101
+        NAS message container:
+          Protocol discriminator = 0x7e (5GS Mobility Management)
+          Security header = 0x0 (Plain 5GS NAS message, not security protected)
+          Message type = 0x41 (Registration request)
+          5GS registration type:
+            Follow-on request bit = 1
+            Value = 1 (initial registration)
+          ngKSI:
+            TSC = 0
+            NAS key set identifier = 7
+          5GS mobile identity:
+            SUCI
+              SUPI format = 0 (IMSI)
+              MCC = 001
+              MNC = 01 
+              Routing indicator = 0
+              Protection scheme id = 0 (Null scheme)
+              Home network public key identifier = 0
+              MSIN = 0000000001
+          5GMM capability:
+            0x04 (SGC=0, 5G-IPHC-CP CIoT=0, N3 data=0, 5G-CP CIoT=0, RestrictEC=0, LPP=1, HO attach=0, S1 mode=0)
+            0x00 (RACS=0, NSSAA=0, 5G-LCS=0, V2XCNPC5=0, V2XCEPC5=0, V2X=0, 5G-UP CIoT=0, 5GSRVCC=0)
+            0x10 (5G ProSe-l2relay=0, 5G ProSe-dc=0, 5G ProSe-dd=0, ER-NSSAI=1, 5G-EHC-CP CIoT=0, multipleUP=0, WUSA=0, CAG=0)
+          UE security capability:
+            0xe0 (5G-EA0=1, 128-5G-EA1=1, 128-5G-EA2=1, 128-5G-EA3=0, 5G-EA4=0, 5G-EA5=0, 5G-EA6=0, 5G-EA7=0)
+            0xe0 (5G-IA0=1, 128-5G-IA1=1, 128-5G-IA2=1, 128-5G-IA3=0, 5G-IA4=0, 5G-IA5=0, 5G-IA6=0, 5G-IA7=0)
+          Requested NSSAI:
+            S-NSSAI
+              Length of S-NSSAI contents = 4 (SST and SD)
+              SST = 0x01
+              SD = 0x000001
+          UE's usage setting = 0x01 (Data centric)
+          Network slicing indication = 0x02 (DCNI=1, NSSCI=0)
+          5GS update type = 0x01 (EPS-PNB-CIoT=no additional information, 5GS-PNB-CIoT=no additional information, NG-RAN-RCU=0, SMS requested=1)
+10:32:20.313 [RRC] UL 0001 00 DCCH-NR: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions ulInformationTransfer: {
+              dedicatedNAS-Message '7E04E1690EBB007E005E7700090521436507000001F171002A7E004179000D0100F110F0FF0000000000001010030400102E02E0E02F05040100000118010192530101'H
+            }
+          }
+        }
+
+10:32:20.335 [RRC] DL 0001 00 DCCH-NR: Security mode command
+        {
+          message c1: securityModeCommand: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions securityModeCommand: {
+              securityConfigSMC {
+                securityAlgorithmConfig {
+                  cipheringAlgorithm nea0,
+                  integrityProtAlgorithm nia2
+                }
+              }
+            }
+          }
+        }
+
+10:32:20.335 [RRC] UL 0001 00 DCCH-NR: Security mode complete
+        {
+          message c1: securityModeComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions securityModeComplete: {
+            }
+          }
+        }
+
+10:32:20.353 [RRC] DL 0001 00 DCCH-NR: UE capability enquiry
+        {
+          message c1: ueCapabilityEnquiry: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions ueCapabilityEnquiry: {
+              ue-CapabilityRAT-RequestList {
+                {
+                  rat-Type nr,
+                  capabilityRequestFilter {
+                    frequencyBandListFilter {
+                      bandInformationNR: {
+                        bandNR 78
+                      }
+                    }
+                  }
+                }
+              },
+              ue-CapabilityEnquiryExt {
+                nonCriticalExtension {
+                  rrc-SegAllowed-r16 enabled
+                }
+              }
+            }
+          }
+        }
+
+10:32:20.353 [RRC] UL 0001 00 DCCH-NR: UE capability information
+        {
+          message c1: ueCapabilityInformation: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions ueCapabilityInformation: {
+              ue-CapabilityRAT-ContainerList {
+                {
+                  rat-Type nr,
+                  ue-CapabilityRAT-Container {
+                    accessStratumRelease rel15,
+                    pdcp-Parameters {
+                      supportedROHC-Profiles {
+                        profile0x0000 TRUE,
+                        profile0x0001 TRUE,
+                        profile0x0002 TRUE,
+                        profile0x0003 FALSE,
+                        profile0x0004 TRUE,
+                        profile0x0006 FALSE,
+                        profile0x0101 FALSE,
+                        profile0x0102 FALSE,
+                        profile0x0103 FALSE,
+                        profile0x0104 FALSE
+                      },
+                      maxNumberROHC-ContextSessions cs16,
+                      outOfOrderDelivery supported,
+                      shortSN supported
+                    },
+                    rlc-Parameters {
+                      am-WithShortSN supported,
+                      um-WithShortSN supported,
+                      um-WithLongSN supported
+                    },
+                    mac-Parameters {
+                      mac-ParametersXDD-Diff {
+                        longDRX-Cycle supported,
+                        shortDRX-Cycle supported
+                      }
+                    },
+                    phy-Parameters {
+                      phy-ParametersCommon {
+                        dynamicHARQ-ACK-Codebook supported,
+                        dynamicBetaOffsetInd-HARQ-ACK-CSI supported,
+                        ra-Type0-PUSCH supported,
+                        dynamicSwitchRA-Type0-1-PDSCH supported,
+                        dynamicSwitchRA-Type0-1-PUSCH supported,
+                        pdsch-MappingTypeA supported,
+                        pdsch-MappingTypeB supported,
+                        interleavingVRB-ToPRB-PDSCH supported,
+                        pusch-RepetitionMultiSlots supported,
+                        pdsch-RepetitionMultiSlots supported,
+                        configuredUL-GrantType1 supported,
+                        configuredUL-GrantType2 supported,
+                        rateMatchingResrcSetSemi-Static supported,
+                        rateMatchingResrcSetDynamic supported,
+                        bwp-SwitchingDelay type1,
+                        rateMatchingCtrlResrcSetDynamic supported,
+                        maxLayersMIMO-Indication supported
+                      },
+                      phy-ParametersFRX-Diff {
+                        twoFL-DMRS '11'B,
+                        supportedDMRS-TypeDL type1And2,
+                        supportedDMRS-TypeUL type1And2,
+                        onePortsPTRS '11'B,
+                        pucch-F2-WithFH supported,
+                        pucch-F3-WithFH supported,
+                        pucch-F4-WithFH supported,
+                        pusch-HalfPi-BPSK supported,
+                        pucch-F3-4-HalfPi-BPSK supported,
+                        mux-SR-HARQ-ACK-CSI-PUCCH-OncePerSlot {
+                          sameSymbol supported
+                        },
+                        mux-SR-HARQ-ACK-PUCCH supported,
+                        dl-SchedulingOffset-PDSCH-TypeA supported,
+                        dl-SchedulingOffset-PDSCH-TypeB supported,
+                        ul-SchedulingOffset supported,
+                        dl-64QAM-MCS-TableAlt supported,
+                        ul-64QAM-MCS-TableAlt supported,
+                        cqi-TableAlt supported,
+                        oneFL-DMRS-TwoAdditionalDMRS-UL supported,
+                        twoFL-DMRS-TwoAdditionalDMRS-UL supported,
+                        oneFL-DMRS-ThreeAdditionalDMRS-UL supported
+                      },
+                      phy-ParametersFR1 {
+                        pdsch-256QAM-FR1 supported
+                      }
+                    },
+                    rf-Parameters {
+                      supportedBandListNR {
+                        {
+                          bandNR 78,
+                          mimo-ParametersPerBand {
+                            pusch-TransCoherence fullCoherent,
+                            beamManagementSSB-CSI-RS {
+                              maxNumberSSB-CSI-RS-ResourceOneTx n32,
+                              maxNumberCSI-RS-Resource n0,
+                              maxNumberCSI-RS-ResourceTwoTx n0,
+                              maxNumberAperiodicCSI-RS-Resource n0
+                            },
+                            codebookParameters {
+                              type1 {
+                                singlePanel {
+                                  supportedCSI-RS-ResourceList {
+                                    {
+                                      maxNumberTxPortsPerResource p32,
+                                      maxNumberResourcesPerBand 1,
+                                      totalNumberTxPortsPerBand 32
+                                    }
+                                  },
+                                  modes mode1andMode2,
+                                  maxNumberCSI-RS-PerResourceSet 1
+                                }
+                              }
+                            },
+                            csi-RS-IM-ReceptionForFeedback {
+                              maxConfigNumberNZP-CSI-RS-PerCC 8,
+                              maxConfigNumberPortsAcrossNZP-CSI-RS-PerCC 32,
+                              maxConfigNumberCSI-IM-PerCC n4,
+                              maxNumberSimultaneousNZP-CSI-RS-PerCC 8,
+                              totalNumberPortsSimultaneousNZP-CSI-RS-PerCC 64
+                            },
+                            csi-ReportFramework {
+                              maxNumberPeriodicCSI-PerBWP-ForCSI-Report 1,
+                              maxNumberAperiodicCSI-PerBWP-ForCSI-Report 1,
+                              maxNumberSemiPersistentCSI-PerBWP-ForCSI-Report 0,
+                              maxNumberPeriodicCSI-PerBWP-ForBeamReport 1,
+                              maxNumberAperiodicCSI-PerBWP-ForBeamReport 1,
+                              maxNumberAperiodicCSI-triggeringStatePerCC n3,
+                              maxNumberSemiPersistentCSI-PerBWP-ForBeamReport 0,
+                              simultaneousCSI-ReportsPerCC 5
+                            }
+                          },
+                          bwp-WithoutRestriction supported,
+                          bwp-SameNumerology upto4,
+                          pusch-256QAM supported,
+                          rateMatchingLTE-CRS supported,
+                          channelBWs-DL fr1: {
+                            scs-15kHz '0000000000'B,
+                            scs-30kHz '1111000000'B,
+                            scs-60kHz '0000000000'B
+                          },
+                          channelBWs-UL fr1: {
+                            scs-15kHz '0000000000'B,
+                            scs-30kHz '1111000000'B,
+                            scs-60kHz '0000000000'B
+                          }
+                        }
+                      },
+                      supportedBandCombinationList {
+                        {
+                          bandList {
+                            nr: {
+                              bandNR 78,
+                              ca-BandwidthClassDL-NR a,
+                              ca-BandwidthClassUL-NR a
+                            }
+                          },
+                          featureSetCombination 0
+                        }
+                      },
+                      appliedFreqBandListFilter {
+                        bandInformationNR: {
+                          bandNR 78
+                        }
+                      },
+                      supportedBandCombinationList-v1540 {
+                        {
+                          bandList-v1540 {
+                            {
+                              srs-TxSwitch {
+                                supportedSRS-TxPortSwitch notSupported
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    featureSets {
+                      featureSetsDownlink {
+                        {
+                          featureSetListPerDownlinkCC {
+                            1
+                          }
+                        }
+                      },
+                      featureSetsDownlinkPerCC {
+                        {
+                          supportedSubcarrierSpacingDL kHz30,
+                          supportedBandwidthDL fr1: mhz20,
+                          maxNumberMIMO-LayersPDSCH twoLayers,
+                          supportedModulationOrderDL qam256
+                        }
+                      },
+                      featureSetsUplink {
+                        {
+                          featureSetListPerUplinkCC {
+                            1
+                          },
+                          supportedSRS-Resources {
+                            maxNumberAperiodicSRS-PerBWP n16,
+                            maxNumberAperiodicSRS-PerBWP-PerSlot 6,
+                            maxNumberPeriodicSRS-PerBWP n16,
+                            maxNumberPeriodicSRS-PerBWP-PerSlot 6,
+                            maxNumberSemiPersistentSRS-PerBWP n16,
+                            maxNumberSemiPersistentSRS-PerBWP-PerSlot 6,
+                            maxNumberSRS-Ports-PerResource n1
+                          }
+                        }
+                      },
+                      featureSetsUplinkPerCC {
+                        {
+                          supportedSubcarrierSpacingUL kHz30,
+                          supportedBandwidthUL fr1: mhz20,
+                          mimo-CB-PUSCH {
+                            maxNumberMIMO-LayersCB-PUSCH oneLayer,
+                            maxNumberSRS-ResourcePerSet 1
+                          },
+                          maxNumberMIMO-LayersNonCB-PUSCH oneLayer,
+                          supportedModulationOrderUL qam256
+                        }
+                      },
+                      featureSetsDownlink-v1540 {
+                        {
+                          oneFL-DMRS-TwoAdditionalDMRS-DL supported,
+                          additionalDMRS-DL-Alt supported,
+                          twoFL-DMRS-TwoAdditionalDMRS-DL supported,
+                          oneFL-DMRS-ThreeAdditionalDMRS-DL supported
+                        }
+                      },
+                      featureSetsUplinkPerCC-v1540 {
+                        {
+                          mimo-NonCB-PUSCH {
+                            maxNumberSRS-ResourcePerSet 1,
+                            maxNumberSimultaneousSRS-ResourceTx 1
+                          }
+                        }
+                      }
+                    },
+                    featureSetCombinations {
+                      {
+                        {
+                          nr: {
+                            downlinkSetNR 1,
+                            uplinkSetNR 1
+                          }
+                        }
+                      }
+                    },
+                    nonCriticalExtension {
+                      nonCriticalExtension {
+                        ims-Parameters {
+                          ims-ParametersFRX-Diff {
+                            voiceOverNR supported
+                          }
+                        },
+                        nonCriticalExtension {
+                          nonCriticalExtension {
+                            receivedFilters {
+                              nonCriticalExtension {
+                                rrc-SegAllowed-r16 enabled
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+10:32:20.375 [RRC] DL 0001 00 DCCH-NR: RRC reconfiguration
+        {
+          message c1: rrcReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcReconfiguration: {
+              nonCriticalExtension {
+                masterCellGroup {
+                  cellGroupId 0,
+                  spCellConfig {
+                    spCellConfigDedicated {
+                      initialDownlinkBWP {
+                        pdsch-Config setup: {
+                          resourceAllocation resourceAllocationType1,
+                          rbg-Size config1,
+                          mcs-Table qam256,
+                          prb-BundlingType staticBundling: {
+                            bundleSize wideband
+                          }
+                        }
+                      },
+                      uplinkConfig {
+                        initialUplinkBWP {
+                          pusch-Config setup: {
+                            txConfig codebook,
+                            resourceAllocation resourceAllocationType1,
+                            mcs-Table qam256,
+                            mcs-TableTransformPrecoder qam256,
+                            codebookSubset nonCoherent,
+                            maxRank 1
+                          }
+                        }
+                      },
+                      pdsch-ServingCellConfig setup: {
+                        nrofHARQ-ProcessesForPDSCH n16,
+                        maxMIMO-Layers 2
+                      },
+                      tag-Id 0
+                    }
+                  }
+                },
+                dedicatedNAS-MessageList {
+                  '7E0204B69B84017E0042010977000BF200F1108001012FA231AD54070000F11000006415050401000001310C040100000101020403000032210203005E01BE3408031F19F1031F11F2'H
+                }
+              }
+            }
+          }
+        }
+
+10:32:20.375 [RRC] UL 0001 00 DCCH-NR: RRC reconfiguration complete
+        {
+          message c1: rrcReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcReconfigurationComplete: {
+            }
+          }
+        }
+
+10:32:20.375 [NAS] DL 0001 5GMM: Registration accept
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x04b69b84
+        Sequence number = 0x01
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x42 (Registration accept)
+        5GS registration result = 0x09 (Disaster roaming registration result=0, Emergency registered=0, NSSAA to be performed=0, SMS allowed=1, 3GPP access)
+        5G-GUTI:
+          5G-GUTI
+            MCC = 001
+            MNC = 01 
+            AMF Region ID = 128
+            AMF Set ID = 4
+            AMF Pointer = 1
+            5G-TMSI = 0x2fa231ad
+        TAI list:
+          Length = 7
+          Data = 00 00 f1 10 00 00 64
+        Allowed NSSAI:
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+        Configured NSSAI:
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+          S-NSSAI
+            Length of S-NSSAI contents = 1 (SST)
+            SST = 0x02
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x03
+            SD = 0x000032
+        5GS network feature support:
+          0x03 (MPSI=0, IWK N26=0, EMF=not supported, EMC=not supported, IMS-VoPS-N3GPP=1, IMS-VoPS-3GPP=1)
+          0x00 (5G-UP CIoT=0, 5G-IPHC-CP CIoT=0, N3 data=0, 5G-CP CIoT=0, RestrictEC=both CE mode A and CE mode B are not restricted, MCSI=0, EMCN3=0)
+        T3512 value:
+          Value = 30
+          Unit = 5 (1 minute)
+        Emergency number list:
+          Length = 8
+          Data = 03 1f 19 f1 03 1f 11 f2
+10:32:20.375 [NAS] -  0001 New state : 5GMM-REGISTERED   CM-CONNECTED
+10:32:20.375 [NAS] UL 0001 5GMM: Registration complete
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x0cf05ab8
+        Sequence number = 0x01
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x43 (Registration complete)
+10:32:20.375 [RRC] UL 0001 00 DCCH-NR: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions ulInformationTransfer: {
+              dedicatedNAS-Message '7E020CF05AB8017E0043'H
+            }
+          }
+        }
+
+10:32:20.375 [NAS] UL 0001 5GSM: PDU session establishment request
+        Protocol discriminator = 0x2e (5GS Session Management)
+        PDU session identity = 1
+        Procedure transaction identity = 1
+        Message type = 0xc1 (PDU session establishment request)
+        Integrity protection maximum data rate:
+          Maximum data rate per UE for user-plane integrity protection for uplink = 0xff (Full data rate)
+          Maximum data rate per UE for user-plane integrity protection for downlink = 0xff (Full data rate)
+        PDU session type = 0x1 (IPv4)
+        Always-on PDU session requested = 1
+        Extended protocol configuration options:
+          Ext = 1
+          Configuration protocol = 0
+          Protocol ID = 0x8021 (IPCP)
+          Data = 01 00 00 10 81 06 00 00 00 00 83 06 00 00 00 00
+          Protocol ID = 0x000a (IP address allocation via NAS signalling)
+          Data =
+          Protocol ID = 0x0010 (IPv4 Link MTU Request)
+          Data =
+          Protocol ID = 0x000d (DNS Server IPv4 Address Request)
+          Data =
+          Protocol ID = 0x0011 (MS support of Local address in TFT indicator)
+          Data =
+10:32:20.375 [NAS] UL 0001 5GMM: UL NAS transport
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x5fdf9ed6
+        Sequence number = 0x02
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x67 (UL NAS transport)
+        Payload container type = 1 (N1 SM information)
+        Payload container:
+          Protocol discriminator = 0x2e (5GS Session Management)
+          PDU session identity = 1
+          Procedure transaction identity = 1
+          Message type = 0xc1 (PDU session establishment request)
+          Integrity protection maximum data rate:
+            Maximum data rate per UE for user-plane integrity protection for uplink = 0xff (Full data rate)
+            Maximum data rate per UE for user-plane integrity protection for downlink = 0xff (Full data rate)
+          PDU session type = 0x1 (IPv4)
+          Always-on PDU session requested = 1
+          Extended protocol configuration options:
+            Ext = 1
+            Configuration protocol = 0
+            Protocol ID = 0x8021 (IPCP)
+            Data = 01 00 00 10 81 06 00 00 00 00 83 06 00 00 00 00
+            Protocol ID = 0x000a (IP address allocation via NAS signalling)
+            Data =
+            Protocol ID = 0x0010 (IPv4 Link MTU Request)
+            Data =
+            Protocol ID = 0x000d (DNS Server IPv4 Address Request)
+            Data =
+            Protocol ID = 0x0011 (MS support of Local address in TFT indicator)
+            Data =
+        PDU session ID = 1
+        Request type = 0x1 (initial request)
+        S-NSSAI:
+          Length of S-NSSAI contents = 4 (SST and SD)
+          SST = 0x01
+          SD = 0x000001
+        DNN = "internet"
+10:32:20.375 [RRC] UL 0001 00 DCCH-NR: UL information transfer
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions ulInformationTransfer: {
+              dedicatedNAS-Message '7E025FDF9ED6027E006701002B2E0101C1FFFF91B17B00208080211001000010810600000000830600000000000A00001000000D00001100120181220401000001250908696E7465726E6574'H
+            }
+          }
+        }
+
+10:32:20.394 [RRC] DL 0001 00 DCCH-NR: DL information transfer
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions dlInformationTransfer: {
+              dedicatedNAS-Message '7E029BD21F26027E0054431081C176589E9EBFCD7490B34CBFBFE56B450981C176589E9EBFCD7446404752212190230240490100'H
+            }
+          }
+        }
+
+10:32:20.394 [NAS] DL 0001 5GMM: Configuration update command
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x9bd21f26
+        Sequence number = 0x02
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x54 (Configuration update command)
+        Full name for network:
+          Length = 16
+          Data = 81 c1 76 58 9e 9e bf cd 74 90 b3 4c bf bf e5 6b
+        Short name for network:
+          Length = 9
+          Data = 81 c1 76 58 9e 9e bf cd 74
+        Local time zone = 64
+        Universal time and local time zone:
+          Data = 52 21 21 90 23 02 40
+        Network daylight saving time:
+          Length = 1
+          Data = 00
+10:32:20.394 [RRC] DL 0001 00 DCCH-NR: RRC reconfiguration
+        {
+          message c1: rrcReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcReconfiguration: {
+              radioBearerConfig {
+                srb-ToAddModList {
+                  {
+                    srb-Identity 2
+                  }
+                },
+                drb-ToAddModList {
+                  {
+                    cnAssociation sdap-Config: {
+                      pdu-Session 1,
+                      sdap-HeaderDL absent,
+                      sdap-HeaderUL present,
+                      defaultDRB TRUE,
+                      mappedQoS-FlowsToAdd {
+                        1
+                      }
+                    },
+                    drb-Identity 1,
+                    pdcp-Config {
+                      drb {
+                        discardTimer infinity,
+                        pdcp-SN-SizeUL len18bits,
+                        pdcp-SN-SizeDL len18bits,
+                        headerCompression notUsed: NULL,
+                        statusReportRequired true
+                      },
+                      t-Reordering ms3000
+                    }
+                  }
+                }
+              },
+              nonCriticalExtension {
+                masterCellGroup {
+                  cellGroupId 0,
+                  rlc-BearerToAddModList {
+                    {
+                      logicalChannelIdentity 4,
+                      servedRadioBearer drb-Identity: 1,
+                      rlc-Config am: {
+                        ul-AM-RLC {
+                          sn-FieldLength size18,
+                          t-PollRetransmit ms80,
+                          pollPDU p64,
+                          pollByte kB125,
+                          maxRetxThreshold t4
+                        },
+                        dl-AM-RLC {
+                          sn-FieldLength size18,
+                          t-Reassembly ms80,
+                          t-StatusProhibit ms10
+                        }
+                      },
+                      mac-LogicalChannelConfig {
+                        ul-SpecificParameters {
+                          priority 13,
+                          prioritisedBitRate kBps8,
+                          bucketSizeDuration ms100,
+                          logicalChannelGroup 7,
+                          schedulingRequestID 0,
+                          logicalChannelSR-Mask FALSE,
+                          logicalChannelSR-DelayTimerApplied FALSE
+                        }
+                      }
+                    },
+                    {
+                      logicalChannelIdentity 2,
+                      servedRadioBearer srb-Identity: 2,
+                      mac-LogicalChannelConfig {
+                        ul-SpecificParameters {
+                          priority 3,
+                          prioritisedBitRate infinity,
+                          bucketSizeDuration ms5,
+                          logicalChannelGroup 0,
+                          schedulingRequestID 0,
+                          logicalChannelSR-Mask FALSE,
+                          logicalChannelSR-DelayTimerApplied FALSE
+                        }
+                      }
+                    }
+                  }
+                },
+                dedicatedNAS-MessageList {
+                  '7E024A35FBCC037E00680100672E0101C2110009010006313F0101FF0106061388047A12290501C0A80302220401000001817900060120410101097B00188080210A0300000A810608080808000D0408080808001100251C08696E7465726E6574066D6E63303031066D636330303104677072731201'H
+                }
+              }
+            }
+          }
+        }
+
+10:32:20.394 [RRC] UL 0001 00 DCCH-NR: RRC reconfiguration complete
+        {
+          message c1: rrcReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcReconfigurationComplete: {
+            }
+          }
+        }
+
+10:32:20.394 [NAS] DL 0001 5GMM: DL NAS transport
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x4a35fbcc
+        Sequence number = 0x03
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x68 (DL NAS transport)
+        Payload container type = 1 (N1 SM information)
+        Payload container:
+          Protocol discriminator = 0x2e (5GS Session Management)
+          PDU session identity = 1
+          Procedure transaction identity = 1
+          Message type = 0xc2 (PDU session establishment accept)
+          Selected PDU session type = 0x1 (IPv4)
+          Selected SSC mode = 0x1 (1)
+          Authorized QoS rules:
+            QoS rule 1:
+              QoS rule identifier = 1
+              Rule operation code = 1 (create new QoS rule)
+              DQR = 1 (the QoS rule is the default QoS rule)
+              Number of packet filters = 1
+              Packet filter identifier = 15
+                Packet filter direction = 3 (bidirectional)
+                Match-all
+              QoS rule precedence = 255
+              QFI = 1
+          Session AMBR:
+            Session-AMBR for downlink = 5000 Mbps
+            Session-AMBR for uplink = 2000000 kbps
+          PDU address:
+            SI6LLA = 0
+            PDU session type = 1 (IPv4)
+            IPv4 = 192.168.3.2
+          S-NSSAI:
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+          Always-on PDU session indication = 1
+          Authorized QoS flow descriptions:
+            QoS flow description 1:
+              QFI = 1
+              Operation code = 1 (create new QoS flow description)
+              E = 1 (parameters list is included)
+              Number of parameters = 1
+              5QI = 9
+          Extended protocol configuration options:
+            Ext = 1
+            Configuration protocol = 0
+            Protocol ID = 0x8021 (IPCP)
+            Data = 03 00 00 0a 81 06 08 08 08 08
+            Protocol ID = 0x000d (DNS Server IPv4 Address)
+            Data = 8.8.8.8
+            Protocol ID = 0x0011 (Network support of Local address in TFT indicator)
+            Data =
+          DNN = "internet.mnc001.mcc001.gprs"
+        PDU session ID = 1
+10:32:20.394 [NAS] DL 0001 5GSM: PDU session establishment accept
+        Protocol discriminator = 0x2e (5GS Session Management)
+        PDU session identity = 1
+        Procedure transaction identity = 1
+        Message type = 0xc2 (PDU session establishment accept)
+        Selected PDU session type = 0x1 (IPv4)
+        Selected SSC mode = 0x1 (1)
+        Authorized QoS rules:
+          QoS rule 1:
+            QoS rule identifier = 1
+            Rule operation code = 1 (create new QoS rule)
+            DQR = 1 (the QoS rule is the default QoS rule)
+            Number of packet filters = 1
+            Packet filter identifier = 15
+              Packet filter direction = 3 (bidirectional)
+              Match-all
+            QoS rule precedence = 255
+            QFI = 1
+        Session AMBR:
+          Session-AMBR for downlink = 5000 Mbps
+          Session-AMBR for uplink = 2000000 kbps
+        PDU address:
+          SI6LLA = 0
+          PDU session type = 1 (IPv4)
+          IPv4 = 192.168.3.2
+        S-NSSAI:
+          Length of S-NSSAI contents = 4 (SST and SD)
+          SST = 0x01
+          SD = 0x000001
+        Always-on PDU session indication = 1
+        Authorized QoS flow descriptions:
+          QoS flow description 1:
+            QFI = 1
+            Operation code = 1 (create new QoS flow description)
+            E = 1 (parameters list is included)
+            Number of parameters = 1
+            5QI = 9
+        Extended protocol configuration options:
+          Ext = 1
+          Configuration protocol = 0
+          Protocol ID = 0x8021 (IPCP)
+          Data = 03 00 00 0a 81 06 08 08 08 08
+          Protocol ID = 0x000d (DNS Server IPv4 Address)
+          Data = 8.8.8.8
+          Protocol ID = 0x0011 (Network support of Local address in TFT indicator)
+          Data =
+        DNN = "internet.mnc001.mcc001.gprs"
+10:32:20.394 [NAS] -  0001 IP addr=192.168.3.2 APN='internet.mnc001.mcc001.gprs'
+10:32:29.555 [NAS] UL 0001 5GSM: PDU session establishment request
+        0000:  2e 02 02 c1 ff ff 93 b1  7b 00 23 80 80 21 10 01  ........{.#..!..
+        0010:  00 00 10 81 06 00 00 00  00 83 06 00 00 00 00 00  ................
+        0020:  03 00 00 0a 00 00 10 00  00 0d 00 00 11 00        ..............
+        Protocol discriminator = 0x2e (5GS Session Management)
+        PDU session identity = 2
+        Procedure transaction identity = 2
+        Message type = 0xc1 (PDU session establishment request)
+        Integrity protection maximum data rate:
+          Maximum data rate per UE for user-plane integrity protection for uplink = 0xff (Full data rate)
+          Maximum data rate per UE for user-plane integrity protection for downlink = 0xff (Full data rate)
+        PDU session type = 0x3 (IPv4v6)
+        Always-on PDU session requested = 1
+        Extended protocol configuration options:
+          Ext = 1
+          Configuration protocol = 0
+          Protocol ID = 0x8021 (IPCP)
+          Data = 01 00 00 10 81 06 00 00 00 00 83 06 00 00 00 00
+          Protocol ID = 0x0003 (DNS Server IPv6 Address Request)
+          Data =
+          Protocol ID = 0x000a (IP address allocation via NAS signalling)
+          Data =
+          Protocol ID = 0x0010 (IPv4 Link MTU Request)
+          Data =
+          Protocol ID = 0x000d (DNS Server IPv4 Address Request)
+          Data =
+          Protocol ID = 0x0011 (MS support of Local address in TFT indicator)
+          Data =
+10:32:29.555 [NAS] UL 0001 5GMM: UL NAS transport
+        0000:  7e 02 20 fa 2a 9a 03 7e  00 67 01 00 2e 2e 02 02  ~. .*..~.g......
+        0010:  c1 ff ff 93 b1 7b 00 23  80 80 21 10 01 00 00 10  .....{.#..!.....
+        0020:  81 06 00 00 00 00 83 06  00 00 00 00 00 03 00 00  ................
+        0030:  0a 00 00 10 00 00 0d 00  00 11 00 12 02 81 25 04  ..............%.
+        0040:  03 69 6d 73                                       .ims
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x20fa2a9a
+        Sequence number = 0x03
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x67 (UL NAS transport)
+        Payload container type = 1 (N1 SM information)
+        Payload container:
+          Protocol discriminator = 0x2e (5GS Session Management)
+          PDU session identity = 2
+          Procedure transaction identity = 2
+          Message type = 0xc1 (PDU session establishment request)
+          Integrity protection maximum data rate:
+            Maximum data rate per UE for user-plane integrity protection for uplink = 0xff (Full data rate)
+            Maximum data rate per UE for user-plane integrity protection for downlink = 0xff (Full data rate)
+          PDU session type = 0x3 (IPv4v6)
+          Always-on PDU session requested = 1
+          Extended protocol configuration options:
+            Ext = 1
+            Configuration protocol = 0
+            Protocol ID = 0x8021 (IPCP)
+            Data = 01 00 00 10 81 06 00 00 00 00 83 06 00 00 00 00
+            Protocol ID = 0x0003 (DNS Server IPv6 Address Request)
+            Data =
+            Protocol ID = 0x000a (IP address allocation via NAS signalling)
+            Data =
+            Protocol ID = 0x0010 (IPv4 Link MTU Request)
+            Data =
+            Protocol ID = 0x000d (DNS Server IPv4 Address Request)
+            Data =
+            Protocol ID = 0x0011 (MS support of Local address in TFT indicator)
+            Data =
+        PDU session ID = 2
+        Request type = 0x1 (initial request)
+        DNN = "ims"
+10:32:29.555 [RRC] UL 0001 00 DCCH-NR: UL information transfer
+        0000:  3a 22 3f 01 10 7d 15 4d  01 bf 00 33 80 80 17 17  :"?..}.M...3....
+        0010:  01 01 60 ff ff c9 d8 bd  80 11 c0 40 10 88 00 80  ..`........@....
+        0020:  00 08 40 83 00 00 00 00  41 83 00 00 00 00 00 01  ..@.....A.......
+        0030:  80 00 05 00 00 08 00 00  06 80 00 08 80 09 01 40  ...............@
+        0040:  92 82 01 b4 b6 b9 80                              .......
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions ulInformationTransfer: {
+              dedicatedNAS-Message '7E0220FA2A9A037E006701002E2E0202C1FFFF93B17B00238080211001000010810600000000830600000000000300000A00001000000D00001100120281250403696D73'H
+            }
+          }
+        }
+
+10:32:29.574 [RRC] DL 0001 00 DCCH-NR: RRC reconfiguration
+        0000:  00 88 80 4d 01 50 01 0a  f5 f8 8e 80 35 00 02 c9  ...M.P......5...
+        0010:  08 cf 21 4f 80 48 35 14  80 00 10 11 8f c0 5d f3  ..!O.H5.......].
+        0020:  4f eb 60 8f c0 0d 00 20  0f a5 c0 40 58 42 60 01  O.`.... ...@XB`.
+        0030:  20 20 00 c6 27 e0 20 3f  e0 20 c0 c2 71 00 8f 42    ..'. ?. ..q..B
+        0040:  45 21 a0 64 00 20 8d 06  00 00 00 38 15 00 80 44  E!.d. .....8...D
+        0050:  40 80 20 00 00 30 2f 20  00 c0 24 08 20 20 20 af  @. ..0/ ..$.   .
+        0060:  60 05 70 10 04 21 40 60  00 01 50 20 c1 01 01 01  `.p..!@`..P ....
+        0070:  00 01 a0 81 01 01 01 00  00 62 04 00 29 0c 09 0c  .........b..)...
+        0080:  00 00 00 00 00 00 00 00  11 11 00 02 20 04 a2 e0  ............ ...
+        0090:  6d 2d ae 60 cd ad cc 66  06 06 20 cd ac 6c 66 06  m-.`...f.. ..lf.
+        00a0:  06 20 8c ee 0e 4e 62 40  40                       . ...Nb@@
+        {
+          message c1: rrcReconfiguration: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcReconfiguration: {
+              radioBearerConfig {
+                drb-ToAddModList {
+                  {
+                    cnAssociation sdap-Config: {
+                      pdu-Session 2,
+                      sdap-HeaderDL absent,
+                      sdap-HeaderUL present,
+                      defaultDRB TRUE,
+                      mappedQoS-FlowsToAdd {
+                        1
+                      }
+                    },
+                    drb-Identity 2,
+                    pdcp-Config {
+                      drb {
+                        discardTimer infinity,
+                        pdcp-SN-SizeUL len18bits,
+                        pdcp-SN-SizeDL len18bits,
+                        headerCompression notUsed: NULL,
+                        statusReportRequired true
+                      },
+                      t-Reordering ms3000
+                    }
+                  }
+                }
+              },
+              nonCriticalExtension {
+                masterCellGroup {
+                  cellGroupId 0,
+                  rlc-BearerToAddModList {
+                    {
+                      logicalChannelIdentity 5,
+                      servedRadioBearer drb-Identity: 2,
+                      rlc-Config am: {
+                        ul-AM-RLC {
+                          sn-FieldLength size18,
+                          t-PollRetransmit ms80,
+                          pollPDU p64,
+                          pollByte kB125,
+                          maxRetxThreshold t4
+                        },
+                        dl-AM-RLC {
+                          sn-FieldLength size18,
+                          t-Reassembly ms80,
+                          t-StatusProhibit ms10
+                        }
+                      },
+                      mac-LogicalChannelConfig {
+                        ul-SpecificParameters {
+                          priority 6,
+                          prioritisedBitRate kBps8,
+                          bucketSizeDuration ms100,
+                          logicalChannelGroup 4,
+                          schedulingRequestID 0,
+                          logicalChannelSR-Mask FALSE,
+                          logicalChannelSR-DelayTimerApplied FALSE
+                        }
+                      }
+                    }
+                  }
+                },
+                dedicatedNAS-MessageList {
+                  '7E02EF9A7F5B047E006801007D2E0202C2130009010006313F0101FF0106061388047A12290D032001046830000001C0A80402220401000001817900060120410101057B002B8080210A0300000A810608080808000D040808080800031020014860486000000000000000008888001100251703696D73066D6E63303031066D636330303104677072731202'H
+                }
+              }
+            }
+          }
+        }
+
+10:32:29.574 [RRC] UL 0001 00 DCCH-NR: RRC reconfiguration complete
+        0000:  08 00                                             ..
+        {
+          message c1: rrcReconfigurationComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcReconfigurationComplete: {
+            }
+          }
+        }
+
+10:32:29.574 [NAS] DL 0001 5GMM: DL NAS transport
+        0000:  7e 02 ef 9a 7f 5b 04 7e  00 68 01 00 7d 2e 02 02  ~....[.~.h..}...
+        0010:  c2 13 00 09 01 00 06 31  3f 01 01 ff 01 06 06 13  .......1?.......
+        0020:  88 04 7a 12 29 0d 03 20  01 04 68 30 00 00 01 c0  ..z.).. ..h0....
+        0030:  a8 04 02 22 04 01 00 00  01 81 79 00 06 01 20 41  ..."......y... A
+        0040:  01 01 05 7b 00 2b 80 80  21 0a 03 00 00 0a 81 06  ...{.+..!.......
+        0050:  08 08 08 08 00 0d 04 08  08 08 08 00 03 10 20 01  .............. .
+        0060:  48 60 48 60 00 00 00 00  00 00 00 00 88 88 00 11  H`H`............
+        0070:  00 25 17 03 69 6d 73 06  6d 6e 63 30 30 31 06 6d  .%..ims.mnc001.m
+        0080:  63 63 30 30 31 04 67 70  72 73 12 02              cc001.gprs..
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0xef9a7f5b
+        Sequence number = 0x04
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x68 (DL NAS transport)
+        Payload container type = 1 (N1 SM information)
+        Payload container:
+          Protocol discriminator = 0x2e (5GS Session Management)
+          PDU session identity = 2
+          Procedure transaction identity = 2
+          Message type = 0xc2 (PDU session establishment accept)
+          Selected PDU session type = 0x3 (IPv4v6)
+          Selected SSC mode = 0x1 (1)
+          Authorized QoS rules:
+            QoS rule 1:
+              QoS rule identifier = 1
+              Rule operation code = 1 (create new QoS rule)
+              DQR = 1 (the QoS rule is the default QoS rule)
+              Number of packet filters = 1
+              Packet filter identifier = 15
+                Packet filter direction = 3 (bidirectional)
+                Match-all
+              QoS rule precedence = 255
+              QFI = 1
+          Session AMBR:
+            Session-AMBR for downlink = 5000 Mbps
+            Session-AMBR for uplink = 2000000 kbps
+          PDU address:
+            SI6LLA = 0
+            PDU session type = 3 (IPv4v6)
+            IPv6 = ::2001:468:3000:1
+            IPv4 = 192.168.4.2
+          S-NSSAI:
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+          Always-on PDU session indication = 1
+          Authorized QoS flow descriptions:
+            QoS flow description 1:
+              QFI = 1
+              Operation code = 1 (create new QoS flow description)
+              E = 1 (parameters list is included)
+              Number of parameters = 1
+              5QI = 5
+          Extended protocol configuration options:
+            Ext = 1
+            Configuration protocol = 0
+            Protocol ID = 0x8021 (IPCP)
+            Data = 03 00 00 0a 81 06 08 08 08 08
+            Protocol ID = 0x000d (DNS Server IPv4 Address)
+            Data = 8.8.8.8
+            Protocol ID = 0x0003 (DNS Server IPv6 Address)
+            Data = 2001:4860:4860::8888
+            Protocol ID = 0x0011 (Network support of Local address in TFT indicator)
+            Data =
+          DNN = "ims.mnc001.mcc001.gprs"
+        PDU session ID = 2
+10:32:29.574 [NAS] DL 0001 5GSM: PDU session establishment accept
+        0000:  2e 02 02 c2 13 00 09 01  00 06 31 3f 01 01 ff 01  ..........1?....
+        0010:  06 06 13 88 04 7a 12 29  0d 03 20 01 04 68 30 00  .....z.).. ..h0.
+        0020:  00 01 c0 a8 04 02 22 04  01 00 00 01 81 79 00 06  ......"......y..
+        0030:  01 20 41 01 01 05 7b 00  2b 80 80 21 0a 03 00 00  . A...{.+..!....
+        0040:  0a 81 06 08 08 08 08 00  0d 04 08 08 08 08 00 03  ................
+        0050:  10 20 01 48 60 48 60 00  00 00 00 00 00 00 00 88  . .H`H`.........
+        0060:  88 00 11 00 25 17 03 69  6d 73 06 6d 6e 63 30 30  ....%..ims.mnc00
+        0070:  31 06 6d 63 63 30 30 31  04 67 70 72 73           1.mcc001.gprs
+        Protocol discriminator = 0x2e (5GS Session Management)
+        PDU session identity = 2
+        Procedure transaction identity = 2
+        Message type = 0xc2 (PDU session establishment accept)
+        Selected PDU session type = 0x3 (IPv4v6)
+        Selected SSC mode = 0x1 (1)
+        Authorized QoS rules:
+          QoS rule 1:
+            QoS rule identifier = 1
+            Rule operation code = 1 (create new QoS rule)
+            DQR = 1 (the QoS rule is the default QoS rule)
+            Number of packet filters = 1
+            Packet filter identifier = 15
+              Packet filter direction = 3 (bidirectional)
+              Match-all
+            QoS rule precedence = 255
+            QFI = 1
+        Session AMBR:
+          Session-AMBR for downlink = 5000 Mbps
+          Session-AMBR for uplink = 2000000 kbps
+        PDU address:
+          SI6LLA = 0
+          PDU session type = 3 (IPv4v6)
+          IPv6 = ::2001:468:3000:1
+          IPv4 = 192.168.4.2
+        S-NSSAI:
+          Length of S-NSSAI contents = 4 (SST and SD)
+          SST = 0x01
+          SD = 0x000001
+        Always-on PDU session indication = 1
+        Authorized QoS flow descriptions:
+          QoS flow description 1:
+            QFI = 1
+            Operation code = 1 (create new QoS flow description)
+            E = 1 (parameters list is included)
+            Number of parameters = 1
+            5QI = 5
+        Extended protocol configuration options:
+          Ext = 1
+          Configuration protocol = 0
+          Protocol ID = 0x8021 (IPCP)
+          Data = 03 00 00 0a 81 06 08 08 08 08
+          Protocol ID = 0x000d (DNS Server IPv4 Address)
+          Data = 8.8.8.8
+          Protocol ID = 0x0003 (DNS Server IPv6 Address)
+          Data = 2001:4860:4860::8888
+          Protocol ID = 0x0011 (Network support of Local address in TFT indicator)
+          Data =
+        DNN = "ims.mnc001.mcc001.gprs"
+10:32:29.574 [NAS] -  0001 IP addr=192.168.4.2 APN='ims.mnc001.mcc001.gprs'
+10:32:29.574 [NAS] -  0001 IPv6 itf id=::2001:468:3000:1 APN='ims.mnc001.mcc001.gprs'
+10:33:32.624 [RRC] DL 0001 00 DCCH-NR: RRC release
+        0000:  10 00                                             ..
+        {
+          message c1: rrcRelease: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcRelease: {
+            }
+          }
+        }
+
+10:33:32.685 [NAS] -  0001 New state : 5GMM-REGISTERED   CM-IDLE

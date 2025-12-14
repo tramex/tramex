@@ -82,12 +82,7 @@ impl FileParser for NGAPParser {
             }
         };
         
-        let text = match Self::parse_lines(&lines[1..]) {
-            Ok(t) => t,
-            Err(e) => {
-                return Err(e);
-            }
-        };
+        let text = lines.to_vec();
         
         let trace = Trace {
             timestamp: 0,

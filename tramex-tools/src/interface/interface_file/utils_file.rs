@@ -16,6 +16,7 @@ use crate::{
             parser_rrc::RRCParser,
             parser_nas::NASParser,
             parser_ngap::NGAPParser,
+            parser_gtpu::GTPUParser,
             time_to_milliseconds,
         },
     },
@@ -81,6 +82,7 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
                 Ok(Layer::RRC) => RRCParser::parse(lines_to_parse),
                 Ok(Layer::NAS) => NASParser::parse(lines_to_parse),
                 Ok(Layer::NGAP) => NGAPParser::parse(lines_to_parse),
+                Ok(Layer::GTPU) => GTPUParser::parse(lines_to_parse),
                 Ok(layer) => BasicParser::parse_with_layer(lines_to_parse, layer),
                 Err(_) => {
                     return Err(tramex_error!(

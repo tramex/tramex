@@ -65,6 +65,14 @@ impl MessageArrow {
                     _ => return None,
                 }
             }
+            Layer::GTPU => {
+                // GTPU: BST <-> CN (uses TO/FROM like NGAP)
+                match direction {
+                    Direction::TO => (Hardware::BST, Hardware::CN),
+                    Direction::FROM => (Hardware::CN, Hardware::BST),
+                    _ => return None,
+                }
+            }
             _ => return None, // Other layers are ignored
         };
         

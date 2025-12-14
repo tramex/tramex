@@ -2,7 +2,7 @@
 use crate::interface::{
     parse_config::FileMetadata, 
     layer::Layer, 
-    parser::{parser_rrc::RRCInfos, parser_nas::NASInfos, parser_ngap::NGAPInfos},
+    parser::{parser_rrc::RRCInfos, parser_nas::NASInfos, parser_ngap::NGAPInfos, parser_gtpu::GTPUInfos},
     types::Direction,
 };
 use core::fmt::Debug;
@@ -131,6 +131,8 @@ pub enum AdditionalInfos {
     NASInfos(NASInfos),
     /// NGAP message
     NGAPInfos(NGAPInfos),
+    /// GTPU message
+    GTPUInfos(GTPUInfos),
     /// No additional info (for simple log entries like PHY, MAC, etc.)
     None,
 }
@@ -142,6 +144,7 @@ impl AdditionalInfos {
             AdditionalInfos::RRCInfos(info) => Some(info.direction.clone()),
             AdditionalInfos::NASInfos(info) => Some(info.direction.clone()),
             AdditionalInfos::NGAPInfos(info) => Some(info.direction.clone()),
+            AdditionalInfos::GTPUInfos(info) => Some(info.direction.clone()),
             AdditionalInfos::None => None,
         }
     }
@@ -152,6 +155,7 @@ impl AdditionalInfos {
             AdditionalInfos::RRCInfos(info) => Some(info.canal_msg.clone()),
             AdditionalInfos::NASInfos(info) => Some(info.message_type.clone()),
             AdditionalInfos::NGAPInfos(info) => Some(info.message_type.clone()),
+            AdditionalInfos::GTPUInfos(info) => Some(info.message_type.clone()),
             AdditionalInfos::None => None,
         }
     }
