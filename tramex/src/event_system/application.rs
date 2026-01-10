@@ -5,6 +5,7 @@ use super::{
 };
 use tramex_tools::interface::layer::Layers;
 use tramex_tools::interface::parse_config::FileMetadata;
+use tramex_tools::interface::association::AssociationRules;
 use tramex_tools::errors::{TramexError, ErrorCode};
 
 /// Main application controller that ties together the event system
@@ -23,6 +24,9 @@ pub struct Application {
     
     /// File metadata (technology, version, etc.)
     metadata: FileMetadata,
+    
+    /// Association rules for computing trace relationships
+    association_rules: AssociationRules,
 }
 
 impl Application {
@@ -34,6 +38,7 @@ impl Application {
             data_source: None,
             layers: Layers::new_optiniated(),
             metadata: FileMetadata::default(),
+            association_rules: AssociationRules::new(),
         }
     }
     
@@ -154,6 +159,10 @@ impl Application {
         
         // Add events to store
         let range = self.event_store.add_events(new_events);
+        
+        // Compute associations for the new batch (with lookback for cross-batch relationships)
+        let batch_start = range.start;
+        self.event_store.compute_associations(&self.association_rules, batch_start);
         
         // Create context for subscribers
         let context = EventContext {

@@ -1,5 +1,7 @@
 //! Parser for GTPU traces
 use super::ParsingError;
+use super::hex_extractor::extract_binary_from_lines;
+use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
 use std::str::FromStr;
 
@@ -84,11 +86,14 @@ impl FileParser for GTPUParser {
             }
         };
         
+        let binary = extract_binary_from_lines(lines);
         let trace = Trace {
             timestamp: 0,
             layer: Layer::GTPU,
             additional_infos,
             text: Some(text),
+            binary,
+            relation: TraceRelation::default(),
         };
         Ok(trace)
     }

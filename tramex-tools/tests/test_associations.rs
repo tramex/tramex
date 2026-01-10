@@ -1,0 +1,71 @@
+use std::path::Path;
+use tramex_tools::data::Data;
+use tramex_tools::interface::association::AssociationRules;
+use tramex_tools::interface::layer::Layers;
+use tramex_tools::interface::interface_file::file_handler::File;
+use tramex_tools::interface::interface_types::InterfaceTrait;
+
+fn get_path(p: &str) -> String {
+    if std::env::current_dir().unwrap().ends_with("tramex-tools") {
+        return Path::new("tests").join(p).to_string_lossy().to_string();
+    }
+    let filename = file!();
+    Path::new(filename).parent().unwrap().join(p).to_string_lossy().to_string()
+}
+
+#[test]
+fn test_nas_rrc_associations() {
+    // Read and parse the log file like other tests
+    let filename = &get_path("gnb_assocations.log");
+    let content = std::fs::read_to_string(filename).unwrap();
+    let mut file = File::new_file_content(filename.into(), content);
+    let mut data: Data = Default::default();
+    
+    // Load all data from file, capturing any errors
+    let mut parse_errors = Vec::new();
+    while !file.full_read {
+        if let Err(e) = file.get_more_data(Layers::all_debug(), &mut data) {
+            parse_errors.extend(e);
+        }
+    }
+    if !parse_errors.is_empty() {
+        println!("Parse errors: {:?}", parse_errors.len());
+        for e in &parse_errors {
+            println!("  - {}", e.message);
+        }
+    }
+    assert!(parse_errors.is_empty(), "Parse errors");
+    
+    // Print parsed traces
+    println!("\n=== Parsed Traces ===");
+    println!("Total traces: {}", data.events.len());
+    assert!(data.events.len() == 14, "Total traces should be 14");
+
+    // for (idx, trace) in data.events.iter().enumerate() {
+    //     let msg_name = trace.additional_infos.get_message_name().unwrap_or_default();
+    //     println!("Trace {}: {:?} - {}", idx, trace.layer, msg_name);
+    // }
+
+    
+    // Compute ALL associations automatically
+    let rules = AssociationRules::new();
+    data.compute_all_associations(&rules);
+    
+    // Show relationship status for all traces
+    // println!("\n=== Relationship Status ===");
+    // for (idx, trace) in data.events.iter().enumerate() {
+    //     let parent_status = &trace.relation.parent;
+    //     let child_status = &trace.relation.child;
+    //     println!("Trace {} ({:?}): parent={:?}, child={:?}", 
+    //              idx, trace.layer, parent_status, child_status);
+    // }
+
+
+    assert!(data.events[0].relation.get_child_index() == Some(1), "Parent index of trace 0 should be 1");
+    assert!(data.events[1].relation.get_parent_index() == Some(0), "Parent index of trace 1 should be 0");
+
+    assert!(data.events[2].relation.has_child() == false, "Trace 2 should have no child");
+    assert!(data.events[13].relation.has_parent() == false, "Trace 13 should have no parent");
+
+    
+}

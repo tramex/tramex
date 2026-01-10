@@ -1,6 +1,7 @@
 //! Event store - single source of truth for all events
 
 use tramex_tools::data::Trace;
+use tramex_tools::interface::association::AssociationRules;
 use std::ops::Range;
 
 /// Core data store that owns all events
@@ -140,6 +141,23 @@ impl EventStore {
                 self.events.len() as f32 / total as f32
             }
         })
+    }
+    
+    /// Compute associations for events starting from a given index
+    /// Uses lookback window to handle cross-batch relationships
+    /// 
+    /// # Arguments
+    /// * `rules` - The association rules to use
+    /// * `batch_start` - Start index of the new batch (lookback is applied automatically)
+    pub fn compute_associations(&mut self, rules: &AssociationRules, batch_start: usize) {
+        use tramex_tools::interface::association::ASSOCIATION_LOOKBACK_WINDOW;
+        
+        // Apply lookback to catch cross-batch relationships
+        let start_index = batch_start.saturating_sub(ASSOCIATION_LOOKBACK_WINDOW);
+        
+        tramex_tools::interface::association::compute_associations(&mut self.events, rules, start_index);
+        log::debug!("EventStore: Computed associations from index {} (batch_start={}, lookback={})", 
+            start_index, batch_start, ASSOCIATION_LOOKBACK_WINDOW);
     }
 }
 

@@ -1,5 +1,7 @@
 //! Parser for NGAP traces
 use super::ParsingError;
+use super::hex_extractor::extract_binary_from_lines;
+use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
 use std::str::FromStr;
 
@@ -83,12 +85,15 @@ impl FileParser for NGAPParser {
         };
         
         let text = lines.to_vec();
+        let binary = extract_binary_from_lines(lines);
         
         let trace = Trace {
             timestamp: 0,
             layer: Layer::NGAP,
             additional_infos,
             text: Some(text),
+            binary,
+            relation: TraceRelation::default(),
         };
         Ok(trace)
     }

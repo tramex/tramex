@@ -2,7 +2,9 @@
 
 use std::str::FromStr;
 
+use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
+use crate::interface::parser::hex_extractor::extract_binary_from_lines;
 use crate::errors::TramexError;
 use crate::interface::functions::extract_hexe;
 
@@ -92,11 +94,15 @@ impl OneLog {
                     canal_msg: firs_line[1][1..].to_owned(),
                 };
                 let infos = AdditionalInfos::RRCInfos(rrc);
+                let text_lines: Vec<String> = self.data[1..].iter().map(|x| x.to_string()).collect();
+                let binary = extract_binary_from_lines(&self.data);
                 let trace = Trace {
                     timestamp: self.timestamp,
                     layer: Layer::RRC,
                     additional_infos: infos,
-                    text: Some(self.data[1..].iter().map(|x| x.to_string()).collect()),
+                    text: Some(text_lines),
+                    binary,
+                    relation: TraceRelation::default(),
                 };
                 Ok(trace)
             }
@@ -138,11 +144,15 @@ impl OneLog {
                     message_type,
                 };
                 let infos = AdditionalInfos::NASInfos(nas);
+                let text_lines: Vec<String> = self.data[1..].iter().map(|x| x.to_string()).collect();
+                let binary = extract_binary_from_lines(&self.data);
                 let trace = Trace {
                     timestamp: self.timestamp,
                     layer: Layer::NAS,
                     additional_infos: infos,
-                    text: Some(self.data[1..].iter().map(|x| x.to_string()).collect()),
+                    text: Some(text_lines),
+                    binary,
+                    relation: TraceRelation::default(),
                 };
                 Ok(trace)
             }

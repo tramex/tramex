@@ -1,5 +1,7 @@
 //! Parser for RRC traces
 use super::ParsingError;
+use super::hex_extractor::extract_binary_from_lines;
+use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
 use std::str::FromStr;
 
@@ -74,11 +76,14 @@ impl FileParser for RRCParser {
                 return Err(e);
             }
         };
+        let binary = extract_binary_from_lines(lines);
         let trace = Trace {
             timestamp: 0,
             layer: Layer::RRC,
             additional_infos: mtype,
             text: Some(text),
+            binary,
+            relation: TraceRelation::default(),
         };
         Ok(trace)
     }

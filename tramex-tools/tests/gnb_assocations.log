@@ -1,0 +1,149 @@
+# lteenb version 2024-03-15, gcc 9.2.1
+# Licensed to 'Télécom ParisTech ' [8a6a4cbd5be14f9b18453920b31dbc669779fc827a1d128fca]
+# SMP C=10 P=normal bandwidth=20.0/40 PRACH=1 DRBs=1 RF0=1/1
+# Log file format:
+# time layer dir ue_id {cell_id    sfn channel:} message
+# global_ran_node_id=00103.74565
+# Cell 0x01: nr_arfcn=623028 ul_nr_arfcn=623028 pci=200 mode=TDD rat=nr n_rb_dl=51 n_rb_ul=51 dl_mu=1 ul_mu=1 ssb_mu=1 ssb_arfcn=622944 coreset0_prb=0:48 coreset0_idx=10
+# GBR limits: DL=9.400 Mre/s UL=2.742 Mre/s
+# Auto k1=[8,7,7,6,5,4,12,11] k2=[7,4] msg3_k2=5
+# PRACH: cfg_id=0 n_root_seqs=32
+# SSB: id=0 arfcn=622944 mu=1 L=8 period=20 offset=0 k_ssb=0 prb=12:20 symb=2
+# PUCCH capacity: ~180 UEs (RB_PUCCH=6 RB_an=1.462 RB_sr/UE=0.015 RB_csi/UE=0.010)
+# Scheduling capacity: ~3.2 PDCCH/slot ~1.6 AN/slot
+# CFG=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
+# Started on 2024-04-09 12:29:58
+# Rotated on 2024-04-09 13:20:45
+13:21:07.079 [RRC] UL 0048 01 DCCH-NR: RRC setup complete
+        0000:  10 10 0b 1f 80 53 cd 29  e4 82 df 80 13 05 40 01  .....S.)......@.
+        0010:  fd 00 40 5b a3 b2 1f dc  40 05 5f 80 13 05 40 01  ..@[....@._...@.
+        0020:  fd 00 40 5b a3 b2 1f d0  00 88 00 14 00 88 00 20  ..@[...........
+        {
+          message c1: rrcSetupComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcSetupComplete: {
+              selectedPLMN-Identity 1,
+              dedicatedNAS-Message '7E014F34A7920B7E004C150007F401016E8EC87F7100157E004C150007F401016E8EC87F4002200050022000'H,
+              ng-5G-S-TMSI-Value ng-5G-S-TMSI-Part2: '000000010'B
+            }
+          }
+        }
+
+13:21:07.079 [NAS] UL 0048 5GMM: Service request
+        0000:  7e 01 4f 34 a7 92 0b 7e  00 4c 15 00 07 f4 01 01  ~.O4...~.L......
+        0010:  6e 8e c8 7f 71 00 15 7e  00 4c 15 00 07 f4 01 01  n...q..~.L......
+        0020:  6e 8e c8 7f 40 02 20 00  50 02 20 00              n...@. .P. .
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x1 (Integrity protected)
+        Auth code = 0x4f34a792
+        Sequence number = 0x0b
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x4c (Service request)
+        ngKSI:
+          TSC = 0
+          NAS key set identifier = 5
+        Service type = 0x01 (data)
+        5G-S-TMSI:
+          5G-S-TMSI
+            AMF Set ID = 4
+            AMF Pointer = 1
+            5G-TMSI = 0x6e8ec87f
+        NAS message container:
+          Protocol discriminator = 0x7e (5GS Mobility Management)
+          Security header = 0x0 (Plain 5GS NAS message, not security protected)
+          Message type = 0x4c (Service request)
+          ngKSI:
+            TSC = 0
+            NAS key set identifier = 5
+          Service type = 0x01 (data)
+          5G-S-TMSI:
+            5G-S-TMSI
+              AMF Set ID = 4
+              AMF Pointer = 1
+              5G-TMSI = 0x6e8ec87f
+          Uplink data status:
+            0x20 (PSI(7)=0, PSI(6)=0, PSI(5)=1, PSI(4)=0, PSI(3)=0, PSI(2)=0, PSI(1)=0, PSI(0)=0)
+            0x00 (PSI(15)=0, PSI(14)=0, PSI(13)=0, PSI(12)=0, PSI(11)=0, PSI(10)=0, PSI(9)=0, PSI(8)=0)
+          PDU session status:
+            0x20 (PSI(7)=0, PSI(6)=0, PSI(5)=1, PSI(4)=0, PSI(3)=0, PSI(2)=0, PSI(1)=0, PSI(0)=0)
+            0x00 (PSI(15)=0, PSI(14)=0, PSI(13)=0, PSI(12)=0, PSI(11)=0, PSI(10)=0, PSI(9)=0, PSI(8)=0)
+
+
+13:24:22.359 [RRC] UL 004e 01 DCCH-NR: RRC setup complete
+        0000:  10 10 0a 1f 80 75 50 69  ef c4 5f 80 13 09 40 01  .....uPi.._...@.
+        0010:  fd 00 40 5b a3 b2 1f dc  40 04 5f 80 13 09 40 01  ..@[....@._...@.
+        0020:  fd 00 40 5b a3 b2 1f d4  00 88 00 20 20           ..@[.......  
+        {
+          message c1: rrcSetupComplete: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions rrcSetupComplete: {
+              selectedPLMN-Identity 1,
+              dedicatedNAS-Message '7E01D541A7BF117E004C250007F401016E8EC87F7100117E004C250007F401016E8EC87F50022000'H,
+              ng-5G-S-TMSI-Value ng-5G-S-TMSI-Part2: '000000010'B
+            }
+          }
+        }
+
+13:20:45.579 [RLC] UL 003d DRB1 test1
+13:20:45.579 [RLC] UL 003d DRB1 test2
+13:20:45.579 [RLC] UL 003d DRB1 test3
+13:20:45.579 [RLC] UL 003d DRB1 test4
+13:20:45.579 [RLC] UL 003d DRB1 test5
+13:20:45.579 [RLC] UL 003d DRB1 test6
+13:20:45.579 [RLC] UL 003d DRB1 test7
+13:20:45.579 [RLC] UL 003d DRB1 test8
+13:20:45.579 [RLC] UL 003d DRB1 test9
+13:20:45.579 [RLC] UL 003d DRB1 test10
+
+13:24:22.360 [NAS] UL 0048 5GSM: Registration accept
+        0000:  7e 02 33 c8 78 a9 f6 7e  00 42 01 09 77 00 0b f2  ~.3.x..~.B..w...
+        0010:  00 f1 10 80 01 01 19 e0  b5 fe 54 07 00 00 f1 10  ..........T.....
+        0020:  00 00 64 15 05 04 01 00  00 01 31 0c 04 01 00 00  ..d.......1.....
+        0030:  01 01 02 04 03 00 00 32  21 02 03 00 5e 01 be 34  .......2!...^..4
+        0040:  08 03 1f 19 f1 03 1f 11  f2                       .........
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x33c878a9
+        Sequence number = 0xf6
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x42 (Registration accept)
+        5GS registration result = 0x09 (Disaster roaming registration result=0, Emergency registered=0, NSSAA to be performed=0, SMS allowed=1, 3GPP access)
+        5G-GUTI:
+          5G-GUTI
+            MCC = 001
+            MNC = 01 
+            AMF Region ID = 128
+            AMF Set ID = 4
+            AMF Pointer = 1
+            5G-TMSI = 0x19e0b5fe
+        TAI list:
+          Length = 7
+          Data = 00 00 f1 10 00 00 64
+        Allowed NSSAI:
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+        Configured NSSAI:
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x01
+            SD = 0x000001
+          S-NSSAI
+            Length of S-NSSAI contents = 1 (SST)
+            SST = 0x02
+          S-NSSAI
+            Length of S-NSSAI contents = 4 (SST and SD)
+            SST = 0x03
+            SD = 0x000032
+        5GS network feature support:
+          0x03 (MPSI=0, IWK N26=0, EMF=not supported, EMC=not supported, IMS-VoPS-N3GPP=1, IMS-VoPS-3GPP=1)
+          0x00 (5G-UP CIoT=0, 5G-IPHC-CP CIoT=0, N3 data=0, 5G-CP CIoT=0, RestrictEC=both CE mode A and CE mode B are not restricted, MCSI=0, EMCN3=0)
+        T3512 value:
+          Value = 30
+          Unit = 5 (1 minute)
+        Emergency number list:
+          Length = 8
+          Data = 03 1f 19 f1 03 1f 11 f2

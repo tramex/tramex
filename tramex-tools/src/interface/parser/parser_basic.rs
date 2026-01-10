@@ -1,5 +1,7 @@
 //! Basic parser for simple layers (PHY, RLC, MAC, PDCP, SDAP, etc.)
 use super::ParsingError;
+use super::hex_extractor::extract_binary_from_lines;
+use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
 use crate::interface::layer::Layer;
 
@@ -20,12 +22,15 @@ impl BasicParser {
         }
         
         let text = lines.to_vec();
+        let binary = extract_binary_from_lines(lines);
         
         let trace = Trace {
             timestamp: 0,
             layer,
             additional_infos: AdditionalInfos::None,
             text: Some(text),
+            binary,
+            relation: TraceRelation::default(),
         };
         Ok(trace)
     }

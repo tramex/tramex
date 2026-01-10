@@ -5,6 +5,7 @@ pub mod parser_basic;
 pub mod parser_nas;
 pub mod parser_ngap;
 pub mod parser_gtpu;
+pub mod hex_extractor;
 
 use crate::data::AdditionalInfos;
 use crate::data::Trace;

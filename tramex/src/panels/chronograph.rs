@@ -102,6 +102,14 @@ pub struct Chronograph {
     
     /// Flag to trigger scroll on next frame
     should_scroll: bool,
+    
+    /// Parent trace index of the current focused trace (if any)
+    #[serde(skip)]
+    related_parent: Option<usize>,
+    
+    /// Child trace index of the current focused trace (if any)
+    #[serde(skip)]
+    related_child: Option<usize>,
 }
 
 impl Default for Chronograph {
@@ -118,6 +126,8 @@ impl Chronograph {
             arrows: Vec::new(),
             scroll_offset: 0.0,
             should_scroll: false,
+            related_parent: None,
+            related_child: None,
         }
     }
     
@@ -251,10 +261,15 @@ impl Chronograph {
                     for (i, arrow) in self.arrows.iter().enumerate() {
                         let y = start_y + (i as f32 * arrow_height);
                         let is_current = arrow.trace_index == self.current_index;
+                        let is_related_parent = self.related_parent == Some(arrow.trace_index);
+                        let is_related_child = self.related_child == Some(arrow.trace_index);
                         
                         // Determine arrow color and thickness
+                        // Current: bright blue, Related (parent/child): lighter blue, Others: black
                         let (arrow_color, arrow_width) = if is_current {
                             (Color32::from_rgb(50, 120, 220), 3.0) // Blue and thicker for current
+                        } else if is_related_parent || is_related_child {
+                            (Color32::from_rgb(130, 180, 240), 2.5) // Lighter blue for related traces
                         } else {
                             (Color32::BLACK, 1.5) // Black for others
                         };
@@ -328,10 +343,17 @@ impl EventSubscriber for Chronograph {
         }
     }
     
-    fn on_event_focused(&mut self, _event: &Trace, index: usize, _context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates to an event, update current index and scroll
         self.current_index = index;
         self.should_scroll = true;
+        
+        // Update related parent/child indices for highlighting
+        self.related_parent = event.relation.get_parent_index();
+        self.related_child = event.relation.get_child_index();
+        
+        log::trace!("Chronograph: Focused on event {}, parent={:?}, child={:?}", 
+            index, self.related_parent, self.related_child);
     }
     
     fn on_events_cleared(&mut self) {
@@ -340,6 +362,8 @@ impl EventSubscriber for Chronograph {
         self.current_index = 0;
         self.scroll_offset = 0.0;
         self.should_scroll = false;
+        self.related_parent = None;
+        self.related_child = None;
     }
     
     fn name(&self) -> &'static str {

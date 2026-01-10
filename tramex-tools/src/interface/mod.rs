@@ -10,3 +10,4 @@ pub mod onelog;
 pub mod parser;
 pub mod types;
 pub mod websocket;
+pub mod association;

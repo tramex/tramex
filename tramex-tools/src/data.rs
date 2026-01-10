@@ -1,4 +1,7 @@
 //! This module contains the data structures used to store the data of the application.
+use crate::interface::association::{
+    TraceRelation, AssociationStatus, AssociationRules, TraceMatcher,
+};
 use crate::interface::{
     parse_config::FileMetadata, 
     layer::Layer, 
@@ -39,6 +42,119 @@ impl Data {
         self.current_index = 0;
         self.metadata = FileMetadata::default();
     }
+
+    /// Compute parent association for a trace at the given index using lazy evaluation.
+    /// If already computed, returns the cached result. Otherwise, computes and caches it.
+    /// 
+    /// # Arguments
+    /// * `index` - Index of the trace to compute parent for
+    /// * `rules` - The association rules to use for matching
+    /// 
+    /// # Returns
+    /// * The parent index if found, None otherwise
+    pub fn compute_parent(&mut self, index: usize, rules: &AssociationRules) -> Option<usize> {
+        // Check if already computed
+        if let Some(trace) = self.events.get(index) {
+            if trace.relation.parent.is_computed() {
+                return trace.relation.get_parent_index();
+            }
+        }
+
+        // Get the trace's layer to find applicable rules
+        let layer = match self.events.get(index) {
+            Some(t) => t.layer.clone(),
+            None => return None,
+        };
+
+        // Try each applicable rule
+        let applicable_rules = rules.rules_for_layer(&layer);
+        for rule in applicable_rules {
+            let status = TraceMatcher::find_relative(index, &self.events, rule, &layer, &rule.target_layer());
+            
+            // Update the trace's relation
+            if let Some(trace) = self.events.get_mut(index) {
+                trace.relation.parent = status.clone();
+            }
+
+            // If we found a parent, also set the child relation on the parent
+            if let AssociationStatus::Found(parent_idx) = status {
+                if let Some(parent_trace) = self.events.get_mut(parent_idx) {
+                    parent_trace.relation.set_child(index);
+                }
+                return Some(parent_idx);
+            }
+        }
+
+        // Mark as not found if no rules matched
+        if let Some(trace) = self.events.get_mut(index) {
+            if !trace.relation.parent.is_computed() {
+                trace.relation.set_parent_not_applicable();
+            }
+        }
+
+        None
+    }
+
+    /// Compute all associations for all traces in the events vector.
+    /// This applies all rules to each trace automatically:
+    /// - For each trace, finds rules where the trace's layer is the source layer
+    /// - Computes the relationship and updates both parent (on source) and child (on target)
+    /// 
+    /// After calling this method, you can use `trace.relation.get_parent_index()` or 
+    /// `trace.relation.get_child_index()` to get related traces.
+    pub fn compute_all_associations(&mut self, rules: &AssociationRules) {
+        crate::interface::association::compute_associations(&mut self.events, rules, 0);
+    }
+
+    /// Get the parent trace for a trace at the given index.
+    /// This will compute the association if not already done.
+    /// 
+    /// # Arguments
+    /// * `index` - Index of the trace
+    /// * `rules` - The association rules to use
+    /// 
+    /// # Returns
+    /// * Reference to the parent trace if found
+    pub fn get_parent_trace(&mut self, index: usize, rules: &AssociationRules) -> Option<&Trace> {
+        let parent_idx = self.compute_parent(index, rules)?;
+        self.events.get(parent_idx)
+    }
+
+    /// Get the child trace for a trace at the given index.
+    /// Note: child relation is set when the child's parent is computed.
+    /// 
+    /// # Arguments
+    /// * `index` - Index of the trace
+    /// 
+    /// # Returns
+    /// * Reference to the child trace if found
+    pub fn get_child_trace(&self, index: usize) -> Option<&Trace> {
+        let trace = self.events.get(index)?;
+        let child_idx = trace.relation.get_child_index()?;
+        self.events.get(child_idx)
+    }
+
+    /// Invalidate all associations (useful when new traces are added)
+    pub fn invalidate_associations(&mut self) {
+        for trace in &mut self.events {
+            trace.relation.invalidate();
+        }
+    }
+
+    /// Invalidate associations in a range around newly added traces
+    /// This is more efficient than invalidating all associations
+    /// 
+    /// # Arguments
+    /// * `start_index` - Start of the range where new traces were added
+    /// * `window` - Window size to invalidate around the new traces
+    pub fn invalidate_associations_in_range(&mut self, start_index: usize, window: usize) {
+        let start = start_index.saturating_sub(window);
+        let end = (start_index + window).min(self.events.len());
+        
+        for trace in &mut self.events[start..end] {
+            trace.relation.invalidate();
+        }
+    }
 }
 
 impl Default for Data {
@@ -55,18 +171,23 @@ impl Default for Data {
 #[derive(Debug, Clone)]
 /// Data structure to store Trace of the application.
 pub struct Trace {
-    /// Message type.
     /// Timestamp of the message.
     pub timestamp: i64,
 
     /// Layer of the message.
     pub layer: Layer,
 
-    /// Message type.
+    /// Additional layer-specific information.
     pub additional_infos: AdditionalInfos,
 
     /// Text representation of the message from the API
     pub text: Option<Vec<String>>,
+
+    /// Binary representation extracted from hex dump (if present and complete)
+    pub binary: Option<Vec<u8>>,
+
+    /// Parent/child relationship with other traces
+    pub relation: TraceRelation,
 }
 
 impl Trace {
