@@ -31,11 +31,8 @@ pub fn compute_associations(events: &mut [Trace], rules: &AssociationRules, star
     let trace_count = events.len();
     
     for index in start_index..trace_count {
-        // Skip if already computed (unless we're in the lookback window - force recompute)
+        // Check if we're in the lookback window for recomputation
         let in_lookback = index < start_index + ASSOCIATION_LOOKBACK_WINDOW;
-        if !in_lookback && events.get(index).map(|t| t.relation.parent.is_computed()).unwrap_or(true) {
-            continue;
-        }
         
         // Reset relation if we're recomputing in lookback window
         if in_lookback {
@@ -75,18 +72,29 @@ pub fn compute_associations(events: &mut [Trace], rules: &AssociationRules, star
                 &rule.target_layer()
             );
             
-            // Update the source trace's parent relation
-            if let Some(trace) = events.get_mut(index) {
-                trace.relation.parent = status.clone();
-            }
-            
-            // If found, also set the child relation on the target trace
-            if let AssociationStatus::Found(target_idx) = status {
-                if let Some(target_trace) = events.get_mut(target_idx) {
-                    target_trace.relation.set_child(index);
+            // If found, set parent/child based on rule's direction
+            if let AssociationStatus::Found(target_indices) = status {
+                for &target_idx in &target_indices {
+                    if rule.source_is_child() {
+                        // Source is child, target is parent (e.g., NAS→RRC)
+                        if let Some(trace) = events.get_mut(index) {
+                            trace.relation.add_parent(target_idx);
+                        }
+                        if let Some(target_trace) = events.get_mut(target_idx) {
+                            target_trace.relation.add_child(index);
+                        }
+                    } else {
+                        // Source is parent, target is child (e.g., NGAP→NAS)
+                        if let Some(trace) = events.get_mut(index) {
+                            trace.relation.add_child(target_idx);
+                        }
+                        if let Some(target_trace) = events.get_mut(target_idx) {
+                            target_trace.relation.add_parent(index);
+                        }
+                    }
                 }
                 found = true;
-                break; // Stop after first match
+                // Don't break - continue to run other rules for additional associations
             }
         }
         

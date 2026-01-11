@@ -72,16 +72,22 @@ impl Data {
             let status = TraceMatcher::find_relative(index, &self.events, rule, &layer, &rule.target_layer());
             
             // Update the trace's relation
-            if let Some(trace) = self.events.get_mut(index) {
-                trace.relation.parent = status.clone();
-            }
-
-            // If we found a parent, also set the child relation on the parent
-            if let AssociationStatus::Found(parent_idx) = status {
-                if let Some(parent_trace) = self.events.get_mut(parent_idx) {
-                    parent_trace.relation.set_child(index);
+            // If we found a parent, set the relations
+            if let AssociationStatus::Found(parent_indices) = status {
+                // Update source trace with all found parents
+                if let Some(trace) = self.events.get_mut(index) {
+                    for &parent_idx in &parent_indices {
+                        trace.relation.add_parent(parent_idx);
+                    }
                 }
-                return Some(parent_idx);
+                // Set child relation on each parent
+                for &parent_idx in &parent_indices {
+                    if let Some(parent_trace) = self.events.get_mut(parent_idx) {
+                        parent_trace.relation.add_child(index);
+                    }
+                }
+                // Return first parent for backwards compatibility
+                return parent_indices.first().copied();
             }
         }
 

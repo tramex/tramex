@@ -105,11 +105,11 @@ pub struct Chronograph {
     
     /// Parent trace index of the current focused trace (if any)
     #[serde(skip)]
-    related_parent: Option<usize>,
+    related_parent: Option<Vec<usize>>,
     
     /// Child trace index of the current focused trace (if any)
     #[serde(skip)]
-    related_child: Option<usize>,
+    related_child: Option<Vec<usize>>,
 }
 
 impl Default for Chronograph {
@@ -260,9 +260,9 @@ impl Chronograph {
                 let start_y = arrow_start_y + 10.0;
                     for (i, arrow) in self.arrows.iter().enumerate() {
                         let y = start_y + (i as f32 * arrow_height);
-                        let is_current = arrow.trace_index == self.current_index;
-                        let is_related_parent = self.related_parent == Some(arrow.trace_index);
-                        let is_related_child = self.related_child == Some(arrow.trace_index);
+                        let is_current: bool = arrow.trace_index == self.current_index;
+                        let is_related_parent = self.related_parent.as_ref().map_or(false, |v| v.contains(&arrow.trace_index));
+                        let is_related_child = self.related_child.as_ref().map_or(false, |v| v.contains(&arrow.trace_index));
                         
                         // Determine arrow color and thickness
                         // Current: bright blue, Related (parent/child): lighter blue, Others: black
@@ -349,8 +349,8 @@ impl EventSubscriber for Chronograph {
         self.should_scroll = true;
         
         // Update related parent/child indices for highlighting
-        self.related_parent = event.relation.get_parent_index();
-        self.related_child = event.relation.get_child_index();
+        self.related_parent = event.relation.get_parent_indices().cloned();
+        self.related_child = event.relation.get_child_indices().cloned();
         
         log::trace!("Chronograph: Focused on event {}, parent={:?}, child={:?}", 
             index, self.related_parent, self.related_child);

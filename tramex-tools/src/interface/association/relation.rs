@@ -6,25 +6,61 @@ pub enum AssociationStatus {
     /// Association has not been computed yet
     #[default]
     NotComputed,
-    /// Association found - contains the index of the related trace
-    Found(usize),
+    /// Association found - contains indices of related traces (can be multiple)
+    Found(Vec<usize>),
     /// Association was searched but no match found within the window
     NotFound,
-    /// This trace type does not support this type of association
+    /// This trace type does not support associations
     NotApplicable,
 }
 
 impl AssociationStatus {
-    /// Returns true if the association has been computed (Found or NotFound)
+    /// Returns true if the association has been computed (Found, NotFound, or NotApplicable)
     pub fn is_computed(&self) -> bool {
         !matches!(self, AssociationStatus::NotComputed)
     }
 
-    /// Returns the index if found
+    /// Returns the first index if found (for backwards compatibility)
     pub fn get_index(&self) -> Option<usize> {
         match self {
-            AssociationStatus::Found(idx) => Some(*idx),
+            AssociationStatus::Found(indices) => indices.first().copied(),
             _ => None,
+        }
+    }
+
+    /// Returns all indices if found
+    pub fn get_indices(&self) -> Option<&Vec<usize>> {
+        match self {
+            AssociationStatus::Found(indices) => Some(indices),
+            _ => None,
+        }
+    }
+
+    /// Add an index to the association
+    /// - If NotComputed or NotFound: becomes Found with single index
+    /// - If Found: appends index if not already present
+    /// - If NotApplicable: no change (returns false)
+    pub fn add_index(&mut self, index: usize) -> bool {
+        match self {
+            AssociationStatus::NotComputed | AssociationStatus::NotFound => {
+                *self = AssociationStatus::Found(vec![index]);
+                true
+            }
+            AssociationStatus::Found(indices) => {
+                if !indices.contains(&index) {
+                    indices.push(index);
+                }
+                true
+            }
+            AssociationStatus::NotApplicable => false,
+        }
+    }
+
+    /// Check if this status contains a specific index
+    pub fn contains(&self, index: usize) -> bool {
+        match self {
+            AssociationStatus::Found(indices) => indices.contains(&index),
+            _ => false,
         }
     }
 }
@@ -59,19 +95,39 @@ impl TraceRelation {
         self.parent.get_index()
     }
 
+    /// Get parent indices if available
+    pub fn get_parent_indices(&self) -> Option<&Vec<usize>> {
+        self.parent.get_indices()
+    }
+
     /// Get child index if available
     pub fn get_child_index(&self) -> Option<usize> {
         self.child.get_index()
     }
 
-    /// Set parent as found
-    pub fn set_parent(&mut self, index: usize) {
-        self.parent = AssociationStatus::Found(index);
+    /// Get child indices if available
+    pub fn get_child_indices(&self) -> Option<&Vec<usize>> {
+        self.child.get_indices()
     }
 
-    /// Set child as found
+    /// Set parent as found (replaces existing)
+    pub fn set_parent(&mut self, index: usize) {
+        self.parent = AssociationStatus::Found(vec![index]);
+    }
+
+    /// Add a parent index (appends to existing if Found)
+    pub fn add_parent(&mut self, index: usize) -> bool {
+        self.parent.add_index(index)
+    }
+
+    /// Set child as found (replaces existing)
     pub fn set_child(&mut self, index: usize) {
-        self.child = AssociationStatus::Found(index);
+        self.child = AssociationStatus::Found(vec![index]);
+    }
+
+    /// Add a child index (appends to existing if Found)
+    pub fn add_child(&mut self, index: usize) -> bool {
+        self.child.add_index(index)
     }
 
     /// Mark parent search as completed with no result

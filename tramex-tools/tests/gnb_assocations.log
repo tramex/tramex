@@ -147,3 +147,177 @@
         Emergency number list:
           Length = 8
           Data = 03 1f 19 f1 03 1f 11 f2
+
+19:16:13.142 [RRC] UL 0031 01 DCCH-NR: UL information transfer
+        0000:  3a 26 3f 01 63 89 ca e3  31 bf 00 33 80 80 15 97  :&?.c...1..3....
+        0010:  00 81 e0 ff ff c8 d8 bd  80 10 40 40 10 88 00 80  ..........@@....
+        0020:  00 08 40 83 00 00 00 00  41 83 00 00 00 00 00 05  ..@.....A.......
+        0030:  00 00 08 00 00 06 80 00  08 80 09 00 c0 91 02 00  ................
+        0040:  80 00 00 92 84 84 34 b7  3a 32 b9 37 32 ba 00     ......4.:2.72..
+        {
+          message c1: ulInformationTransfer: {
+            criticalExtensions ulInformationTransfer: {
+              dedicatedNAS-Message '7E02C71395C6637E006701002B2E0103C1FFFF91B17B00208080211001000010810600000000830600000000000A00001000000D00001100120181220401000001250908696E7465726E6574'H
+            }
+          }
+        }
+
+19:16:13.142 [NAS] UL 0031 5GMM: UL NAS transport
+        0000:  7e 02 c7 13 95 c6 63 7e  00 67 01 00 2b 2e 01 03  ~.....c~.g..+...
+        0010:  c1 ff ff 91 b1 7b 00 20  80 80 21 10 01 00 00 10  .....{. ..!.....
+        0020:  81 06 00 00 00 00 83 06  00 00 00 00 00 0a 00 00  ................
+        0030:  10 00 00 0d 00 00 11 00  12 01 81 22 04 01 00 00  ..........."....
+        0040:  01 25 09 08 69 6e 74 65  72 6e 65 74              .%..internet
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0xc71395c6
+        Sequence number = 0x63
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x67 (UL NAS transport)
+        Payload container type = 1 (N1 SM information)
+        Payload container:
+          Protocol discriminator = 0x2e (5GS Session Management)
+          PDU session identity = 1
+          Procedure transaction identity = 3
+          Message type = 0xc1 (PDU session establishment request)
+          Integrity protection maximum data rate:
+            Maximum data rate per UE for user-plane integrity protection for uplink = 0xff (Full data rate)
+            Maximum data rate per UE for user-plane integrity protection for downlink = 0xff (Full data rate)
+          PDU session type = 0x1 (IPv4)
+          Always-on PDU session requested = 1
+          Extended protocol configuration options:
+            Ext = 1
+            Configuration protocol = 0
+            Protocol ID = 0x8021 (IPCP)
+            Data = 01 00 00 10 81 06 00 00 00 00 83 06 00 00 00 00
+            Protocol ID = 0x000a (IP address allocation via NAS signalling)
+            Data =
+            Protocol ID = 0x0010 (IPv4 Link MTU Request)
+            Data =
+            Protocol ID = 0x000d (DNS Server IPv4 Address Request)
+            Data =
+            Protocol ID = 0x0011 (MS support of Local address in TFT indicator)
+            Data =
+        PDU session ID = 1
+        Request type = 0x1 (initial request)
+        S-NSSAI:
+          Length of S-NSSAI contents = 4 (SST and SD)
+          SST = 0x01
+          SD = 0x000001
+        DNN = "internet"
+19:16:13.142 [NGAP] TO 0094 0031 127.0.1.100:38412 Uplink NAS transport
+        0000:  00 2e 40 73 00 00 04 00  0a 00 02 00 94 00 55 00  ..@s..........U.
+        0010:  02 00 31 00 26 00 4d 4c  7e 02 c7 13 95 c6 63 7e  ..1.&.ML~.....c~
+        0020:  00 67 01 00 2b 2e 01 03  c1 ff ff 91 b1 7b 00 20  .g..+........{. 
+        0030:  80 80 21 10 01 00 00 10  81 06 00 00 00 00 83 06  ..!.............
+        0040:  00 00 00 00 00 0a 00 00  10 00 00 0d 00 00 11 00  ................
+        0050:  12 01 81 22 04 01 00 00  01 25 09 08 69 6e 74 65  ...".....%..inte
+        0060:  72 6e 65 74 00 79 40 0f  40 00 f1 10 00 12 34 50  rnet.y@.@.....4P
+        0070:  10 00 f1 10 00 00 64                              ......d
+        initiatingMessage: {
+          procedureCode id-UplinkNASTransport,
+          criticality ignore,
+          value {
+            protocolIEs {
+              {
+                id id-AMF-UE-NGAP-ID,
+                criticality reject,
+                value 148
+              },
+              {
+                id id-RAN-UE-NGAP-ID,
+                criticality reject,
+                value 49
+              },
+              {
+                id id-NAS-PDU,
+                criticality reject,
+                value '7E02C71395C6637E006701002B2E0103C1FFFF91B17B00208080211001000010810600000000830600000000000A00001000000D00001100120181220401000001250908696E7465726E6574'H
+              },
+              {
+                id id-UserLocationInformation,
+                criticality ignore,
+                value userLocationInformationNR: {
+                  nR-CGI {
+                    pLMNIdentity '00F110'H,
+                    nRCellIdentity '001234501'H
+                  },
+                  tAI {
+                    pLMNIdentity '00F110'H,
+                    tAC '000064'H
+                  }
+                }
+              }
+            }
+          }
+        }
+
+19:16:13.142 [NGAP] FROM 0094 0031 127.0.1.100:38412 Downlink NAS transport
+        0000:  00 04 40 48 00 00 03 00  0a 00 02 00 94 00 55 00  ..@H..........U.
+        0010:  02 00 31 00 26 00 35 34  7e 02 10 d3 97 50 34 7e  ..1.&.54~....P4~
+        0020:  00 54 43 10 81 c1 76 58  9e 9e bf cd 74 90 b3 4c  .TC...vX....t..L
+        0030:  bf bf e5 6b 45 09 81 c1  76 58 9e 9e bf cd 74 46  ...kE...vX....tF
+        0040:  40 47 62 10 01 81 61 31  40 49 01 00              @Gb...a1@I..
+        initiatingMessage: {
+          procedureCode id-DownlinkNASTransport,
+          criticality ignore,
+          value {
+            protocolIEs {
+              {
+                id id-AMF-UE-NGAP-ID,
+                criticality reject,
+                value 148
+              },
+              {
+                id id-RAN-UE-NGAP-ID,
+                criticality reject,
+                value 49
+              },
+              {
+                id id-NAS-PDU,
+                criticality reject,
+                value '7E0210D39750347E0054431081C176589E9EBFCD7490B34CBFBFE56B450981C176589E9EBFCD7446404762100181613140490100'H
+              }
+            }
+          }
+        }
+
+19:16:13.142 [NAS] DL 0031 5GMM: Configuration update command
+        0000:  7e 02 10 d3 97 50 34 7e  00 54 43 10 81 c1 76 58  ~....P4~.TC...vX
+        0010:  9e 9e bf cd 74 90 b3 4c  bf bf e5 6b 45 09 81 c1  ....t..L...kE...
+        0020:  76 58 9e 9e bf cd 74 46  40 47 62 10 01 81 61 31  vX....tF@Gb...a1
+        0030:  40 49 01 00                                       @I..
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x2 (Integrity protected and ciphered)
+        Auth code = 0x10d39750
+        Sequence number = 0x34
+        Protocol discriminator = 0x7e (5GS Mobility Management)
+        Security header = 0x0 (Plain 5GS NAS message, not security protected)
+        Message type = 0x54 (Configuration update command)
+        Full name for network:
+          Length = 16
+          Data = 81 c1 76 58 9e 9e bf cd 74 90 b3 4c bf bf e5 6b
+        Short name for network:
+          Length = 9
+          Data = 81 c1 76 58 9e 9e bf cd 74
+        Local time zone = 64
+        Universal time and local time zone:
+          Data = 62 10 01 81 61 31 40
+        Network daylight saving time:
+          Length = 1
+          Data = 00
+19:16:13.142 [RRC] DL 0031 01 DCCH-NR: DL information transfer
+        0000:  28 86 8f c0 42 1a 72 ea  06 8f c0 0a 88 62 10 38  (...B.r......b.8
+        0010:  2e cb 13 d3 d7 f9 ae 92  16 69 97 f7 fc ad 68 a1  .........i....h.
+        0020:  30 38 2e cb 13 d3 d7 f9  ae 88 c8 08 ec 42 00 30  08...........B.0
+        0030:  2c 26 28 09 20 20 00                              ,&(.  .
+        {
+          message c1: dlInformationTransfer: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions dlInformationTransfer: {
+              dedicatedNAS-Message '7E0210D39750347E0054431081C176589E9EBFCD7490B34CBFBFE56B450981C176589E9EBFCD7446404762100181613140490100'H
+            }
+          }
+        }
+

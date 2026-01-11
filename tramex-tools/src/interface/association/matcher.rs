@@ -43,28 +43,28 @@ impl TraceMatcher {
         match direction {
             SearchDirection::BackwardFirst => {
                 if let Some(idx) = Self::search_backward(source_index, events, source, rule, &target_layer) {
-                    return AssociationStatus::Found(idx);
+                    return AssociationStatus::Found(vec![idx]);
                 }
                 if let Some(idx) = Self::search_forward(source_index, events, source, rule, &target_layer) {
-                    return AssociationStatus::Found(idx);
+                    return AssociationStatus::Found(vec![idx]);
                 }
             }
             SearchDirection::ForwardFirst => {
                 if let Some(idx) = Self::search_forward(source_index, events, source, rule, &target_layer) {
-                    return AssociationStatus::Found(idx);
+                    return AssociationStatus::Found(vec![idx]);
                 }
                 if let Some(idx) = Self::search_backward(source_index, events, source, rule, &target_layer) {
-                    return AssociationStatus::Found(idx);
+                    return AssociationStatus::Found(vec![idx]);
                 }
             }
             SearchDirection::BackwardOnly => {
                 if let Some(idx) = Self::search_backward(source_index, events, source, rule, &target_layer) {
-                    return AssociationStatus::Found(idx);
+                    return AssociationStatus::Found(vec![idx]);
                 }
             }
             SearchDirection::ForwardOnly => {
                 if let Some(idx) = Self::search_forward(source_index, events, source, rule, &target_layer) {
-                    return AssociationStatus::Found(idx);
+                    return AssociationStatus::Found(vec![idx]);
                 }
             }
         }
@@ -87,8 +87,8 @@ impl TraceMatcher {
     ) -> Option<usize> {
         let window_size = rule.window_size();
         let start = index.saturating_sub(window_size);
-
         for idx in (start..index).rev() {
+            println!("Searching backward for {:?}, index: {}, start: {}, candidate: {}", target_layer, index, start, idx);
             let candidate = &events[idx];
 
             if &candidate.layer != target_layer {
@@ -112,8 +112,8 @@ impl TraceMatcher {
     ) -> Option<usize> {
         let window_size = rule.window_size();
         let end = (index + window_size + 1).min(events.len());
-
         for idx in (index + 1)..end {
+            println!("Searching forward for {:?}, index: {}, end: {}, candidate: {}", target_layer, index, end, idx);
             let candidate = &events[idx];
 
             if &candidate.layer != target_layer {

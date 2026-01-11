@@ -63,6 +63,25 @@ pub trait AssociationRule: Send + Sync {
     fn window_size(&self) -> usize {
         10 // Default window size for searching related traces
     }
+
+    /// Filter for valid source message names (if empty, all messages are valid)
+    /// This is checked before attempting to match
+    fn valid_source_messages(&self) -> &[&str] {
+        &[] // Empty means all source messages are valid
+    }
+
+    /// Filter for valid target message names (if empty, all messages are valid)
+    /// This is checked before attempting to match
+    fn valid_target_messages(&self) -> &[&str] {
+        &[] // Empty means all target messages are valid
+    }
+
+    /// Returns true if the source trace is the child in the relationship
+    /// - true: source is child, target is parent (e.g., NAS→RRC where NAS is child)
+    /// - false: source is parent, target is child (e.g., NGAP→NAS where NAS is child)
+    fn source_is_child(&self) -> bool {
+        true // Default: source trace is the child
+    }
 }
 
 
@@ -82,6 +101,7 @@ impl AssociationRules {
     pub fn new() -> Self {
         let mut rules: Vec<Box<dyn AssociationRule>> = Vec::new();
         rules.push(Box::new(NasToRrcRule::new()));
+        rules.push(Box::new(NgapToNasRule::new()));
         Self { rules }
     }
 
@@ -105,6 +125,8 @@ pub struct NasToRrcRule {
     pub byte_match_length: usize,
     /// Explicit list of RRC messages that can carry NAS
     pub valid_rrc_messages: &'static [&'static str],
+    /// Explicit list of NAS messages that can be carried by RRC
+    pub valid_nas_messages: &'static [&'static str],
 }
 
 impl NasToRrcRule {
@@ -116,7 +138,13 @@ impl NasToRrcRule {
                 "dl information transfer",
                 "ul information transfer",
                 "rrc setup complete",
+                "rrc reconfiguration",
             ], // All RRC messages that can carry NAS
+            valid_nas_messages: &[
+                "service request",
+                "registration accept",
+                "deregistration request",
+            ], // All NAS messages that can be carried by RRC
         }
     }
 
@@ -177,6 +205,14 @@ impl AssociationRule for NasToRrcRule {
         Layer::RRC
     }
 
+    fn valid_source_messages(&self) -> &[&str] {
+        self.valid_nas_messages
+    }
+
+    fn valid_target_messages(&self) -> &[&str] {
+        self.valid_rrc_messages
+    }
+    
     fn matches(&self, trace: &Trace, candidate: &Trace) -> bool {
         // Determine which trace is NAS and which is RRC (bidirectional matching)
         let (nas_trace, rrc_trace) = if trace.layer == Layer::NAS && candidate.layer == Layer::RRC {
@@ -221,6 +257,175 @@ impl AssociationRule for NasToRrcRule {
         nas_binary[..match_len] == rrc_nas_binary[..match_len]
     }
 }
+
+
+
+
+/// Rule for associating NGAP messages with their child NAS messages
+#[derive(Debug, Default)]
+pub struct NgapToNasRule {
+    /// Number of bytes to match from the NAS message binary
+    /// We match only the first 14 bytes because of potential ciphering differences
+    pub byte_match_length: usize,
+    /// Explicit list of NGAP messages that can carry NAS (source filter)
+    pub valid_ngap_messages: &'static [&'static str],
+    /// Explicit list of NAS messages that can be carried by NGAP (target filter)
+    pub valid_nas_messages: &'static [&'static str],
+}
+
+impl NgapToNasRule {
+    /// Create a new NGAP to NAS rule
+    pub fn new() -> Self {
+        Self {
+            byte_match_length: 14, // Match first 14 bytes (does not need full match due to ciphering)
+            valid_ngap_messages: &[
+                "initial ue message",
+                "downlink nas transport",
+                "uplink nas transport",
+                "initial context setup request"
+            ], // NGAP messages that can carry NAS
+            valid_nas_messages: &[
+                "service request",
+                "registration accept",
+                "deregistration request",
+                "ul nas transport",
+                "dl nas transport",
+            ], // NAS messages that can be carried by NGAP
+        }
+    }
+
+    /// Extract NAS message binary from NGAP trace text
+    /// Looks for id-NAS-PDU field in ASN.1 structure and extracts the hex value from the following value line
+    /// 
+    /// Format example:
+    /// ```text
+    /// {
+    ///   id id-NAS-PDU,
+    ///   criticality reject,
+    ///   value '7E017E49623C607E004509000BF200F110800101E6162E91'H
+    /// },
+    /// ```
+    fn extract_ngap_nas_binary(&self, trace: &Trace) -> Option<Vec<u8>> {
+        let text = trace.text.as_ref()?;
+        
+        let mut found_nas_pdu = false;
+        
+        for line in text.iter() {
+            let trimmed = line.trim();
+            
+            // Look for id-NAS-PDU line
+            if trimmed.contains("id-NAS-PDU") {
+                found_nas_pdu = true;
+                continue;
+            }
+            
+            // After finding id-NAS-PDU, look for the value line with hex string
+            if found_nas_pdu && trimmed.starts_with("value ") {
+                // Extract hex value: value '7E017E...'H
+                if let Some(hex_start) = trimmed.find('\'') {
+                    if let Some(hex_end) = trimmed[hex_start + 1..].find('\'') {
+                        let hex_str = &trimmed[hex_start + 1..hex_start + 1 + hex_end];
+                        return Self::hex_string_to_bytes(hex_str);
+                    }
+                }
+                // Reset if value line didn't have hex (it's a different value field)
+                found_nas_pdu = false;
+            }
+            
+            // Reset if we hit a closing brace without finding the value
+            if found_nas_pdu && trimmed.starts_with('}') {
+                found_nas_pdu = false;
+            }
+        }
+        None
+    }
+
+    /// Convert hex string to bytes
+    fn hex_string_to_bytes(hex_str: &str) -> Option<Vec<u8>> {
+        let hex_clean: String = hex_str.chars()
+            .filter(|c| c.is_ascii_hexdigit())
+            .collect();
+        
+        if hex_clean.len() % 2 != 0 {
+            return None;
+        }
+        
+        let mut bytes = Vec::new();
+        for i in (0..hex_clean.len()).step_by(2) {
+            if let Ok(byte) = u8::from_str_radix(&hex_clean[i..i+2], 16) {
+                bytes.push(byte);
+            } else {
+                return None;
+            }
+        }
+        
+        Some(bytes)
+    }
+}
+
+impl AssociationRule for NgapToNasRule {
+    fn source_layer(&self) -> Layer {
+        Layer::NGAP
+    }
+
+    fn target_layer(&self) -> Layer {
+        Layer::NAS
+    }
+
+    fn valid_source_messages(&self) -> &[&str] {
+        self.valid_ngap_messages
+    }
+
+    fn valid_target_messages(&self) -> &[&str] {
+        self.valid_nas_messages
+    }
+
+    fn source_is_child(&self) -> bool {
+        false // NGAP is parent, NAS is child
+    }
+
+    fn preferred_direction(&self, source: &Trace) -> SearchDirection {
+        if source.additional_infos.get_direction().unwrap() == Direction::UL 
+        || source.additional_infos.get_direction().unwrap() == Direction::TO {
+            SearchDirection::BackwardFirst
+        } else {
+            SearchDirection::ForwardFirst
+        }
+    }
+
+    fn matches(&self, trace: &Trace, candidate: &Trace) -> bool {
+        // trace is NGAP (source), candidate is NAS (target)
+        if trace.layer != Layer::NGAP || candidate.layer != Layer::NAS {
+            return false;
+        }
+        let (ngap_trace, nas_trace) = (trace, candidate);
+        
+
+        // Get NAS binary data
+        let nas_binary = match &nas_trace.binary {
+            Some(b) => b,
+            None => return false,
+        };
+
+        // Extract dedicated NAS message binary from NGAP trace
+        let ngap_nas_binary = match self.extract_ngap_nas_binary(ngap_trace) {
+            Some(b) => b,
+            None => return false,
+        };
+
+        // Compare first N bytes
+        // We only match the first 14 bytes because the rest may differ due to ciphering
+        let match_len = self.byte_match_length.min(nas_binary.len()).min(ngap_nas_binary.len());
+        if match_len == 0 {
+            return false;
+        }
+
+        // Binary comparison of first 14 bytes
+        log::debug!("match found");
+        nas_binary[..match_len] == ngap_nas_binary[..match_len]
+    }
+}
+
 
 
 
