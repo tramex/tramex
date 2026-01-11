@@ -3,7 +3,8 @@
 //! Displays a visual timeline of message exchanges between UE, BST, and CN
 
 use crate::event_system::{EventSubscriber, EventContext};
-use egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
+use egui::{self, Pos2, Rect, Stroke, Vec2};
+use crate::theme::{ThemeColors, ArrowColors};
 use tramex_tools::{
     data::{Data, Trace},
     errors::TramexError,
@@ -213,8 +214,8 @@ impl Chronograph {
                 let arrow_start_y = rect.top() + header_height;
                 
                 // Draw vertical lines for hardware (starting after header)
-                let line_color = Color32::from_rgb(100, 100, 100);
-                let line_stroke = Stroke::new(2.0, line_color);
+                let theme = ThemeColors::get(ui);
+                let line_stroke = Stroke::new(2.0, theme.text_weak);
                 
                 let ue_x = Self::get_hardware_x(Hardware::UE, &rect);
                 let bst_x = Self::get_hardware_x(Hardware::BST, &rect);
@@ -233,27 +234,28 @@ impl Chronograph {
                     line_stroke,
                 );
                 
-                // Draw labels at the top
+                // Draw labels at the top - use theme-aware text color
+                let text_color = theme.text;
                 painter.text(
                     Pos2::new(ue_x, rect.top() + 20.0),
                     egui::Align2::CENTER_CENTER,
                     "UE",
                     egui::FontId::proportional(16.0),
-                    Color32::BLACK,
+                    text_color,
                 );
                 painter.text(
                     Pos2::new(bst_x, rect.top() + 20.0),
                     egui::Align2::CENTER_CENTER,
                     "BST",
                     egui::FontId::proportional(16.0),
-                    Color32::BLACK,
+                    text_color,
                 );
                 painter.text(
                     Pos2::new(cn_x, rect.top() + 20.0),
                     egui::Align2::CENTER_CENTER,
                     "CN",
                     egui::FontId::proportional(16.0),
-                    Color32::BLACK,
+                    text_color,
                 );
                 
                 // Draw arrows
@@ -265,13 +267,13 @@ impl Chronograph {
                         let is_related_child = self.related_child.as_ref().map_or(false, |v| v.contains(&arrow.trace_index));
                         
                         // Determine arrow color and thickness
-                        // Current: bright blue, Related (parent/child): lighter blue, Others: black
+                        // Current: bright blue, Related (parent/child): lighter blue, Others: theme-aware
                         let (arrow_color, arrow_width) = if is_current {
-                            (Color32::from_rgb(50, 120, 220), 3.0) // Blue and thicker for current
+                            (ArrowColors::CURRENT, 3.0) // Blue and thicker for current
                         } else if is_related_parent || is_related_child {
-                            (Color32::from_rgb(130, 180, 240), 2.5) // Lighter blue for related traces
+                            (ArrowColors::RELATED, 2.5) // Lighter blue for related traces
                         } else {
-                            (Color32::BLACK, 1.5) // Black for others
+                            (theme.text, 1.5) // Theme-aware for others
                         };
                         
                         let from_x = Self::get_hardware_x(arrow.from, &rect);

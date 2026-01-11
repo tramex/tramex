@@ -3,7 +3,8 @@
 //! Displays parsed identity information from NAS messages (PDU session establishment, etc.)
 
 use crate::event_system::{EventSubscriber, EventContext};
-use egui::{self, Color32, RichText};
+use egui::{self, RichText};
+use crate::theme::ThemeColors;
 use tramex_tools::{
     data::Trace,
     interface::{layer::Layer, parse_config::FileMetadata},
@@ -496,20 +497,22 @@ impl Identity {
         None
     }
     
-    /// Render a field row with light-mode friendly colors
+    /// Render a field row with theme-aware colors
     fn render_field(ui: &mut egui::Ui, label: &str, value: &Option<String>) {
+        let theme = ThemeColors::get(ui);
         ui.horizontal(|ui| {
-            ui.label(RichText::new(label).color(Color32::from_rgb(60, 60, 60)).strong());
+            ui.label(RichText::new(label).color(theme.text_strong).strong());
             ui.label(RichText::new(value.as_ref().map(|s| s.as_str()).unwrap_or("N/A"))
-                .color(Color32::from_rgb(30, 30, 30)));
+                .color(theme.text));
         });
     }
     
     /// Render a field row with a specific value (not Option)
     fn render_field_value(ui: &mut egui::Ui, label: &str, value: &str) {
+        let theme = ThemeColors::get(ui);
         ui.horizontal(|ui| {
-            ui.label(RichText::new(label).color(Color32::from_rgb(60, 60, 60)).strong());
-            ui.label(RichText::new(value).color(Color32::from_rgb(30, 30, 30)));
+            ui.label(RichText::new(label).color(theme.text_strong).strong());
+            ui.label(RichText::new(value).color(theme.text));
         });
     }
 }
@@ -588,8 +591,9 @@ impl PanelView for Identity {
                 ui.separator();
                 
                 // PDU Address section
+                let theme = ThemeColors::get(ui);
                 ui.group(|ui| {
-                    ui.label(RichText::new("PDU Address").strong().color(Color32::from_rgb(0, 100, 150)));
+                    ui.label(RichText::new("PDU Address").strong().color(theme.header));
                     Self::render_field(ui, "Session Type:", &self.pdu_session_type);
                     Self::render_field(ui, "IPv4:", &self.pdu_ipv4);
                     Self::render_field(ui, "IPv6:", &self.pdu_ipv6);
@@ -599,7 +603,7 @@ impl PanelView for Identity {
                 
                 // Network section
                 ui.group(|ui| {
-                    ui.label(RichText::new("Network").strong().color(Color32::from_rgb(0, 100, 150)));
+                    ui.label(RichText::new("Network").strong().color(theme.header));
                     Self::render_field(ui, "DNN:", &self.dnn);
                     Self::render_field(ui, "DNS IPv4:", &self.dns_ipv4);
                 });
@@ -608,7 +612,7 @@ impl PanelView for Identity {
                 
                 // 5G-GUTI section
                 ui.group(|ui| {
-                    ui.label(RichText::new("5G-GUTI").strong().color(Color32::from_rgb(0, 100, 150)));
+                    ui.label(RichText::new("5G-GUTI").strong().color(theme.header));
                     Self::render_field(ui, "MCC:", &self.guti_mcc);
                     Self::render_field(ui, "MNC:", &self.guti_mnc);
                     Self::render_field(ui, "AMF Region ID:", &self.guti_amf_region_id);
@@ -621,7 +625,7 @@ impl PanelView for Identity {
                 
                 // TAI List section
                 ui.group(|ui| {
-                    ui.label(RichText::new("TAI List").strong().color(Color32::from_rgb(0, 100, 150)));
+                    ui.label(RichText::new("TAI List").strong().color(theme.header));
                     if let Some(raw) = &self.tai_info.raw_data {
                         Self::render_field_value(ui, "Raw Data:", raw);
                     } else {
@@ -640,7 +644,7 @@ impl PanelView for Identity {
                 
                 // Session AMBR section
                 ui.group(|ui| {
-                    ui.label(RichText::new("Session AMBR").strong().color(Color32::from_rgb(0, 100, 150)));
+                    ui.label(RichText::new("Session AMBR").strong().color(theme.header));
                     Self::render_field(ui, "Downlink:", &self.session_ambr_dl);
                     Self::render_field(ui, "Uplink:", &self.session_ambr_ul);
                 });
@@ -649,7 +653,7 @@ impl PanelView for Identity {
                 
                 // QoS Rules section
                 ui.group(|ui| {
-                    ui.label(RichText::new("QoS Rules").strong().color(Color32::from_rgb(0, 100, 150)));
+                    ui.label(RichText::new("QoS Rules").strong().color(theme.header));
                     Self::render_field(ui, "5QI:", &self.fiveqi);
                     
                     if self.qos_rules.is_empty() {
@@ -658,7 +662,7 @@ impl PanelView for Identity {
                         for (i, rule) in self.qos_rules.iter().enumerate() {
                             ui.add_space(3.0);
                             ui.label(RichText::new(format!("Rule {}:", i + 1))
-                                .color(Color32::from_rgb(80, 80, 80))
+                                .color(theme.text_weak)
                                 .italics());
                             Self::render_field(ui, "  Identifier:", &rule.identifier);
                             Self::render_field(ui, "  DQR:", &rule.dqr);

@@ -843,3 +843,257 @@ The migration preserved backward compatibility by:
    - Export/import event sets
 
 ---
+
+## 7. Trace Association System
+
+### Implementation Date
+2025-01-11
+
+### Overview
+A flexible, rule-based system for linking related protocol messages across layers, enabling visibility into parent/child relationships between traces.
+
+### Key Principles
+
+#### 1. Parent-Child Relationships
+
+Each `Trace` contains a `TraceRelation` that stores its associations:
+
+**TraceRelation** holds two `AssociationStatus` fields:
+```rust
+pub struct TraceRelation {
+    pub parent: AssociationStatus,  // Traces that carry this one
+    pub child: AssociationStatus,   // Traces carried by this one
+}
+```
+
+**AssociationStatus** represents the state of an association search:
+```rust
+pub enum AssociationStatus {
+    NotComputed,           // Not yet processed
+    Found(Vec<usize>),     // Found related trace indices
+    NotFound,              // Searched but no match found
+    NotApplicable,         // Layer doesn't support associations
+}
+```
+
+**Why `Vec<usize>` for multiple associations?**  
+This is specific to **NAS**, which is carried by both RRC (radio layer) and NGAP (core network). A NAS message can have two parents simultaneously. For logic convenience and consistency, this multi-parent support has been applied to all layers, and extended to children as well for shared logic and possible evolution.
+
+#### 2. Window-Based Search
+
+Associations are found by searching within a **configurable window** around the source trace:
+
+```
+         ←── window_size ──→            ←── window_size ──→
+    [...][candidate][candidate][SOURCE][candidate][candidate][...]
+              <-                    ↑                  ->
+         search_backward      current trace      search_forward
+```
+
+- **Default window**: 10 traces in each direction
+- **Efficiency**: Avoids scanning entire event list. 
+- **Configurable**: Each rule can override `window_size()`
+
+#### 3. Preferred Direction
+
+Rules specify which direction to search first based on the trace's communication direction:
+
+```rust
+pub enum SearchDirection {
+    BackwardFirst,   // Search past traces first, then future
+    ForwardFirst,    // Search future traces first, then past
+    BackwardOnly,    // Only search past traces
+    ForwardOnly,     // Only search future traces
+}
+```
+
+**Typical usage:**
+- **Uplink (UL/TO)**: Search backward first (carrier came before because the ENB/GNB is reading encapsulation with lower level first)
+- **Downlink (DL/FROM)**: Search forward first (carrier comes after because the ENB/GNB is encapsulating higher level first)
+
+#### 4. Message Filtering
+
+Rules can filter which messages are eligible for association:
+
+- **`valid_source_messages()`**: Only process source traces with these message names
+- **`valid_target_messages()`**: Only consider targets with these message names
+
+This prevents false matches between unrelated message types.
+
+#### 5. Relationship Direction (`source_is_child`)
+
+Each rule defines whether the source trace is the child or parent:
+
+| `source_is_child` | Source Role | Target Role | Example |
+|-------------------|-------------|-------------|---------|
+| `true` | Child | Parent | NAS finds its RRC carrier |
+| `false` | Parent | Child | NGAP finds the NAS it carries |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                 AssociationRules                        │
+│         (Collection of rule implementations)            │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   TraceMatcher                          │
+│  - find_relative(source, rules) → AssociationStatus    │
+│  - search_backward() / search_forward()                │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   TraceRelation                         │
+│  - parent: AssociationStatus (Vec<usize>)              │
+│  - child: AssociationStatus (Vec<usize>)               │
+└─────────────────────────────────────────────────────────┘
+```
+
+### AssociationRule Trait
+
+```rust
+pub trait AssociationRule {
+    // Layer configuration
+    fn source_layer(&self) -> Layer;
+    fn target_layer(&self) -> Layer;
+    
+    // Core matching logic
+    fn matches(&self, source: &Trace, candidate: &Trace) -> bool;
+    
+    // Search behavior
+    fn window_size(&self) -> usize { 10 }
+    fn preferred_direction(&self, source: &Trace) -> SearchDirection;
+    
+    // Filtering
+    fn valid_source_messages(&self) -> &[&str] { &[] }
+    fn valid_target_messages(&self) -> &[&str] { &[] }
+    
+    // Relationship direction
+    fn source_is_child(&self) -> bool { true }
+}
+```
+
+### Computation Flow
+
+#### compute_associations()
+
+Main entry point that processes traces and builds relationships:
+
+```rust
+pub fn compute_associations(
+    events: &mut [Trace], 
+    rules: &AssociationRules, 
+    start_index: usize
+) {
+    for index in start_index..events.len() {
+        // 1. Get applicable rules for this trace's layer
+        let applicable_rules = rules.rules_for_layer(&layer);
+        
+        // 2. If no rules apply, mark as NotApplicable
+        if applicable_rules.is_empty() {
+            trace.relation.set_parent_not_applicable();
+            continue;
+        }
+        
+        // 3. Try each rule until match found
+        for rule in applicable_rules {
+            let status = TraceMatcher::find_relative(index, events, rule);
+            
+            if let AssociationStatus::Found(targets) = status {
+                // 4. Set bidirectional relationship based on source_is_child
+                if rule.source_is_child() {
+                    trace.add_parent(target);      // source is child
+                    target.add_child(index);       // target is parent
+                } else {
+                    trace.add_child(target);       // source is parent
+                    target.add_parent(index);      // target is child
+                }
+            }
+        }
+    }
+}
+```
+
+#### rules_for_layer()
+
+Returns all rules where the given layer is the **source layer**:
+
+```rust
+pub fn rules_for_layer(&self, layer: &Layer) -> Vec<&dyn AssociationRule> {
+    self.rules.iter()
+        .filter(|r| r.source_layer() == *layer)
+        .collect()
+}
+```
+
+This means:
+- When processing a **NAS** trace → `NasToRrcRule` applies (NAS is source, finds RRC parent)
+- When processing an **NGAP** trace → `NgapToNasRule` applies (NGAP is source, finds NAS child)
+
+#### Lookback Window
+
+When new batches arrive, traces near the batch boundary are re-processed to catch associations that span batches:
+
+```rust
+let lookback_window = 20;
+let lookback_start = start_index.saturating_sub(lookback_window);
+// Reset NotFound status in lookback range to NotComputed
+// Then recompute from lookback_start
+```
+
+### Chronograph Integration
+
+Related traces are visually highlighted:
+- **Current trace**: Bright blue
+- **Parent/child traces**: Lighter blue
+- **Other traces**: Theme-aware default color
+
+### Implemented Rules
+
+#### NasToRrcRule
+| Parameter | Value |
+|-----------|-------|
+| Source Layer | NAS |
+| Target Layer | RRC |
+| `source_is_child` | `true` (NAS is child) |
+| Window Size | 10 |
+| Matching | Binary comparison (first 10 bytes) |
+| Valid Source | All NAS messages |
+| Valid Target | `dl information transfer`, `ul information transfer`, `rrc setup complete`, `rrc reconfiguration` |
+
+#### NgapToNasRule
+| Parameter | Value |
+|-----------|-------|
+| Source Layer | NGAP |
+| Target Layer | NAS |
+| `source_is_child` | `false` (NGAP is parent) |
+| Window Size | 10 |
+| Matching | Binary comparison (first 14 bytes) |
+| Valid Source | `initial ue message`, `downlink nas transport`, `uplink nas transport`, `initial context setup request` |
+| Valid Target | All NAS messages |
+
+
+### Files Structure
+
+**New Files:**
+- `tramex-tools/src/interface/association/mod.rs` - `compute_associations()`
+- `tramex-tools/src/interface/association/relation.rs` - `TraceRelation`, `AssociationStatus`
+- `tramex-tools/src/interface/association/rules.rs` - `AssociationRule` trait, implementations
+- `tramex-tools/src/interface/association/matcher.rs` - `TraceMatcher`
+
+
+#### Note on Rule Direction
+
+| Rule | Direction |
+|------|-----------|
+| `NgapToNasRule` | `source_is_child = false` |
+| `NasToRrcRule` | `source_is_child = true` |
+
+There is no particular reason for this difference. Both orders are valid. The variation was primarily for testing the full logic.
+
+**Performance consideration:** There is no difference in performance between the two approaches. However, `source_is_child = false` could be slightly faster if the hex parsing is reused across matches instead of being parsed every time.
+
+---

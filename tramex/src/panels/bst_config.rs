@@ -3,14 +3,14 @@
 //! Displays parsed ASN.1 fields from RRC messages based on configurable field mappings.
 
 use crate::event_system::{EventSubscriber, EventContext};
-use egui::{self, Color32, RichText};
+use egui::{self, RichText};
+use crate::theme::ThemeColors;
 use serde_json::Value;
 use tramex_tools::{
     data::{AdditionalInfos, Trace},
     errors::TramexError,
     interface::{layer::Layer, parse_config::FileMetadata},
 };
-use crate::panels::PanelView;
 
 /// Configuration for a field to extract and display
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
@@ -525,6 +525,7 @@ impl BstConfig {
     
     /// UI for the panel with metadata
     fn ui_with_metadata(&mut self, ui: &mut egui::Ui, metadata: &FileMetadata) {
+        let theme = ThemeColors::get(ui);
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
@@ -537,49 +538,49 @@ impl BstConfig {
                     .show(ui, |ui| {
                         // Technology
                         ui.label(RichText::new("Technology")
-                            .color(Color32::BLACK)
+                            .color(theme.text_strong)
                             .strong());
                         ui.label(RichText::new(format!("{}", metadata.technology))
-                            .color(Color32::DARK_GRAY));
+                            .color(theme.text));
                         ui.end_row();
                         
                         // PCI
                         if let Some(pci) = metadata.pci {
                             ui.label(RichText::new("PCI")
-                                .color(Color32::BLACK)
+                                .color(theme.text_strong)
                                 .strong());
                             ui.label(RichText::new(format!("{}", pci))
-                                .color(Color32::DARK_GRAY));
+                                .color(theme.text));
                             ui.end_row();
                         }
                         
                         // Mode
                         if let Some(ref mode) = metadata.mode {
                             ui.label(RichText::new("Mode")
-                                .color(Color32::BLACK)
+                                .color(theme.text_strong)
                                 .strong());
                             ui.label(RichText::new(mode)
-                                .color(Color32::DARK_GRAY));
+                                .color(theme.text));
                             ui.end_row();
                         }
                         
                         // ARFCN
                         if let Some(arfcn) = metadata.arfcn {
                             ui.label(RichText::new("ARFCN")
-                                .color(Color32::BLACK)
+                                .color(theme.text_strong)
                                 .strong());
                             ui.label(RichText::new(format!("{}", arfcn))
-                                .color(Color32::DARK_GRAY));
+                                .color(theme.text));
                             ui.end_row();
                         }
                         
                         // IO Mode (MIMO/SISO)
                         if let Some(ref io_mode) = metadata.io_mode {
                             ui.label(RichText::new("I/O Mode")
-                                .color(Color32::BLACK)
+                                .color(theme.text_strong)
                                 .strong());
                             ui.label(RichText::new(io_mode)
-                                .color(Color32::DARK_GRAY));
+                                .color(theme.text));
                             ui.end_row();
                         }
                     });
@@ -595,10 +596,10 @@ impl BstConfig {
                         .show(ui, |ui| {
                             for (name, value) in &self.sib1_fields {
                                 ui.label(RichText::new(name)
-                                    .color(Color32::BLACK)
+                                    .color(theme.text_strong)
                                     .strong());
                                 ui.label(RichText::new(value)
-                                    .color(Color32::DARK_GRAY));
+                                    .color(theme.text));
                                 ui.end_row();
                             }
                         });
@@ -615,10 +616,10 @@ impl BstConfig {
                         .show(ui, |ui| {
                             for (name, value) in &self.sib2_fields {
                                 ui.label(RichText::new(name)
-                                    .color(Color32::BLACK)
+                                    .color(theme.text_strong)
                                     .strong());
                                 ui.label(RichText::new(value)
-                                    .color(Color32::DARK_GRAY));
+                                    .color(theme.text));
                                 ui.end_row();
                             }
                         });
@@ -634,18 +635,18 @@ impl BstConfig {
                     for (name, value) in &self.sib3_fields {
                         ui.add_space(8.0);
                         ui.label(RichText::new(name)
-                            .color(Color32::BLACK)
+                            .color(theme.text_strong)
                             .strong());
                         
                         // Check if value contains newlines (multi-line structure)
                         if value.contains('\n') {
                             // Use monospace font for structured data
                             ui.label(RichText::new(value)
-                                .color(Color32::DARK_GRAY)
+                                .color(theme.text)
                                 .family(egui::FontFamily::Monospace));
                         } else {
                             ui.label(RichText::new(value)
-                                .color(Color32::DARK_GRAY));
+                                .color(theme.text));
                         }
                     }
                 }
@@ -674,9 +675,11 @@ impl BstConfig {
                                     .unwrap_or(false);
                                 
                                 let label = if is_allowed {
-                                    format!("SST={}, SD={} (allowed)", sst, sd)
+                                    RichText::new(format!("SST={}, SD={} (allowed)", sst, sd))
+                                        .color(theme.text_strong)
                                 } else {
-                                    format!("SST={}, SD={}", sst, sd)
+                                    RichText::new(format!("SST={}, SD={}", sst, sd))
+                                        .color(theme.text)
                                 };
                                 ui.label(label);
                                 ui.end_row();

@@ -1,9 +1,10 @@
 //! Panel to display the RRC status
 use super::functions_panels::ArrowColor;
 use super::functions_panels::ArrowDirection;
-use super::functions_panels::CustomLabelColor;
 use super::functions_panels::make_arrow;
 use super::functions_panels::make_label;
+use crate::theme::ChannelColors;
+use egui::Color32;
 use crate::event_system::{EventSubscriber, EventContext};
 use crate::panels::PanelView;
 use tramex_tools::data::{AdditionalInfos, Trace};
@@ -12,7 +13,7 @@ use tramex_tools::interface::types::Direction;
 use tramex_tools::interface::parse_config::Technology;
 
 /// Make a label with hover effect
-fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
+fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) {
     make_label(ui, label, show, color);
 }
 
@@ -237,19 +238,19 @@ impl RRCStatusPanel {
                 
                 // CONNECTED state
                 let connected_active = self.rrc_state == RrcState::Connected;
-                make_label_hover(ui, "CONNECTED", connected_active, CustomLabelColor::Green);
+                make_label_hover(ui, "CONNECTED", connected_active, ChannelColors::GREEN);
                 
                 ui.add_space(8.0);
                 
                 // IDLE state
                 let idle_active = self.rrc_state == RrcState::Idle;
-                make_label_hover(ui, "IDLE", idle_active, CustomLabelColor::Red);
+                make_label_hover(ui, "IDLE", idle_active, ChannelColors::RED);
                 
                 // INACTIVE state (only for NR)
                 if self.technology == Technology::NR {
                     ui.add_space(8.0);
                     let inactive_active = self.rrc_state == RrcState::Inactive;
-                    make_label_hover(ui, "INACTIVE", inactive_active, CustomLabelColor::Green);
+                    make_label_hover(ui, "INACTIVE", inactive_active, ChannelColors::GREEN);
                 }
             });
         });

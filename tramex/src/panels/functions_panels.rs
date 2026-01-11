@@ -1,66 +1,32 @@
 //! Panels functions
 
 use egui::{Color32, TextFormat};
+use crate::theme::{ThemeColors, ChannelColors, ArrowColors};
 
-/// Custom label color
-#[derive(Clone)]
-pub enum CustomLabelColor {
-    /// Red color
-    Red,
-
-    /// Blue color
-    Blue,
-
-    /// Orange color
-    Orange,
-
-    /// Green color
-    Green,
-
-    /// White color
-    White,
-}
-
-impl CustomLabelColor {
-    /// Get the type of channel
-    pub fn get_type_channel(&self) -> &'static str {
-        match self {
-            CustomLabelColor::Red => "Broadcast channel",
-            CustomLabelColor::Blue => "Common channel",
-            CustomLabelColor::Green => "Traffic channel",
-            CustomLabelColor::Orange => "Dedicated channel",
-            CustomLabelColor::White => "This channel is currently unused",
-        }
-    }
-}
-
-/// Print a label on the grid
-pub fn make_label_equal(ui: &mut egui::Ui, label: &str, state: &str, color: CustomLabelColor) {
-    make_label(ui, label, label == state, color);
-}
-
-/// Create a label with a background color
-pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) -> egui::Response {
+/// Create a label with a background color (using Color32 directly)
+pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) -> egui::Response {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
-    let (default_color, _strong_color) = (Color32::BLACK, Color32::BLACK);
-    let background = if show {
-        match color {
-            CustomLabelColor::Red => Color32::from_rgb(255, 84, 84),
-            CustomLabelColor::Blue => Color32::from_rgb(68, 143, 255),
-            CustomLabelColor::Orange => Color32::from_rgb(255, 181, 68),
-            CustomLabelColor::Green => Color32::from_rgb(90, 235, 100),
-            CustomLabelColor::White => Color32::from_rgb(255, 255, 255),
-        }
+    let theme = ThemeColors::get(ui);
+    
+    // Use theme-aware text color - dark text on colored backgrounds for readability
+    let text_color = if show {
+        ChannelColors::TEXT_ON_COLOR
     } else {
-        Color32::from_rgb(255, 255, 255)
+        theme.text
+    };
+    
+    let background = if show {
+        color
+    } else {
+        Color32::TRANSPARENT
     };
 
     job.append(
         label,
         0.0,
         TextFormat {
-            color: default_color,
+            color: text_color,
             background,
             ..Default::default()
         },
@@ -103,10 +69,11 @@ pub fn make_arrow(ui: &mut egui::Ui, direction: ArrowDirection, color: ArrowColo
         ArrowDirection::Down => "⇣",
         ArrowDirection::Up => "⇡",
     };
+    let theme = ThemeColors::get(ui);
     let current_color = match color {
-        ArrowColor::Green => Color32::from_rgb(110, 255, 110),
-        ArrowColor::Blue => Color32::from_rgb(68, 143, 255),
-        ArrowColor::Black => Color32::from_rgb(0, 0, 0),
+        ArrowColor::Green => ArrowColors::ACTIVE,
+        ArrowColor::Blue => ArrowColors::HIGHLIGHT,
+        ArrowColor::Black => theme.text,
     };
 
     ui.label(egui::RichText::new(content).color(current_color).font(font_id.clone()));
@@ -149,18 +116,18 @@ pub enum LogicalChannelsEnum {
 
 impl LogicalChannelsEnum {
     /// Get the color of the logical channel
-    pub fn get_color(&self) -> CustomLabelColor {
+    pub fn get_color(&self) -> Color32 {
         match self {
-            LogicalChannelsEnum::PCCH => CustomLabelColor::Blue,
-            LogicalChannelsEnum::BCCH => CustomLabelColor::Red,
-            LogicalChannelsEnum::DL_CCCH => CustomLabelColor::Blue,
-            LogicalChannelsEnum::DL_DCCH => CustomLabelColor::Orange,
-            LogicalChannelsEnum::DL_DTCH => CustomLabelColor::Green,
-            LogicalChannelsEnum::MCCH => CustomLabelColor::Blue,
-            LogicalChannelsEnum::MTCH => CustomLabelColor::Green,
-            LogicalChannelsEnum::UL_CCCH => CustomLabelColor::Blue,
-            LogicalChannelsEnum::UL_DCCH => CustomLabelColor::Orange,
-            LogicalChannelsEnum::UL_DTCH => CustomLabelColor::Green,
+            LogicalChannelsEnum::PCCH => ChannelColors::BLUE,
+            LogicalChannelsEnum::BCCH => ChannelColors::RED,
+            LogicalChannelsEnum::DL_CCCH => ChannelColors::BLUE,
+            LogicalChannelsEnum::DL_DCCH => ChannelColors::ORANGE,
+            LogicalChannelsEnum::DL_DTCH => ChannelColors::GREEN,
+            LogicalChannelsEnum::MCCH => ChannelColors::BLUE,
+            LogicalChannelsEnum::MTCH => ChannelColors::GREEN,
+            LogicalChannelsEnum::UL_CCCH => ChannelColors::BLUE,
+            LogicalChannelsEnum::UL_DCCH => ChannelColors::ORANGE,
+            LogicalChannelsEnum::UL_DTCH => ChannelColors::GREEN,
         }
     }
 }
@@ -207,15 +174,15 @@ pub enum TransportChannelsEnum {
 }
 
 impl TransportChannelsEnum {
-    /// Get the color of the logical channel
-    pub fn get_color(&self) -> CustomLabelColor {
+    /// Get the color of the transport channel
+    pub fn get_color(&self) -> Color32 {
         match self {
-            TransportChannelsEnum::PCH => CustomLabelColor::Blue,
-            TransportChannelsEnum::BCH => CustomLabelColor::Red,
-            TransportChannelsEnum::DL_SCH => CustomLabelColor::Green,
-            TransportChannelsEnum::MCH => CustomLabelColor::Green,
-            TransportChannelsEnum::RACH => CustomLabelColor::Blue,
-            TransportChannelsEnum::UL_SCH => CustomLabelColor::Green,
+            TransportChannelsEnum::PCH => ChannelColors::BLUE,
+            TransportChannelsEnum::BCH => ChannelColors::RED,
+            TransportChannelsEnum::DL_SCH => ChannelColors::GREEN,
+            TransportChannelsEnum::MCH => ChannelColors::GREEN,
+            TransportChannelsEnum::RACH => ChannelColors::BLUE,
+            TransportChannelsEnum::UL_SCH => ChannelColors::GREEN,
         }
     }
 }
@@ -261,16 +228,16 @@ pub enum PhysicalChannelsEnum {
 }
 
 impl PhysicalChannelsEnum {
-    /// Get the color of the logical channel
-    pub fn get_color(&self) -> CustomLabelColor {
+    /// Get the color of the physical channel
+    pub fn get_color(&self) -> Color32 {
         match self {
-            PhysicalChannelsEnum::PDSCH => CustomLabelColor::Green,
-            PhysicalChannelsEnum::PBCH => CustomLabelColor::Red,
-            PhysicalChannelsEnum::PDCCH => CustomLabelColor::Orange,
-            PhysicalChannelsEnum::PMCH => CustomLabelColor::Green,
-            PhysicalChannelsEnum::PRACH => CustomLabelColor::Blue,
-            PhysicalChannelsEnum::PUSCH => CustomLabelColor::Green,
-            PhysicalChannelsEnum::PUCCH => CustomLabelColor::Orange,
+            PhysicalChannelsEnum::PDSCH => ChannelColors::GREEN,
+            PhysicalChannelsEnum::PBCH => ChannelColors::RED,
+            PhysicalChannelsEnum::PDCCH => ChannelColors::ORANGE,
+            PhysicalChannelsEnum::PMCH => ChannelColors::GREEN,
+            PhysicalChannelsEnum::PRACH => ChannelColors::BLUE,
+            PhysicalChannelsEnum::PUSCH => ChannelColors::GREEN,
+            PhysicalChannelsEnum::PUCCH => ChannelColors::ORANGE,
         }
     }
 }

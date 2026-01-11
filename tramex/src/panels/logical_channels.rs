@@ -1,8 +1,9 @@
 //! Logical Channels panel
 
-use eframe::egui;
-use crate::event_system::{EventSubscriber, EventContext};
+use crate::ChannelColors;
+use crate::event_system::{EventContext, EventSubscriber};
 use crate::panels::PanelView;
+use eframe::egui;
 use tramex_tools::data::{AdditionalInfos, Trace};
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::parse_config::Technology;
@@ -10,15 +11,33 @@ use tramex_tools::interface::parse_config::Technology;
 use super::functions_panels::LogicalChannelsEnum;
 use super::functions_panels::PhysicalChannelsEnum;
 use super::functions_panels::TransportChannelsEnum;
-use super::functions_panels::{CustomLabelColor, make_label};
+use super::functions_panels::make_label;
+use egui::Color32;
+
+/// Get channel type description for a color (for hover text)
+fn get_channel_type(color: Color32) -> &'static str {
+    if color == ChannelColors::RED {
+        "Broadcast channel"
+    } else if color == ChannelColors::BLUE {
+        "Common channel"
+    } else if color == ChannelColors::GREEN {
+        "Traffic channel"
+    } else if color == ChannelColors::ORANGE {
+        "Dedicated channel"
+    } else {
+        "This channel is currently unused"
+    }
+}
 
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
-pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: CustomLabelColor) {
-    make_label(ui, label, show, color.clone()).on_hover_text_at_pointer(if show {
-        color.get_type_channel()
-    } else {
-        CustomLabelColor::White.get_type_channel()
-    });
+pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) {
+    make_label(ui, label, show, color).on_hover_text_at_pointer(
+        if show {
+            get_channel_type(color)
+        } else {
+            get_channel_type(Color32::WHITE)
+        }
+    );
 }
 
 /// Logical Channels data
@@ -35,7 +54,7 @@ pub struct LogicalChannels {
 
     /// channel state : which logical channels to switch on
     state: Option<ChannelState>,
-    
+
     /// Technology (LTE or NR)
     technology: Technology,
 }
@@ -156,7 +175,6 @@ impl LogicalChannels {
     }
 }
 
-
 /// Print a label on the grid
 #[inline]
 pub fn print_on_grid(ui: &mut egui::Ui, label: &str) {
@@ -195,7 +213,7 @@ impl super::PanelView for LogicalChannels {
             print_on_grid(ui, "Uplink");
             print_on_grid(ui, "----");
             ui.end_row();
-            
+
             self.make_label_hover_logical(ui, LogicalChannelsEnum::PCCH);
             self.make_label_hover_logical(ui, LogicalChannelsEnum::BCCH);
             self.make_label_hover_logical(ui, LogicalChannelsEnum::DL_CCCH);
@@ -250,7 +268,7 @@ impl EventSubscriber for LogicalChannels {
         if self.technology != context.metadata.technology {
             self.technology = context.metadata.technology;
         }
-        
+
         // Extract RRC info from the event
         if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
             self.canal = infos.canal.to_owned();
@@ -258,7 +276,7 @@ impl EventSubscriber for LogicalChannels {
             self.handle_logic();
         }
     }
-    
+
     fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates, update the displayed channels
         self.current_index = index;
@@ -273,7 +291,7 @@ impl EventSubscriber for LogicalChannels {
             self.state = None;
         }
     }
-    
+
     fn on_events_cleared(&mut self) {
         log::debug!("Logical Channels: Clearing all state");
         self.canal.clear();
@@ -281,11 +299,11 @@ impl EventSubscriber for LogicalChannels {
         self.state = None;
         self.current_index = 0;
     }
-    
+
     fn name(&self) -> &'static str {
         "Logical Channels"
     }
-    
+
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         egui::Window::new("Logical Channels")
             .resizable(true)

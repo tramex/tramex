@@ -88,7 +88,6 @@ impl TraceMatcher {
         let window_size = rule.window_size();
         let start = index.saturating_sub(window_size);
         for idx in (start..index).rev() {
-            println!("Searching backward for {:?}, index: {}, start: {}, candidate: {}", target_layer, index, start, idx);
             let candidate = &events[idx];
 
             if &candidate.layer != target_layer {
@@ -113,7 +112,6 @@ impl TraceMatcher {
         let window_size = rule.window_size();
         let end = (index + window_size + 1).min(events.len());
         for idx in (index + 1)..end {
-            println!("Searching forward for {:?}, index: {}, end: {}, candidate: {}", target_layer, index, end, idx);
             let candidate = &events[idx];
 
             if &candidate.layer != target_layer {

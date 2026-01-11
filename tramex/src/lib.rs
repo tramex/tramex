@@ -19,3 +19,6 @@ pub mod event_system;
 
 mod utils;
 pub use utils::*;
+
+pub mod theme;
+pub use theme::{ThemeColors, ChannelColors, ArrowColors};
