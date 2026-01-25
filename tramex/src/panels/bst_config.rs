@@ -334,10 +334,11 @@ impl BstConfig {
             ],
         });
         
-        // SIB2 Configuration
+        // SIB2 Configuration (5G NR)
         self.message_configs.push(MessageConfig {
             canal_msg: "SIB2".to_string(),
             fields: vec![
+                // 5G NR paths
                 FieldMapping {
                     display_name: "q-Hyst".to_string(),
                     json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.cellReselectionInfoCommon.q-Hyst".to_string(),
@@ -355,14 +356,13 @@ impl BstConfig {
                 },
                 FieldMapping {
                     display_name: "t-ReselectionNR".to_string(),
-                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.intraFreqCellReselectionInfo.q-RxLevelMin".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib2.intraFreqCellReselectionInfo.t-ReselectionNR".to_string(),
                     unit: None,
                 },
-                // Add more SIB2 fields as needed
             ],
         });
         
-        // SIB3 Configuration
+        // SIB3 Configuration (5G NR)
         self.message_configs.push(MessageConfig {
             canal_msg: "SIB3".to_string(),
             fields: vec![
@@ -371,7 +371,41 @@ impl BstConfig {
                     json_path: "message.c1.systemInformation.criticalExtensions.systemInformation.sib-TypeAndInfo.sib3.intraFreqNeighCellList".to_string(),
                     unit: None,
                 },
-                // Add more SIB3 fields as needed
+            ],
+        });
+        
+        // SIB Configuration (4G LTE - combined SIB2 & SIB3 in same message)
+        self.message_configs.push(MessageConfig {
+            canal_msg: "SIB".to_string(),
+            fields: vec![
+                // SIB2 fields (4G)
+                
+                // SIB3 fields (4G)
+                FieldMapping {
+                    display_name: "q-Hyst".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation-r8.sib-TypeAndInfo.sib3.cellReselectionInfoCommon.q-Hyst".to_string(),
+                    unit: Some("dB".to_string()),
+                },
+                FieldMapping {
+                    display_name: "s-NonIntraSearch".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation-r8.sib-TypeAndInfo.sib3.cellReselectionServingFreqInfo.s-NonIntraSearch".to_string(),
+                    unit: None,
+                },
+                FieldMapping {
+                    display_name: "q-RxLevMin".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation-r8.sib-TypeAndInfo.sib3.intraFreqCellReselectionInfo.q-RxLevMin".to_string(),
+                    unit: Some("dBm".to_string()),
+                },
+                FieldMapping {
+                    display_name: "s-IntraSearch".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation-r8.sib-TypeAndInfo.sib3.intraFreqCellReselectionInfo.s-IntraSearch".to_string(),
+                    unit: None,
+                },
+                FieldMapping {
+                    display_name: "neighCellConfig".to_string(),
+                    json_path: "message.c1.systemInformation.criticalExtensions.systemInformation-r8.sib-TypeAndInfo.sib3.intraFreqCellReselectionInfo.neighCellConfig".to_string(),
+                    unit: None,
+                },
             ],
         });
     }
@@ -438,6 +472,13 @@ impl BstConfig {
                     }
                     "SIB3" => {
                         log::debug!("BstConfig: Updating SIB3 with {} fields", fields.len());
+                        self.sib3_fields = fields;
+                    }
+                    "SIB" => {
+                        // 4G LTE combined SIB message - split fields into SIB2 and SIB3
+                        log::debug!("BstConfig: Updating SIB with {} fields", fields.len());
+                        // Fields are ordered: SIB2 fields first, then SIB3 fields
+                        // SIB3 fields start with q-Hyst (from cellReselectionInfoCommon)
                         self.sib3_fields = fields;
                     }
                     _ => {} // Unknown SIB type, ignore

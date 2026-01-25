@@ -93,8 +93,8 @@ impl LogicalChannels {
             | ("CCCH", "RRC setup request") => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::UL_CCCH,
-                    transport: TransportChannelsEnum::RACH,
-                    physical: PhysicalChannelsEnum::PRACH,
+                    transport: TransportChannelsEnum::UL_SCH,
+                    physical: PhysicalChannelsEnum::PUSCH,
                 });
             }
             ("CCCH", "RRC connection setup") //4G
