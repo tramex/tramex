@@ -1097,3 +1097,157 @@ There is no particular reason for this difference. Both orders are valid. The va
 **Performance consideration:** There is no difference in performance between the two approaches. However, `source_is_child = false` could be slightly faster if the hex parsing is reused across matches instead of being parsed every time.
 
 ---
+
+## 8. Resource Blocks Panel (5G NR Resource Grid)
+
+### Implementation Date
+2025-02-11
+
+### Overview
+A visual resource grid panel displaying 5G NR Physical Resource Block (PRB) allocations over time, based on PHY layer traces (PDSCH/PUSCH).
+
+### Features
+
+#### Visual Resource Grid
+Displays a scrollable matrix of **PRBs (y-axis) × Symbols (x-axis)** across multiple slots:
+
+```
+        Slot 0    Slot 1    Slot 2    Slot 3
+       0.0.0     0.0.1     0.1.0     0.1.1
+PRB  ┌─────────┬─────────┬─────────┬─────────┐
+ 50  │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │         │  ← PDSCH (blue)
+ 49  │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │         │
+ 48  │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │         │
+ ... │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │  ← PUSCH (cyan)
+  2  │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │
+  1  │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │
+  0  │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │
+     └─────────┴─────────┴─────────┴─────────┘
+       0123456.. 0123456.. 0123456.. 0123456..
+            Symbols (0-13)
+```
+
+**Resource Type Colors:**
+| Resource | Color | Usage |
+|----------|-------|-------|
+| Empty | White | Unallocated resource elements |
+| PDSCH | Blue (`0, 100, 200`) | Downlink data channel |
+| PUSCH | Cyan (`0, 180, 180`) | Uplink data channel |
+| PDCCH | Gray (`180, 180, 180`) | Downlink control channel |
+| PUCCH | Yellow (`255, 220, 0`) | Uplink control channel |
+| SSB | Magenta (`200, 0, 200`) | Synchronization signal block |
+| DMRS | Red dot | Demodulation reference signal |
+| Guard | Dark gray (`100, 100, 100`) | Guard periods |
+
+#### Slot Headers
+Each slot column shows:
+- **Top**: `frame.subframe` (e.g., "10.2")
+- **Middle**: `Slot X` (slot index within subframe)
+- **Bottom**: Timestamp (when available)
+
+Headers are pinned to the top and scroll horizontally with the grid.
+
+#### Navigation Controls
+- **◀◀ / ▶▶**: Navigate by frames (±10 subframes)
+- **◀ / ▶**: Navigate by subframes (±1 subframe)
+- **Cell size slider**: Adjust grid cell size (6-24 pixels)
+- **Frame display**: Shows current frame range (e.g., "Frames 10-19")
+
+#### Hover Tooltips
+Hovering over any colored cell displays PHY allocation details:
+```
+PDSCH (DL Data)
+Frame 431 | Slot 16
+PRB: 2-5 (4 PRBs)
+Symbols: 0-13 (14 symbols)
+```
+
+#### Data Source
+The panel automatically populates from cached PHY events:
+- Listens to `on_event_added` for PDSCH/PUSCH traces
+- Caches events with trace index for lookup
+- Rebuilds grid when navigating to new frame window
+- Supports 10-frame window with configurable slots per subframe
+
+### Architecture
+
+**SlotGrid Structure:**
+```rust
+pub struct SlotGrid {
+    pub slot_number: u8,        // Slot within frame
+    pub frame_number: u32,      // Frame number
+    pub grid: Vec<Vec<ResourceType>>,  // [prb][symbol] -> type
+    pub timestamp: Option<i64>,
+    pub event_indices: Vec<Vec<Option<usize>>>, // For hover lookup
+}
+```
+
+**Grid Coordinate System:**
+- **X-axis**: Symbols within slot (0-13 for normal CP)
+- **Y-axis**: PRBs (0-50 typical for 10MHz bandwidth)
+- **Z-axis (time)**: Slots scroll horizontally
+
+**Rendering:**
+- Single `ScrollArea::both()` for the entire grid
+- Manual "sticky" headers using viewport coordinates
+- Visible-range culling for performance (only draws visible slots/PRBs)
+- Variable gaps: small gap between slots, larger gap between subframes
+
+**Navigation Model:**
+- Uses global slot index: `start_slot = frame * slots_per_frame + slot_in_frame`
+- Window size: 10 frames × 10 subframes/frame × 2 slots/subframe = 200 slots
+- Grid rebuilt on navigation, populated from PHY event cache
+
+### Files Modified
+
+**New Files:**
+- `tramex/src/panels/ressources_blocks.rs` - Resource Blocks panel implementation
+
+**Modified Files:**
+- `tramex/src/panels/mod.rs` - Added module export
+- `tramex/src/event_system/integration.rs` - Registered panel as EventSubscriber
+
+### Implementation Notes
+
+**PHY Event Matching:**
+```rust
+// Events are matched to grid cells by frame/slot
+let event_global_slot = phy.frame as usize * spf + phy.slot as usize;
+let slot_idx = event_global_slot - self.start_slot;
+let slot = &mut self.slots[slot_idx];
+
+// Store event index for hover lookup
+slot.set_range(
+    phy.prb_start as usize,
+    phy.prb_length as usize,
+    phy.symb_start as usize,
+    phy.symb_length as usize,
+    resource_type,
+    Some(event.trace_index),  // For hover tooltip
+);
+```
+
+**Hover Detection:**
+- Uses `ui.ctx().pointer_hover_pos()` to get mouse position
+- Checks `cell_rect.contains(pos)` for each visible cell
+- Looks up event index and displays PHY info in tooltip
+
+### Future Enhancements
+
+1. **Additional PHY Channels**: Support for PDCCH, PUCCH, SSB visualization
+2. **DMRS Patterns**: Show actual DMRS symbol patterns per allocation
+3. **HARQ Indicators**: Display HARQ process IDs on allocations
+4. **Zoom/Pan**: Smooth zoom and pan controls
+5. **Selection**: Click to select and focus on specific allocations
+6. **Export**: Save grid view as image
+7. **Real-time**: Live update during WebSocket streaming
+
+### Usage Example
+
+1. **Open a file** with PHY traces (PDSCH/PUSCH logs)
+2. **Open Resource Blocks panel** from Windows menu
+3. **Navigate** using frame/subframe buttons to find allocations
+4. **Hover** over colored cells to see allocation details
+5. **Adjust cell size** for better visibility of dense allocations
+
+---

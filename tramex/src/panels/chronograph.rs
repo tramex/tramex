@@ -318,6 +318,14 @@ impl Chronograph {
 
 // EventSubscriber implementation for new event system
 impl EventSubscriber for Chronograph {
+    fn name(&self) -> &'static str {
+        "Chronograph"
+    }
+
+    fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {
+        
+    }
+
     fn on_event_added(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When a new event is added, create an arrow for it
         if let Some(arrow) = MessageArrow::from_trace(event, index) {
@@ -366,10 +374,6 @@ impl EventSubscriber for Chronograph {
         self.should_scroll = false;
         self.related_parent = None;
         self.related_child = None;
-    }
-    
-    fn name(&self) -> &'static str {
-        "Chronograph"
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

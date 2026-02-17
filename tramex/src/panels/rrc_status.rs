@@ -259,24 +259,29 @@ impl RRCStatusPanel {
 
 // EventSubscriber implementation for new event system
 impl EventSubscriber for RRCStatusPanel {
-    fn on_event_added(&mut self, event: &Trace, index: usize, context: &EventContext) {
+    fn name(&self) -> &'static str {
+        "RRC Status"
+    }
+
+    fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {
         // Update technology from context metadata
-        if self.technology != context.metadata.technology {
-            self.technology = context.metadata.technology;
+        if self.technology != metadata.technology {
+            self.technology = metadata.technology;
             log::info!("RRC Status: Updated technology from context to {:?}", self.technology);
         }
-        
+    }
+    fn on_event_added(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         self.process_rrc_event(event, index, self.technology);
     }
     
-    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates, restore state at that point in time
         self.current_index = index;
         self.navigate_to_index(index);
         
         // Check if the focused event is a pertinent RRC message
         if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
-            let state_machine = RrcStateMachine::for_technology(context.metadata.technology);
+            let state_machine = RrcStateMachine::for_technology(self.technology);
             
             // Only show direction arrow if this is a pertinent message (affects RRC state)
             if state_machine.is_pertinent_message(&infos.canal_msg) {
@@ -300,10 +305,6 @@ impl EventSubscriber for RRCStatusPanel {
         self.rrc_state = RrcState::Idle;
         self.technology = Technology::Unknown;
         self.state_history.clear();
-    }
-    
-    fn name(&self) -> &'static str {
-        "RRC Status"
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

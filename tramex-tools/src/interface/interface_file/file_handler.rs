@@ -14,7 +14,7 @@ use super::utils_file::parse_one_block;
 use super::file_index::{FileIndex};
 
 /// The default number of log processed by batch
-const DEFAULT_NB: usize = 50;
+const BATCH_SIZE: usize = 100;
 
 #[derive(Debug, Clone)]
 /// Data structure to store the file.
@@ -53,7 +53,7 @@ impl Default for File {
             file_path: PathBuf::from(""),
             file_content: vec![],
             full_read: false,
-            nb_read: DEFAULT_NB,
+            nb_read: BATCH_SIZE,
             index_line: 0,
             available: true,
             index: None,
@@ -141,7 +141,7 @@ impl File {
             file_path,
             file_content: file_content.lines().map(|x| x.to_string()).collect(),
             full_read: false,
-            nb_read: DEFAULT_NB,
+            nb_read: BATCH_SIZE,
             index_line: 0,
             available: true,
             index: None,
@@ -156,7 +156,7 @@ impl File {
             file_path,
             file_content: file_content.lines().map(|x| x.to_string()).collect(),
             full_read: false,
-            nb_read: DEFAULT_NB,
+            nb_read: BATCH_SIZE,
             index_line: 0,
             available: true,
             index: None,

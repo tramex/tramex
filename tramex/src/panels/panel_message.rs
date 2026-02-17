@@ -58,27 +58,44 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
     ui.label(format!("{:?}", &curr_trace.additional_infos));
     ui.separator();
 
-    // Show full message checkbox
-    ui.checkbox(show_full, "Show full message");
-
-    if *show_full {
-        ui.separator();
-        egui::ScrollArea::vertical()
-            .id_salt("scroll_area_raw")
-            .max_height(250.0)
-            .auto_shrink([false, true])
-            .show(ui, |ui| {
-                match &curr_trace.text {
-                    Some(vec_text) => {
-                        for elem in vec_text {
-                            ui.label(elem);
-                        }
-                    }
-                    None => {
-                        ui.label("No text available for this trame");
+    // Show full message checkbox and copy button
+    ui.horizontal(|ui| {
+        ui.checkbox(show_full, "Show full message");
+        
+        if *show_full {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if let Some(vec_text) = &curr_trace.text {
+                    let full_text = vec_text.join("\n");
+                    if ui.button("📋").on_hover_text("Copy to clipboard").clicked() {
+                        ui.output_mut(|o| o.copied_text = full_text);
                     }
                 }
             });
+        }
+    });
+
+    if *show_full {
+        ui.separator();
+        match &curr_trace.text {
+            Some(vec_text) => {
+                let full_text = vec_text.join("\n");
+                let mut text_copy = full_text.as_str();
+                egui::ScrollArea::vertical()
+                    .id_salt("scroll_area_raw")
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::TextEdit::multiline(&mut text_copy)
+                                .desired_width(f32::INFINITY)
+                                // .font(egui::TextStyle::Monospace)
+                                .interactive(true)
+                        );
+                    });
+            }
+            None => {
+                ui.label("No text available for this trame");
+            }
+        }
         #[cfg(feature = "types_lte_3gpp")]
         {
             ui.separator();
@@ -106,6 +123,14 @@ pub fn hexe_decoding(_curr_trace: &Trace) -> String {
 
 // EventSubscriber implementation for new event system
 impl EventSubscriber for MessageBox {
+    fn name(&self) -> &'static str {
+        "Messages"
+    }
+
+    fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {
+        // MessageBox doesn't need to process metadata changes
+    }
+    
     fn on_event_added(&mut self, _event: &Trace, _index: usize, _context: &EventContext) {
         // MessageBox doesn't need to process every event as it arrives
         // It only displays the currently focused event
@@ -132,10 +157,6 @@ impl EventSubscriber for MessageBox {
         self.events_len = 0;
         self.current_index = 0;
         self.save_text.clear();
-    }
-    
-    fn name(&self) -> &'static str {
-        "Messages"
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

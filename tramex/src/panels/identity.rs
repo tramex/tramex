@@ -731,10 +731,12 @@ impl EventSubscriber for Identity {
     fn name(&self) -> &'static str {
         "Identity"
     }
+
+    fn on_metadata_changed(&mut self, metadata: &FileMetadata) {
+        self.metadata = metadata.clone();
+    }
     
-    fn on_event_added(&mut self, event: &Trace, _index: usize, context: &EventContext) {
-        // Update metadata when events are added
-        self.metadata = context.metadata.clone();
+    fn on_event_added(&mut self, event: &Trace, _index: usize, _context: &EventContext) {
         
         // Parse NAS messages for identity information
         if event.layer == Layer::NAS {
@@ -744,9 +746,8 @@ impl EventSubscriber for Identity {
         }
     }
     
-    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         self.current_index = index;
-        self.metadata = context.metadata.clone();
         
         // Parse the focused NAS message to update state
         // Values are preserved when navigating to other layers (RRC, etc.)

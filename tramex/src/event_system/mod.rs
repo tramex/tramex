@@ -8,7 +8,6 @@ pub mod file_source;
 pub mod websocket_source;
 pub mod application;
 pub mod integration;
-pub mod example;
 
 pub use event_bus::{EventBus, EventSubscriber, EventContext};
 pub use event_store::EventStore;

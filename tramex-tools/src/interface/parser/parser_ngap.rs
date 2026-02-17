@@ -87,8 +87,15 @@ impl FileParser for NGAPParser {
         let text = lines.to_vec();
         let binary = extract_binary_from_lines(lines);
         
+        // Parse timestamp from first line
+        let timestamp = if let Some(first_line) = lines.first() {
+            super::parse_timestamp(first_line)?
+        } else {
+            0
+        };
+        
         let trace = Trace {
-            timestamp: 0,
+            timestamp,
             layer: Layer::NGAP,
             additional_infos,
             text: Some(text),

@@ -440,7 +440,7 @@ impl BstConfig {
             log::debug!("BstConfig: Found config for {}", canal_msg);
             // Parse ASN.1 to JSON
             if let Some(json) = trace.parse_asn1_to_json() {
-                log::debug!("BstConfig: JSON structure: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
+                // log::debug!("BstConfig: JSON structure: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
                 let mut fields = Vec::new();
                 
                 // Extract each configured field
@@ -746,10 +746,9 @@ impl EventSubscriber for BstConfig {
         }
     }
     
-    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates to an event, extract fields from it
         self.current_index = index;
-        self.metadata = context.metadata.clone();
         self.update_fields(event);
         // Parse NAS messages for NSSAI
         if event.layer == Layer::NAS {
@@ -767,6 +766,10 @@ impl EventSubscriber for BstConfig {
         self.sib3_fields.clear();
         self.allowed_nssai.clear();
         self.configured_nssai.clear();
+    }
+
+    fn on_metadata_changed(&mut self, metadata: &FileMetadata) {
+        self.metadata = metadata.clone();
     }
     
     fn name(&self) -> &'static str {

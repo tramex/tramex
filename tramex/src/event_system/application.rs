@@ -424,6 +424,7 @@ impl Application {
     pub fn set_metadata(&mut self, metadata: FileMetadata) {
         log::info!("Application: Setting metadata - Technology: {:?}", metadata.technology);
         self.metadata = metadata;
+        self.event_bus.notify_metadata_changed(&self.metadata);
     }
     
     /// Update metadata from Data (for legacy compatibility)
@@ -431,6 +432,7 @@ impl Application {
         if self.metadata.technology != data.metadata.technology {
             self.metadata = data.metadata.clone();
             log::info!("Application: Synced metadata from Data - Technology: {:?}", self.metadata.technology);
+            self.event_bus.notify_metadata_changed(&self.metadata);
         }
     }
 }

@@ -87,8 +87,16 @@ impl FileParser for GTPUParser {
         };
         
         let binary = extract_binary_from_lines(lines);
+
+        // Parse timestamp from first line
+        let timestamp = if let Some(first_line) = lines.first() {
+            super::parse_timestamp(first_line)?
+        } else {
+            0
+        };
+
         let trace = Trace {
-            timestamp: 0,
+            timestamp,
             layer: Layer::GTPU,
             additional_infos,
             text: Some(text),

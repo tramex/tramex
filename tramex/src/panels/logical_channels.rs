@@ -263,12 +263,18 @@ impl super::PanelView for LogicalChannels {
 
 // EventSubscriber implementation for new event system
 impl EventSubscriber for LogicalChannels {
-    fn on_event_added(&mut self, event: &Trace, _index: usize, context: &EventContext) {
-        // Update technology from context metadata
-        if self.technology != context.metadata.technology {
-            self.technology = context.metadata.technology;
-        }
+        fn name(&self) -> &'static str {
+        "Logical Channels"
+    }
 
+    fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {
+        // Update technology from context metadata
+        if self.technology != metadata.technology {
+            self.technology = metadata.technology;
+        }
+    }
+
+    fn on_event_added(&mut self, event: &Trace, _index: usize, _context: &EventContext) {
         // Extract RRC info from the event
         if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
             self.canal = infos.canal.to_owned();
@@ -298,10 +304,6 @@ impl EventSubscriber for LogicalChannels {
         self.canal_msg.clear();
         self.state = None;
         self.current_index = 0;
-    }
-
-    fn name(&self) -> &'static str {
-        "Logical Channels"
     }
 
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

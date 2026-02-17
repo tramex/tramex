@@ -30,6 +30,9 @@ pub trait EventSubscriber: Send {
     /// Called when all events are cleared
     fn on_events_cleared(&mut self);
     
+    /// Called when file metadata changes (e.g., new file loaded)
+    fn on_metadata_changed(&mut self, _metadata: &FileMetadata);
+    
     /// Name of this subscriber (for debugging)
     fn name(&self) -> &'static str;
     
@@ -80,6 +83,14 @@ impl EventBus {
         log::debug!("EventBus: Notifying {} subscribers of clear", self.subscribers.len());
         for subscriber in &mut self.subscribers {
             subscriber.on_events_cleared();
+        }
+    }
+    
+    /// Notify all subscribers that metadata has changed
+    pub fn notify_metadata_changed(&mut self, metadata: &FileMetadata) {
+        log::debug!("EventBus: Notifying {} subscribers of metadata change", self.subscribers.len());
+        for subscriber in &mut self.subscribers {
+            subscriber.on_metadata_changed(metadata);
         }
     }
     

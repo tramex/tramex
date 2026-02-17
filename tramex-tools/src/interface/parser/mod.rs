@@ -5,6 +5,7 @@ pub mod parser_basic;
 pub mod parser_nas;
 pub mod parser_ngap;
 pub mod parser_gtpu;
+pub mod parser_phy;
 pub mod hex_extractor;
 
 use crate::data::AdditionalInfos;
@@ -61,6 +62,25 @@ pub fn time_to_milliseconds(time: &NaiveTime) -> i64 {
     let milliseconds = time.nanosecond() as i64 / 1_000_000; // convert nanoseconds to milliseconds
 
     hours_in_ms + minutes_in_ms + seconds_in_ms + milliseconds
+}
+
+/// Parse timestamp from the first line of a trace
+/// Expected format: "HH:MM:SS.mmm [LAYER] ..."
+/// # Errors
+/// Returns ParsingError if timestamp cannot be parsed
+pub fn parse_timestamp(first_line: &str) -> Result<i64, ParsingError> {
+    let parts: Vec<&str> = first_line.split_whitespace().collect();
+    if parts.is_empty() {
+        return Err(ParsingError::new("Empty line, cannot parse timestamp".to_string(), 0));
+    }
+    
+    let date = chrono::NaiveTime::parse_from_str(parts[0], "%H:%M:%S%.3f")
+        .map_err(|_| ParsingError::new(
+            format!("Error parsing timestamp '{}' in line: {}", parts[0], first_line),
+            0,
+        ))?;
+    
+    Ok(time_to_milliseconds(&date))
 }
 
 /// Build a eof_error

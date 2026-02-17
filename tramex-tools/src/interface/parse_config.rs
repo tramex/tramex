@@ -58,6 +58,9 @@ pub struct FileMetadata {
     
     /// IO mode ("SISO" if dl_mu=1, "MIMO" otherwise)
     pub io_mode: Option<String>,
+
+    /// SSB configuration lines from header comments (multiple SSBs possible)
+    pub ssb_info: Vec<String>,
 }
 
 impl FileMetadata {
@@ -110,6 +113,11 @@ impl FileMetadata {
                     }
                 }
             }
+
+            // Parse SSB header lines (collect all, not just first)
+            if trimmed.starts_with("# SSB:") {
+                metadata.ssb_info.push(trimmed.to_string());
+            }
             
             // Parse version
             if trimmed.starts_with("# lteenb version") || trimmed.starts_with("# mme version") {
@@ -152,6 +160,7 @@ impl FileMetadata {
             "mode" => self.mode.clone(),
             "arfcn" => self.arfcn.map(|v| v.to_string()),
             "io_mode" => self.io_mode.clone(),
+            "ssb_info" => if self.ssb_info.is_empty() { None } else { Some(self.ssb_info.join("; ")) },
             _ => None,
         }
     }
