@@ -47,6 +47,8 @@ pub enum FileLoadingStrategy {
 }
 
 /// Trait for different data sources (File, WebSocket, etc.)
+/// threaded version, enable poll on UI render loop
+#[cfg(not(target_arch = "wasm32"))]
 pub trait DataSource: Send {
     /// Poll for new events (non-blocking)
     /// 
@@ -97,14 +99,42 @@ pub trait DataSource: Send {
     /// 
     /// # Returns
     /// Total event count or None
-    fn total_count(&self) -> Option<usize> {
-        None
-    }
+    fn total_count(&self) -> Option<usize> {None}
     
     /// Cast to Any for downcasting
     /// 
     /// # Returns
     /// Mutable reference to Any
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+/// Single threaded version
+#[cfg(target_arch = "wasm32")]
+pub trait DataSource {
+    /// Poll for new events (non-blocking)
+    fn poll(&mut self) -> Result<Vec<Trace>, Vec<TramexError>>;
+    
+    /// Request more data
+    fn request_more(&mut self, layers: &Layers) -> Result<(), Vec<TramexError>>;
+    
+    /// Check if source is in auto-loading mode
+    fn is_auto_loading(&self) -> bool;
+    
+    /// Toggle auto-loading
+    fn toggle_auto_loading(&mut self);
+    
+    /// Check if source has more data available
+    fn has_more(&self) -> bool;
+    
+    /// Get loading progress (0.0 to 1.0), None if unknown
+    fn progress(&self) -> Option<f32>;
+    
+    /// Get source type for UI display
+    fn source_type(&self) -> DataSourceType;
+    
+    /// Get total event count if known
+    fn total_count(&self) -> Option<usize> {None}
+    
+    /// Cast to Any for downcasting
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
