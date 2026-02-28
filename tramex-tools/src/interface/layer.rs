@@ -203,6 +203,7 @@ impl Layers {
         let mut layers = Layers::new();
         // Add default visible layers here : 
         layers.rrc = LayerLogLevel::Debug;
+        layers.phy = LayerLogLevel::Debug;
         layers
     }
 

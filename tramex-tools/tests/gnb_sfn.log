@@ -1,0 +1,21 @@
+# lteenb version 2024-03-15, gcc 9.2.1
+# Licensed to 'Télécom ParisTech ' [8a6a4cbd5be14f9b18453920b31dbc669779fc827a1d128fca]
+# SMP C=10 P=normal bandwidth=20.0/40 PRACH=1 DRBs=1 RF0=1/1
+# Log file format:
+# time layer dir ue_id {cell_id    sfn channel:} message
+# global_ran_node_id=00103.74565
+# Cell 0x01: nr_arfcn=623028 ul_nr_arfcn=623028 pci=200 mode=TDD rat=nr n_rb_dl=51 n_rb_ul=51 dl_mu=1 ul_mu=1 ssb_mu=1 ssb_arfcn=622944 coreset0_prb=0:48 coreset0_idx=10
+# GBR limits: DL=9.400 Mre/s UL=2.742 Mre/s
+# Auto k1=[8,7,7,6,5,4,12,11] k2=[7,4] msg3_k2=5
+# PRACH: cfg_id=0 n_root_seqs=32
+# SSB: id=0 arfcn=622944 mu=1 L=8 period=20 offset=0 k_ssb=0 prb=12:20 symb=2
+# PUCCH capacity: ~180 UEs (RB_PUCCH=6 RB_an=1.462 RB_sr/UE=0.015 RB_csi/UE=0.010)
+# Scheduling capacity: ~3.2 PDCCH/slot ~1.6 AN/slot
+# CFG=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
+# Started on 2024-04-09 12:29:58
+# Rotated on 2024-04-09 13:20:45
+10:32:34.739 [PHY] UL 0001 01 4601  1022.1 PUSCH: harq=2 prb=15:34 symb=0:14 CW0: tb_len=4867 mod=8 rv_idx=0 cr=0.92 retx=0 crc=OK snr=33.9 epre=-83.0 ta=-0.3
+10:32:34.739 [PHY] UL 0001 01 4601  1.2 PUSCH: harq=2 prb=15:34 symb=0:14 CW0: tb_len=4867 mod=8 rv_idx=0 cr=0.92 retx=0 crc=OK snr=33.9 epre=-83.0 ta=-0.3
+10:32:34.739 [PHY] UL 0001 01 4601  1023.3 PUSCH: harq=2 prb=15:34 symb=0:14 CW0: tb_len=4867 mod=8 rv_idx=0 cr=0.92 retx=0 crc=OK snr=33.9 epre=-83.0 ta=-0.3
+10:32:34.739 [PHY] UL 0001 01 4601  2.4 PUSCH: harq=2 prb=15:34 symb=0:14 CW0: tb_len=4867 mod=8 rv_idx=0 cr=0.92 retx=0 crc=OK snr=33.9 epre=-83.0 ta=-0.3
+10:32:34.739 [PHY] UL 0001 01 4601  3.5 PUSCH: harq=2 prb=15:34 symb=0:14 CW0: tb_len=4867 mod=8 rv_idx=0 cr=0.92 retx=0 crc=OK snr=33.9 epre=-83.0 ta=-0.3

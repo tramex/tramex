@@ -33,7 +33,7 @@ pub struct PHYInfos {
     /// Channel type (PDSCH, PUSCH, etc.)
     pub channel_type: PHYChannelType,
     /// Frame number
-    pub frame: u32,
+    pub frame: u16,
     /// Slot number within frame
     pub slot: u8,
     /// PRB start position
@@ -179,7 +179,7 @@ pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
 /// The frame.slot appears after the UE ID fields, e.g.:
 /// `[PHY] DL 0001 01 003d   421.0 PDSCH:`
 ///                                 ^^^^^
-fn parse_frame_slot(line: &str) -> Option<(u32, u8)> {
+fn parse_frame_slot(line: &str) -> Option<(u16, u8)> {
     // Look for a pattern like "  421.0 " or "  431.16 "
     // The frame.slot is typically after the layer/direction/UE fields
     
@@ -195,9 +195,9 @@ fn parse_frame_slot(line: &str) -> Option<(u32, u8)> {
             // Make sure there's no trailing punctuation on slot_part
             let slot_part: String = slot_part.chars().take_while(|c| c.is_ascii_digit()).collect();
             
-            if let (Ok(frame), Ok(slot)) = (frame_part.parse::<u32>(), slot_part.parse::<u8>()) {
-                // Sanity check: frame should be reasonable (0-1000000), slot should be < 20
-                if frame <= 1_000_000 && slot < 20 {
+            if let (Ok(frame), Ok(slot)) = (frame_part.parse::<u16>(), slot_part.parse::<u8>()) {
+                // Sanity check: frame < 1024 (0-1023), slot < 20
+                if slot < 20 {
                     return Some((frame, slot));
                 }
             }
