@@ -1098,156 +1098,343 @@ There is no particular reason for this difference. Both orders are valid. The va
 
 ---
 
-## 8. Resource Blocks Panel (5G NR Resource Grid)
+## 8. Resource Blocks Panel - 5G NR Resource Grid Visualization
 
-### Implementation Date
-2025-02-11
+### Implementation Timeline
+- **v1.0**: 2025-02-11 - Initial grid visualization
+- **v2.0**: 2025-02-28 - HFN support, view modes, performance optimizations
 
 ### Overview
-A visual resource grid panel displaying 5G NR Physical Resource Block (PRB) allocations over time, based on PHY layer traces (PDSCH/PUSCH).
+A visual resource grid panel displaying 5G NR Physical Resource Block (PRB) allocations over time. Renders a scrollable matrix of **PRBs (y-axis) × Time (x-axis)** with two view modes: Symbol-level (detailed) and Slot-level (aggregated).
 
-### Features
+### 8.1. Key principles
 
-#### Visual Resource Grid
-Displays a scrollable matrix of **PRBs (y-axis) × Symbols (x-axis)** across multiple slots:
+#### 8.1.1. Frequency Axis
+
+The Y axis is the frequency axis. 
+There is no specific name for the unit, it will be referenced as **Physical Resource Blocks (PRB)**, although one PRB is a unit of frequency x time.\
+One PRB is composed on multiple subcarriers, but this level of precision is not pertinent for the representation as it serves mainly for increasing the data output capacity.
+
+Here, the Y axis is composed of 51 PRBs of 180KHz each. This can vary depending on the bandwidth configuration.
+
+#### 8.1.2. Time Axis
+The X axis is the time axis. 
+
+- A **frame** is 10ms
+- A **Subframe** is 1ms, 1/10th of a Frame.
+- The number of **Slot** per Subframe can vary from 2 to 8 depending of the antenna configuration. It is commonly 2 slots per subframe, so 1 slot = 0.5ms
+- There is 14 **Symbol** per Slot in 5G. This is the smallest allocation duration.
+
+#### 8.1.3. PHY layer
+The Traces from Amarisoft provide enough information through the PHY layer to build most part of the resource grid. (Unfortunalty his does apply for PDSCH, where positions are more difficult to find)
+
+Exemple of a PHY event : 
+
+```10:32:35.169 [PHY] UL 0001 01 4601  476.19 PUSCH: harq=0 prb=15:34 symb=0:14 ...```
+
+From there we can extract information to help us fill the grid : 
+
+| Unit | PHY | Rendering |
+|------|-----|-----------|
+| PRB | `prb=15:34` | PRBs 15 → 48 |
+| Symbol | `symb=0:14` | Symbols 0 → 13 |
+| SFN | `476.19` | Frame 476 - Slot 19 |
+
+The **System Frame Number (SFN)** takes only into account the Frame and Slot number, but we can construct the SubFrame number through the number of **Symbol per Frame (SpF)**. \
+This gives us : Frame 476, SubFrame 9, Slot 1, Symbol 0-13
+
+**Note:** The System Frame Number (SFN) is a 10-bit value that cycles every 1024 frames and does not include the **Hyper Frame Number (HFN)**. Therefore, we must infer the HFN by detecting SFN wraparound:
 
 ```
-        Slot 0    Slot 1    Slot 2    Slot 3
-       0.0.0     0.0.1     0.1.0     0.1.1
-PRB  ┌─────────┬─────────┬─────────┬─────────┐
- 50  │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │         │  ← PDSCH (blue)
- 49  │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │         │
- 48  │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │         │
- ... │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │  ← PUSCH (cyan)
-  2  │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │
-  1  │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │
-  0  │         │ ▓▓▓▓▓▓▓ │         │ ▓▓▓▓▓▓▓ │
-     └─────────┴─────────┴─────────┴─────────┘
-       0123456.. 0123456.. 0123456.. 0123456..
-            Symbols (0-13)
+HFN: N, Frame 1023 → HFN: N+1, Frame 0
 ```
 
-**Resource Type Colors:**
-| Resource | Color | Usage |
-|----------|-------|-------|
-| Empty | White | Unallocated resource elements |
-| PDSCH | Blue (`0, 100, 200`) | Downlink data channel |
-| PUSCH | Cyan (`0, 180, 180`) | Uplink data channel |
-| PDCCH | Gray (`180, 180, 180`) | Downlink control channel |
-| PUCCH | Yellow (`255, 220, 0`) | Uplink control channel |
-| SSB | Magenta (`200, 0, 200`) | Synchronization signal block |
-| DMRS | Red dot | Demodulation reference signal |
-| Guard | Dark gray (`100, 100, 100`) | Guard periods |
+#### 8.1.4. SSB
 
-#### Slot Headers
-Each slot column shows:
-- **Top**: `frame.subframe` (e.g., "10.2")
-- **Middle**: `Slot X` (slot index within subframe)
-- **Bottom**: Timestamp (when available)
+There is another type of event which can be easily displayed but which are not in the traces but in the antenna configuration: **SSB**
 
-Headers are pinned to the top and scroll horizontally with the grid.
+```SSB: id=0 arfcn=630336 mu=1 L=8 period=20 offset=0 k_ssb=20 prb=15:21 symb=2```
 
-#### Navigation Controls
-- **◀◀ / ▶▶**: Navigate by frames (±10 subframes)
-- **◀ / ▶**: Navigate by subframes (±1 subframe)
-- **Cell size slider**: Adjust grid cell size (6-24 pixels)
-- **Frame display**: Shows current frame range (e.g., "Frames 10-19")
+From there we can extract information to help us fill the grid : 
 
-#### Hover Tooltips
-Hovering over any colored cell displays PHY allocation details:
+| Unit | SSB | Rendering |
+|------|-----|-----------|
+| ID | `id=0` | -- |
+| PRB | `prb=15:21` | PRBs 15 → 35 |
+| Symbol | `symb=2` | Symbol 2 → 2 |
+| SFN | `period=20` | Every 20ms (2 frames) |
+
+### 8.2. Architecture Principles
+
+#### 8.2.1. Data Pipeline
+
+As for every panel the events are parsed from the data source (File / Websocket) to the `Trace` format. \
+This is where we extract the information from the events and store it in the `PHYInfos` struct based on the rules above. HFN is not present because is cannot be extracted from the PHY event itself.
+
+``` rust
+pub struct PHYInfos {
+    pub direction: Direction, // Direction (UL or DL)
+    pub channel_type: PHYChannelType, /// Channel type (PDSCH, PUSCH, etc.)
+    pub frame: u16, /// Frame number
+    pub slot: u8, /// Slot number within frame
+    pub prb_start: u16, /// PRB start position
+    pub prb_length: u16, /// PRB length (number of PRBs)
+    pub symb_start: u8, /// Symbol start position within slot
+    pub symb_length: u8, /// Symbol length (number of symbols)
+}
 ```
-PDSCH (DL Data)
-Frame 431 | Slot 16
-PRB: 2-5 (4 PRBs)
-Symbols: 0-13 (14 symbols)
-```
+When events are added to the trace, we process the `PHYInfos` and store them in a the `CachedPHYEvent` with the computed HFN.
 
-#### Data Source
-The panel automatically populates from cached PHY events:
-- Listens to `on_event_added` for PDSCH/PUSCH traces
-- Caches events with trace index for lookup
-- Rebuilds grid when navigating to new frame window
-- Supports 10-frame window with configurable slots per subframe
 
-### Architecture
+### 8.2.2. Event System Integration
 
-**SlotGrid Structure:**
+The panel implements `EventSubscriber` for reactive updates:
+
 ```rust
-pub struct SlotGrid {
-    pub slot_number: u8,        // Slot within frame
-    pub frame_number: u32,      // Frame number
-    pub grid: Vec<Vec<ResourceType>>,  // [prb][symbol] -> type
-    pub timestamp: Option<i64>,
-    pub event_indices: Vec<Vec<Option<usize>>>, // For hover lookup
+impl EventSubscriber for ResourceBlocks {
+    fn on_event_added(&mut self, event: &Trace, index: usize, _ctx: &EventContext) {
+        // Cache PHY events with HFN
+        if let AdditionalInfos::PHYInfos(phy) = &event.additional_infos {
+            self.add_phy_event(index, phy.clone());
+        }
+    }
+    
+    fn on_event_focused(&mut self, event: &Trace, index: usize, _ctx: &EventContext) {
+        // Track for highlight and auto-center grid
+        self.focused_trace_index = Some(index);
+        self.center_on_event(event);
+    }
+    
+    fn on_events_cleared(&mut self) {
+        self.clear_slots();
+        self.start_limit = (0, 0, 0);
+        self.end_limit = (0, 0, 0);
+    }
 }
 ```
 
-**Grid Coordinate System:**
-- **X-axis**: Symbols within slot (0-13 for normal CP)
-- **Y-axis**: PRBs (0-50 typical for 10MHz bandwidth)
-- **Z-axis (time)**: Slots scroll horizontally
+**Auto-Centering:** When a PHY event is focused in the navigation panel, the Resource Blocks grid automatically scrolls to center on that frame/slot.
 
-**Rendering:**
-- Single `ScrollArea::both()` for the entire grid
-- Manual "sticky" headers using viewport coordinates
-- Visible-range culling for performance (only draws visible slots/PRBs)
-- Variable gaps: small gap between slots, larger gap between subframes
 
-**Navigation Model:**
-- Uses global slot index: `start_slot = frame * slots_per_frame + slot_in_frame`
-- Window size: 10 frames × 10 subframes/frame × 2 slots/subframe = 200 slots
-- Grid rebuilt on navigation, populated from PHY event cache
+#### 8.2.3. Three-Dimensional Grid Model
 
-### Files Modified
+For performance issues, it is not reasonable to think of building the whole grid : \
+1s = 100 Frames = 1k SubFrames = 2k Slots = 28k Symbols \
+One symbol column is one state ID of 8 bits x 51 PRBs = 51 octets \
+So 1s = 1.39 Mo, 1 hour of trace is over 5Go, and this is without counting for indexing cost and other additionnal data per symbol.
 
-**New Files:**
-- `tramex/src/panels/ressources_blocks.rs` - Resource Blocks panel implementation
+Therefore, we need to build the grid on demand, only for the visible part of the trace.
+We render N=10 frames before and after the focused event. With the possibility to navigate 1 Frame or 1 SubFrame. This also allows us to reduce the hell of scrolling headlessly on an infinite time axis.
 
-**Modified Files:**
-- `tramex/src/panels/mod.rs` - Added module export
-- `tramex/src/event_system/integration.rs` - Registered panel as EventSubscriber
 
-### Implementation Notes
 
-**PHY Event Matching:**
+The grid operates on three axes with distinct addressing strategies:
+
+| Axis | Dimension | Addressing | Rendering |
+|------|-----------|------------|-----------|
+| **Y** | Frequency (PRBs) | 0 to n_rb_dl (e.g., 0-50) | Vertical scroll with sticky labels |
+| **X** | Time (Symbols/Slots) | Symbol: 0-13 per slot<br>Slot: aggregated | Horizontal scroll with sticky headers |
+| **X"** | Frame Window | Global slot index | Virtual scrolling with 200-slot (10 frames) window |
+
+**Global Slot Addressing:**
+
+We use the absolute slot position for indexing: 
+
 ```rust
-// Events are matched to grid cells by frame/slot
-let event_global_slot = phy.frame as usize * spf + phy.slot as usize;
-let slot_idx = event_global_slot - self.start_slot;
-let slot = &mut self.slots[slot_idx];
+// HFN-aware slot addressing for 1024-frame looping
+pub type SlotAddress = (u32, u16, u16);  // (hfn, frame, slot)
 
-// Store event index for hover lookup
-slot.set_range(
-    phy.prb_start as usize,
-    phy.prb_length as usize,
-    phy.symb_start as usize,
-    phy.symb_length as usize,
-    resource_type,
-    Some(event.trace_index),  // For hover tooltip
-);
+// Global slot index for window positioning
+let global_slot = (hfn as usize * 1024 + frame as usize) * slots_per_frame + slot;
 ```
 
-**Hover Detection:**
-- Uses `ui.ctx().pointer_hover_pos()` to get mouse position
-- Checks `cell_rect.contains(pos)` for each visible cell
-- Looks up event index and displays PHY info in tooltip
+#### 8.2.3 HFN-Aware Event Caching
 
-### Future Enhancements
+5G NR frames loop every 1024 frames. Without Hyper Frame Number tracking, frame 0 at startup is indistinguishable from frame 0 after wraparound.
 
-1. **Additional PHY Channels**: Support for PDCCH, PUCCH, SSB visualization
-2. **DMRS Patterns**: Show actual DMRS symbol patterns per allocation
-3. **HARQ Indicators**: Display HARQ process IDs on allocations
-4. **Zoom/Pan**: Smooth zoom and pan controls
-5. **Selection**: Click to select and focus on specific allocations
-6. **Export**: Save grid view as image
-7. **Real-time**: Live update during WebSocket streaming
+```rust
+pub struct CachedPHYEvent {
+    pub trace_index: usize,
+    pub hfn: u32,  // Hyper Frame Number increments on wraparound
+    pub phy_info: PHYInfos,
+}
 
-### Usage Example
+// Limits stored with HFN for correct range checking
+pub struct ResourceBlocks {
+    pub start_limit: (u32, u16, u16),  // (hfn, frame, slot)
+    pub end_limit: (u32, u16, u16),
+}
+```
 
-1. **Open a file** with PHY traces (PDSCH/PUSCH logs)
-2. **Open Resource Blocks panel** from Windows menu
-3. **Navigate** using frame/subframe buttons to find allocations
-4. **Hover** over colored cells to see allocation details
-5. **Adjust cell size** for better visibility of dense allocations
+**Frame Wrap Detection:**
+```rust
+// Detect wraparound by large frame jump (more than -512 frames)
+if frame < end_frame && (end_frame - frame) > 512 { // Wrapped: 1023 -> 0
+    hfn = hfn.saturating_add(1);  // HFN += 1
+}
+```
 
----
+However, because of the precision of the Amarisoft logger, we can have prior events (relative to the SFN) coming after the current event. So we need to be able to detect an anti-wrap.
+
+```rust
+// Detect anti-wraparound by large frame jump (more than +512 frames)
+if frame > end_frame && (frame - end_frame) > 512 { // Anti-wrapped: 0 -> 1023
+    hfn = hfn.saturating_sub(1); // HFN -= 1
+}
+```
+
+### 8.3. Data Structures
+
+#### 8.3.1 SlotGrid
+```rust
+pub struct SlotGrid {
+    pub hfn: u32,               // HyperFrame number
+    pub frame_number: u16,      // Frame (0-1023, wraps around)
+    pub subframe_number: u16,   // Subframe (0-9)
+    pub slot_number: u16,       // Slot within frame
+    pub symbols: Vec<Vec<ResourceType>>,        // [prb][symbol] -> Resource Type 
+    pub event_indices: Vec<Vec<Option<usize>>>, // [prb][symbol] -> trace index
+    pub ssb_ids: Vec<Vec<Option<usize>>>,       // [prb][symbol] -> SSB index
+}
+```
+
+#### 8.3.2 Resource Types
+| Type | Color | Purpose |
+|------|-------|---------|
+| Empty | White | Unallocated |
+| PDCCH | Dark green `0, 100, 0` | Downlink control |
+| PUCCH | Light green `0, 200, 0` | Uplink control |
+| PDSCH | Blue `0, 100, 200` | Downlink data |
+| PUSCH | Cyan `0, 180, 180` | Uplink data |
+| PRACH | Yellow `255, 220, 0` | Random access |
+| SSB | Magenta `200, 0, 200` | Synchronization signal |
+| DMRS | Red `200, 0, 0` | Reference signal |
+| Guard | Dark gray `100, 100, 100` | Guard band |
+
+### 8.4. UI Rendering
+
+#### 8.4.1 Dual View Mode Architecture
+
+The panel supports two visualization modes with shared underlying data:
+
+```rust
+pub enum ViewMode {
+    Symbol,  // Detailed: 14 symbols × PRBs per slot
+    Slot,    // Aggregated: 1 column per slot with priority-based color
+}
+```
+
+**View Mode Characteristics:**
+
+| Aspect | Symbol View | Slot View |
+|--------|-------------|-----------|
+| **Use Case** | Detailed analysis | Overview, pattern detection |
+| **Cell Count** | 14 × PRBs × slots | PRBs × slots |
+| **Resource Display** | Exact symbol allocation | Highest priority resource |
+| **Performance** | Higher CPU (more cells) | Optimized (cached aggregation) |
+
+**Priority Aggregation for Slot View:**
+
+In case many resources are allocated to the same PRB and slot, we need to prioritize the most important one to be displayed.
+```rust
+// cf
+impl ResourceType -> pub fn priority(&self)
+```
+
+#### 8.4.2 Sticky Header Rendering
+
+Traditional `egui::Grid` cannot handle both sticky row headers (PRB labels) and sticky column headers (slot info). The panel uses a custom overlay approach:
+
+**Implementation:**
+- Single `ScrollArea::both()` contains the entire grid
+- Headers/labels drawn as overlays using `painter` with viewport-relative coordinates
+- Content rect calculations account for label/header dimensions
+
+#### 8.4.3. Visible-Range Culling
+
+Only render cells within the visible viewport for performance:
+
+```rust
+// Calculate visible ranges from scroll offset
+let vis_start_slot = (scroll_offset_x / slot_width) as usize;
+let vis_end_slot = ((scroll_offset_x + viewport_width) / slot_width) as usize + 1;
+let vis_start_prb = (scroll_offset_y / cell_size) as usize;
+let vis_end_prb = ((scroll_offset_y + viewport_height) / cell_size) as usize + 1;
+
+// Clamp to actual data bounds
+let vis_start_slot = vis_start_slot.min(total_slots);
+let vis_end_slot = vis_end_slot.min(total_slots);
+```
+
+#### 8.4.4. Smart Border Drawing
+
+Vertical-only borders with thickness indicating hierarchy:
+
+| Border Type | Thickness | Purpose |
+|-------------|-----------|---------|
+| Symbol gap | 0.5px | Visual separation within slot |
+| Slot boundary | 1.0px | Major time unit separation |
+| Subframe gap | 2.0px | Frame structure boundary |
+
+**No horizontal borders** - visual clarity through vertical separation only.
+
+### 8.5. Performance Optimizations
+
+#### 8.5.1. Hot Path Optimizations
+
+| Optimization | Before | After | Impact |
+|--------------|--------|-------|--------|
+| Limit checks | Per cell (14×PRBs×slots) | Per slot | -93% ops |
+| Slot lookups | 3× per PRB | 1× cached | -85% lookups |
+| Symbol passes | 3 separate loops | 1 combined | -67% iterations |
+| Coordinate math | Per-cell computation | Hoisted to loop start | -99% redundant math |
+| Tooltip strings | Allocated every frame | Deferred to callback | -95% idle allocations |
+
+**Key Techniques:**
+
+1. **Hoisted Coordinate Calculations:**
+```rust
+// Before: computed per cell (N × M × 14 times)
+let y = content_rect.top() + header_height + (prb as f32 * cell_size);
+
+// After: computed once
+let grid_origin_y = content_rect.top() + header_height;
+// In loop: just add offset
+let y = grid_origin_y + (prb as f32 * cell_size);
+```
+
+2. **Early Exit Aggregation:**
+```rust
+// Inlined with early termination
+for symb in 0..symbols_per_slot {
+    let resource = slot.get(prb, symb);
+    if resource.priority() >= 6 {  // PUSCH/PDSCH
+        return *resource;  // Early exit, no need to scan remaining
+    }
+}
+```
+
+3. **Deferred Tooltip Allocation:**
+```rust
+// Before: always allocates
+response.on_hover_text(format!("Frame {}", frame));
+
+// After: allocates only when shown
+response.on_hover_ui(|ui| {
+    ui.label(format!("Frame {}", frame)); // Only runs on hover
+});
+```
+
+### 8.6. Files
+
+- `tramex/src/panels/ressources_blocks.rs` - Panel implementation
+- `tramex-tools/src/interface/layer.rs` - PHY layer visibility (default: on)
+
+### 8.7. Usage
+
+1. Load a file with PHY traces (PDSCH, PUSCH, PUCCH, PRACH)
+2. Open Resource Blocks panel from Windows menu
+3. Navigate events - grid auto-centers on focused PHY event
+4. Toggle Symbol/Slot view for detail vs overview
+5. Hover cells for detailed PHY allocation info
+6. Adjust cell size for visibility of dense allocations

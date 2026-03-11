@@ -1146,22 +1146,23 @@ impl ResourceBlocks {
         let candidate_pos = (frame, slot);
 
         if candidate_pos > (self.end_limit.1, self.end_limit.2) {
-            // Event extends the range forward - check for wrap
+            // Event extends range backward (old event from earlier HFN)
+            // Check for anti-wrap
             let end_frame = self.end_limit.1;
             if frame > end_frame && (frame - end_frame) > 512 {
-                // Frame wrapped around (e.g., 1023 -> 0), increment HFN
+                // This frame is much larger than start but position is earlier
+                // Means this is from a previous HFN
                 hfn = hfn.saturating_sub(1);
             } else {
                 self.end_limit = (hfn, frame, slot);
             }
         } else if candidate_pos < (self.end_limit.1, self.end_limit.2) {
-            // Event extends range backward (old event from earlier HFN)
-            // Check if we need to decrement HFN
+            // Event extends the range forward
+            // Check for wrap
             let end_frame = self.end_limit.1;
-            if end_frame > frame && (end_frame - frame) > 512 {
-                // This frame is much larger than start but position is earlier
-                // Means this is from a previous HFN
-                hfn += 1; // modify the hfn for storing the cache
+            if frame < end_frame && (end_frame - frame) > 512 {
+                // Frame wrapped around (e.g., 1023 -> 0), increment HFN
+                hfn += 1;
                 self.end_limit = (hfn, frame, slot);
             }
         }
