@@ -44,6 +44,8 @@ pub struct PHYInfos {
     pub symb_start: u8,
     /// Symbol length (number of symbols)
     pub symb_length: u8,
+    /// HARQ process number (0-15 typically)
+    pub harq: Option<u8>,
 }
     
 /// PHY layer parser
@@ -162,6 +164,9 @@ pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
     // Parse symb field: "symb=0:13" - if missing, assume full slot (0:14)
     let (symb_start, symb_length) = parse_symb(line).unwrap_or((0, 14));
 
+    // Parse harq field: "harq=2" -> Some(2)
+    let harq = parse_harq(line);
+
     Some(PHYInfos {
         direction,
         channel_type,
@@ -171,6 +176,7 @@ pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
         prb_length,
         symb_start,
         symb_length,
+        harq,
     })
 }
 
@@ -205,6 +211,22 @@ fn parse_frame_slot(line: &str) -> Option<(u16, u8)> {
     }
     
     None
+}
+
+/// Parse the harq field from the trace line
+/// 
+/// Format: "harq=2" -> Some(2)
+/// Returns None if the harq field is not present
+fn parse_harq(line: &str) -> Option<u8> {
+    let harq_start_idx = line.find("harq=")?;
+    let harq_value_start = harq_start_idx + 5; // Skip "harq="
+    
+    let value_part: String = line[harq_value_start..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    
+    value_part.parse::<u8>().ok()
 }
 
 /// Parse the prb field from the trace line
