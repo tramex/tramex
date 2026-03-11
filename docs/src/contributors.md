@@ -4,3 +4,4 @@
 - Sacha Di Costanzo
 - katheleligaf
 - comeyrd <https://ceyraud.com>
+- Pierre HUGUES

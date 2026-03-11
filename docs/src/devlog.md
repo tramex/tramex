@@ -1,24 +1,31 @@
-# Development Log
+# **Development Log**
 
 ## Overview
 This document tracks major improvements to Tramex, including the indexed file navigation system, automatic batch continuation, and enhanced UI with a dedicated navigation panel.
 
 ---
 
-## 1. Indexed Pre-Scan with Lazy Parsing
+# 1. Indexed Pre-Scan with Lazy Parsing
 
 ### Implementation Date
 2025-10-10
 
-### Problem Solved
+## 1.0. Overview
+### 1.0.1 Problem Solved
 - Slow navigation through large log files (900k+ events)
 - Landing on filtered/disabled layers when navigating
 - No visibility into total event count or progress
 
-### Solution: File Index System
+### 1.0.1 Solution: File Index System
 Implemented a lightweight index that pre-scans the file to identify all log boundaries and extract metadata without full parsing.
 
-#### Key Components
+### 1.0.2. Performance Improvements
+- **Index building**: ~3-4x faster (8s → 2-3s for 900k traces)
+- **Navigation**: Instant jumps to any event position
+- **Memory**: Only parsed events are cached
+- **Filtering**: Can skip disabled layers efficiently
+
+## 1.1. Key Components
 
 **File Index (`file_index.rs`)**
 - Scans file on load to identify all log boundaries
@@ -45,13 +52,7 @@ Implemented trait methods without changing core logic:
 - No preloading support (server controls data)
 - Unknown total count (returns None)
 
-### Performance Improvements
-- **Index building**: ~3-4x faster (8s → 2-3s for 900k traces)
-- **Navigation**: Instant jumps to any event position
-- **Memory**: Only parsed events are cached
-- **Filtering**: Can skip disabled layers efficiently
-
-### Files Modified
+## 1.2. Files Modified
 **New Files:**
 - `tramex-tools/src/interface/interface_file/file_index.rs`
 
@@ -65,18 +66,24 @@ Implemented trait methods without changing core logic:
 
 ---
 
-## 2. Automatic Batch Continuation
+# 2. Automatic Batch Continuation
 
 ### Implementation Date
 2025-10-10
 
-### Problem Solved
+## 2.0. Overview
+### 2.0.1. Problem Solved
 When navigating with layer filters enabled, the "Next" button would sometimes stop after loading 5-6 batches without finding an enabled layer, requiring multiple clicks to continue.
 
-### Solution: Loop-Based Batch Loading
+### 2.0.2. Solution: Loop-Based Batch Loading
 Modified the frontend to keep loading batches in a loop until an enabled layer is found or the end of file is reached.
 
-#### How It Works
+### 2.0.3. Benefits
+- **No more manual clicking**: One click finds the next enabled event
+- **Faster navigation**: Automatic batch loading feels instant
+- **Better UX**: Users don't need to understand batching
+
+## 2.1. Architecture
 1. User clicks "Next"
 2. Search through currently loaded events
 3. If no enabled layer found → load next batch
@@ -84,7 +91,7 @@ Modified the frontend to keep loading batches in a loop until an enabled layer i
 5. If still not found → load another batch
 6. **Repeat until**: enabled layer found OR end of file OR error
 
-#### Implementation Details
+### 2.1.1. Implementation Details
 **In `frontend.rs`:**
 ```rust
 while self.trame_manager.should_get_more_log {
@@ -99,30 +106,65 @@ while self.trame_manager.should_get_more_log {
 - Sets `continue_navigation_after_load = true` to resume search
 - Automatically continues until enabled layer found
 
-### Benefits
-- **No more manual clicking**: One click finds the next enabled event
-- **Faster navigation**: Automatic batch loading feels instant
-- **Better UX**: Users don't need to understand batching
-
-### Files Modified
+## 2.2. Files Modified
 - `tramex/src/frontend.rs` - Added while loop for batch continuation
 - `tramex/src/panels/trame_manager.rs` - Navigation logic with flags
 
 ---
 
-## 3. Enhanced Navigation UI
+# 3. Enhanced Navigation UI
 
 ### Implementation Date
 2025-10-10
 
-### Problem Solved
+## 3.0. Overview
+### 3.0.1. Problem Solved
 - Limited visibility into navigation state
 - No clear indication of progress or total events
 - Plain, unstyled controls
 
-### Solution: Dedicated Navigation Panel + Enhanced Controls
+### 3.0.2. Solution: Dedicated Navigation Panel + Enhanced Controls
 
-#### New Navigation Panel Window (`navigation_panel.rs`)
+### 3.0.3. Future Enhancements
+
+#### 3.0.3.1 Navigation Features
+1. **Jump to Event**: Input field to jump to specific event number
+2. **Keyboard shortcuts**: Arrow keys for navigation
+3. **Event markers**: Visual indicators for important events
+4. **Timeline view**: Visual timeline of events
+5. **Search**: Search through events by content
+6. **Bookmarks**: Mark and save important event positions
+
+### 3.0.3.2 Performance
+1. **Parallel indexing**: Build index in background thread
+2. **Incremental updates**: Update index as file grows
+3. **Smart caching**: LRU cache for parsed events
+4. **Batch size optimization**: Adaptive batch sizes
+
+### 3.0.3.3 UI/UX
+1. **Filtering UI**: Visual filter controls in navigation panel
+2. **Statistics graphs**: Charts showing event distribution
+3. **Performance metrics**: Show parsing speed, memory usage
+4. **Batch controls**: Skip forward/backward by N events
+5. **Auto-play**: Automatically advance through events
+6. **Dark/Light themes**: Theme support
+
+
+## 3.1. New Navigation Panel Window (`navigation_panel.rs`)
+
+Navigation Panel Window Layout
+```
+┌─────────────────────────────────────────┐
+│  Navigation                     [X]     │
+├─────────────────────────────────────────┤
+│  Event: 1 / 1234   |  Loaded: 150       │
+│  Time: 12:34:56.789   |  Layer: RRC     │
+│  ─────────────────────────────────────  │
+│   [  ◀ Previous  ]        [  ▶ Next  ] │
+└─────────────────────────────────────────┘
+```
+
+### 3.1.1. Functionalities
 A floating window that displays comprehensive navigation statistics:
 
 **Statistics Display:**
@@ -137,33 +179,19 @@ A floating window that displays comprehensive navigation statistics:
 - Centered layout for better visual balance
 - Large buttons (150x40px) for easy clicking
 
-**Color Coding:**
-- Blue (`50, 120, 220`) - Next button
-- Brown (`150, 100, 50`) - Previous button
-- Orange (`255, 200, 100`) - Loaded count
-- Purple (`200, 150, 255`) - Timestamps
-- Red (`255, 150, 150`) - Layer info
-
 **Features:**
 - Opens by default with other windows
 - Can be toggled via Windows menu
 - Resizable and movable
 - Real-time updates as you navigate
 
-#### Button Styling Improvements
-- **Start button**: Green (`50, 180, 50`) - indicates "begin"
-- **Next button**: Blue (`50, 120, 220`) - indicates "continue"
-- **Previous button**: Brown (`150, 100, 50`) - indicates "go back"
-- **Rounded corners**: 8px border radius for modern look
-- **Centered layout**: Better visual balance
-
-#### Menu Organization
+## 3.2. Menu Organization
 Moved Windows menu to top menu bar:
 - **Menu**: Organize windows, About, Quit
 - **Windows**: Toggle all panels (Navigation, Message Box, etc.)
 - **About**: Documentation links
 
-### Files Modified
+## 3.3. Files Modified
 **New Files:**
 - `tramex/src/panels/navigation_panel.rs`
 
@@ -172,154 +200,47 @@ Moved Windows menu to top menu bar:
 - `tramex/src/frontend.rs` - Added NavigationPanel, updated menu integration
 - `tramex/src/app.rs` - Integrated Windows menu in top bar
 - `tramex/src/panels/panel_message.rs` - Re-added "Show full message" checkbox
-
 ---
 
-## 4. UI/UX Improvements Summary
-
-### Visual Design Principles
-- **Color coding**: Consistent colors for same information types
-- **High contrast**: White text on colored buttons
-- **Clear icons**: Universal symbols (▶, ◀)
-- **Grouped sections**: Related info together
-- **Responsive**: Adapts to window size
-
-### Accessibility Features
-1. **High contrast**: White text on colored buttons
-2. **Clear icons**: Universal symbols
-3. **Consistent colors**: Same meaning throughout
-4. **Large buttons**: 150x40px minimum for easy clicking
-5. **Monospace timestamps**: Easy to read and compare
-
-### User Experience Benefits
-- **Better visibility**: Color-coded information is easier to scan
-- **Clearer status**: Icons and colors show state at a glance
-- **Organized layout**: Grouped sections reduce visual clutter
-- **Instant feedback**: Real-time updates as you navigate
-- **No more stuck navigation**: Automatic batch loading
-
----
-
-## Testing Checklist
-
-### File Index System
-- [x] Open a file - verify index builds quickly
-- [x] Check total event count displays correctly
-- [x] Navigate through logs with layer filters
-- [x] Verify automatic batch loading works
-- [x] Test with large files (900k+ events)
-
-### Navigation UI
-- [x] Navigation panel opens by default
-- [x] Statistics display correctly
-- [x] Buttons are centered and styled
-- [x] Colors display correctly
-- [x] Start button is green, Next is blue
-- [x] Timestamp and layer update in real-time
-- [x] Windows menu appears in top bar
-
-### Batch Continuation
-- [x] Click Next with filters - automatically finds enabled layer
-- [x] No manual clicking needed for multiple batches
-- [x] Stops at end of file correctly
-
-### WebSocket Mode
-- [ ] WebSocket connection still works
-- [ ] Navigation works without total count
-- [ ] No errors from missing index
-
----
-
-## Future Enhancements
-
-### Navigation Features
-1. **Jump to Event**: Input field to jump to specific event number
-2. **Keyboard shortcuts**: Arrow keys for navigation
-3. **Event markers**: Visual indicators for important events
-4. **Timeline view**: Visual timeline of events
-5. **Search**: Search through events by content
-6. **Bookmarks**: Mark and save important event positions
-
-### Performance
-1. **Parallel indexing**: Build index in background thread
-2. **Incremental updates**: Update index as file grows
-3. **Smart caching**: LRU cache for parsed events
-4. **Batch size optimization**: Adaptive batch sizes
-
-### UI/UX
-1. **Filtering UI**: Visual filter controls in navigation panel
-2. **Statistics graphs**: Charts showing event distribution
-3. **Performance metrics**: Show parsing speed, memory usage
-4. **Batch controls**: Skip forward/backward by N events
-5. **Auto-play**: Automatically advance through events
-6. **Dark/Light themes**: Theme support
-
----
-
-## Notes
-
-- All changes are backward compatible
-- No breaking changes to existing functionality
-- WebSocket mode continues to work unchanged
-- Colors and icons can be easily customized
-- Navigation panel can be hidden if not needed
-- File index is built once and cached
----
-
-## UI Layout Reference
-
-### Navigation Panel Window Layout
-```
-┌─────────────────────────────────────────┐
-│  Navigation                     [X]     │
-├─────────────────────────────────────────┤
-│  Event: 1 / 1234  |  Loaded: 150       │
-│  Time: 12:34:56.789  |  Layer: RRC     │
-│  ─────────────────────────────────────  │
-│         [  ▶ Next  ]  [  ◀ Previous  ] │
-└─────────────────────────────────────────┘
-```
-
-### Color Reference
-| Element | Color (RGB) | Usage |
-|---------|-------------|-------|
-| Next button | `50, 120, 220` | Blue - Continue action |
-| Start button | `50, 180, 50` | Green - Begin action |
-| Previous button | `150, 100, 50` | Brown - Go back |
-| Event count | `100, 200, 255` | Blue - Current position |
-| Loaded count | `255, 200, 100` | Orange - Memory usage |
-| Timestamp | `200, 150, 255` | Purple - Time info |
-| Layer | `255, 150, 150` | Red - Layer type |
-
-### Menu Structure
-```
-Top Menu Bar:
-  [Theme] | [Menu ▼] [Windows ▼] [About ▼]
-  
-Windows Menu:
-  ☑ Navigation
-  ☑ Message Box
-  ☑ Logical Channels
-  ☑ Link Panel
-```
-
----
-
-## 5. RRC Field Viewer & Message Panel Improvements
+# 4. RRC Field Viewer & Message Panel Improvements
 
 ### Implementation Date
 2025-10-10
 
-### Problem Solved
+## 4.0. Overview
+### 4.0.1. Problem Solved
 - No dedicated panel for viewing specific RRC message fields
 - Message panel displayed too much information (timestamp, hex always visible)
 - Array values in JSON were not properly displayed
 - Technology information was not visible in logical channels panel
 - Technology detection relied only on file headers (which could be missing)
 
-### Solution: RRC Field Viewer + UI Enhancements
+### 4.0.2. Solution: RRC Field Viewer + UI Enhancements
 
-#### New RRC Field Viewer Panel (`bst_config.rs`)
+### 4.0.3. Benefits
+
+**For Users:**
+- Quick access to important RRC message fields
+- Cleaner message panel with less clutter
+- Technology always visible and correctly detected
+- Easy to understand array values
+
+**For Developers:**
+- Easy to add new message configurations
+- Flexible JSON path system
+- Centralized technology detection
+- Extensible field mapping system
+
+### 4.0.4. Future Enhancements
+
+1. **Dynamic field configuration**: Load field mappings from config file
+2. **More message types**: Add configurations for other RRC messages (SIB2, MIB, etc.)
+3. **Field filtering**: Show/hide specific fields
+4. **Export fields**: Copy field values to clipboard
+5. **Field history**: Track field value changes over time
+6. **Comparison view**: Compare fields across multiple messages
+
+## 4.1. New RRC Field Viewer Panel (`bst_config.rs`)
 A dedicated panel for displaying extracted fields from RRC messages with configurable field mappings.
 
 **Key Features:**
@@ -352,7 +273,7 @@ A dedicated panel for displaying extracted fields from RRC messages with configu
 - **Objects with decimal**: `{"decimal": 101, "hex": "000065"}` → displayed as `101`
 - **Objects with hex**: `{"hex": "001234501"}` → displayed as `0x001234501`
 
-#### Message Panel Improvements
+## 4.2. Message Panel Improvements
 **UI Cleanup:**
 - **Layer type**: Now displayed as large heading
 - **Timestamp removed**: No longer displayed by default
@@ -379,7 +300,7 @@ AdditionalInfos(...)
   [ASN.1 text...]
 ```
 
-#### Technology Detection Enhancement
+## 4.3. Technology Detection Enhancement
 **Two-tier detection system:**
 
 1. **Primary**: File header parsing (existing)
@@ -397,7 +318,7 @@ AdditionalInfos(...)
 - Propagates to all panels automatically
 - Displayed in Logical Channels panel
 
-#### Logical Channels Panel Update
+## 4.4. Logical Channels Panel Update
 **New display:**
 ```
 [----] [----] [----] [Downlink] [----] [----] [----]
@@ -406,21 +327,8 @@ AdditionalInfos(...)
 
 Shows technology (LTE/NR) in the channel grid for quick reference.
 
-### Files Modified
 
-**New Files:**
-- `tramex/src/panels/bst_config.rs` - New RRC field viewer panel
-
-**Modified Files:**
-- `tramex/src/panels/mod.rs` - Added bst_config module
-- `tramex/src/frontend.rs` - Integrated RRC Field Viewer panel
-- `tramex/src/panels/panel_message.rs` - UI improvements, moved display_log function
-- `tramex/src/utils.rs` - Removed display_log (moved to panel_message.rs)
-- `tramex/src/panels/logical_channels.rs` - Added technology display
-- `tramex-tools/src/interface/interface_file/file_handler.rs` - Technology inference logic
-- `tramex-tools/src/interface/parse_config.rs` - Technology enum and FileMetadata
-
-### Technical Details
+## 4.5. Technical Details
 
 **Array Indexing Implementation:**
 ```rust
@@ -455,38 +363,34 @@ if data.metadata.technology == Technology::Unknown {
 }
 ```
 
-### Benefits
+## 4.5. Files Modified
 
-**For Users:**
-- Quick access to important RRC message fields
-- Cleaner message panel with less clutter
-- Technology always visible and correctly detected
-- Easy to understand array values
+**New Files:**
+- `tramex/src/panels/bst_config.rs` - New RRC field viewer panel
 
-**For Developers:**
-- Easy to add new message configurations
-- Flexible JSON path system
-- Centralized technology detection
-- Extensible field mapping system
+**Modified Files:**
+- `tramex/src/panels/mod.rs` - Added bst_config module
+- `tramex/src/frontend.rs` - Integrated RRC Field Viewer panel
+- `tramex/src/panels/panel_message.rs` - UI improvements, moved display_log function
+- `tramex/src/utils.rs` - Removed display_log (moved to panel_message.rs)
+- `tramex/src/panels/logical_channels.rs` - Added technology display
+- `tramex-tools/src/interface/interface_file/file_handler.rs` - Technology inference logic
+- `tramex-tools/src/interface/parse_config.rs` - Technology enum and FileMetadata
 
-### Future Enhancements
-
-1. **Dynamic field configuration**: Load field mappings from config file
-2. **More message types**: Add configurations for other RRC messages (SIB2, MIB, etc.)
-3. **Field filtering**: Show/hide specific fields
-4. **Export fields**: Copy field values to clipboard
-5. **Field history**: Track field value changes over time
-6. **Comparison view**: Compare fields across multiple messages
 
 ---
 
-# WebSocket Connection Debugging Guide
+# 5. WebSocket Connection Debugging Guide
 
-## Current Situation
+### Implementation Date
+2025-11-27
+
+## 5.0. Overview
+### 5.0.1. Current Situation
 
 You're receiving the initial "ready" message from the Amarisoft server but not seeing subsequent log messages.
 
-## Root Cause
+### 5.0.2. Root Cause
 
 **The Amarisoft WebSocket server uses a REQUEST-RESPONSE pattern**, not a push model:
 
@@ -494,9 +398,18 @@ You're receiving the initial "ready" message from the Amarisoft server but not s
 2. ❌ **You must send `log_get` requests to receive logs** (this is not happening automatically)
 3. ❌ Server only sends log data in response to your `log_get` requests
 
-## How Your Application Works
 
-### Message Flow:
+### 5.0.3. Next Steps
+
+1. **Run your application** and check the logs for the emoji indicators (🔵 📨 📤 ✅)
+2. **Click the Next button** to trigger a `log_get` request
+3. **Check if you see the request being sent** (📤 messages)
+4. **Check if you receive a response** (🔵 and 📨 messages)
+5. **If no response**, check the Amarisoft server configuration for screen settings
+
+## 5.1. How Your Application Works
+
+### 5.1.1 Message Flow:
 ```
 1. Connect → Server sends "ready" message
 2. User navigates (clicks Next) → Triggers `should_get_more_log = true`
@@ -504,7 +417,7 @@ You're receiving the initial "ready" message from the Amarisoft server but not s
 4. Server responds → `try_recv()` receives the log data
 ```
 
-### The Problem:
+### 5.1.2. The Problem:
 - `try_recv()` is called every frame to check for incoming messages ✅
 - `get_more_data()` sends the request to the server ✅
 - **BUT** `get_more_data()` is only called when:
@@ -512,9 +425,9 @@ You're receiving the initial "ready" message from the Amarisoft server but not s
   - You're near the end of loaded events (preloading)
   - `should_get_more_log` is set to `true`
 
-## Debugging Steps
+## 5.2. Debugging Steps
 
-### Step 1: Check the Logs
+### 5.2.1. Check the Logs
 
 I've added comprehensive logging to help you debug. Run your application and look for these log messages:
 
@@ -524,7 +437,7 @@ I've added comprehensive logging to help you debug. Run your application and loo
 💡 Server is ready. You need to click 'Load More' or enable auto-loading to request logs.
 ```
 
-### Step 2: Trigger a Request
+### 5.2.2. Trigger a Request
 
 After connecting, you need to trigger a `log_get` request. Try one of these:
 
@@ -540,7 +453,7 @@ After connecting, you need to trigger a `log_get` request. Try one of these:
 - The code has preloading logic that should automatically request more data
 - But it only works if you have some events already loaded
 
-### Step 3: Watch for Server Response
+### 5.2.3. Watch for Server Response
 
 After sending a request, you should see:
 ```
@@ -550,9 +463,9 @@ After sending a request, you should see:
 
 If you DON'T see the server response, the problem is with the server or network.
 
-## Common Issues
+## 5.3. Common Issues
 
-### Issue 1: "Screens" on Amarisoft Server
+### 5.3.1. "Screens" on Amarisoft Server
 
 Amarisoft servers often require you to enable "screens" to receive log data:
 
@@ -578,7 +491,7 @@ log_options: {
 }
 ```
 
-### Issue 2: Layer Filters
+### 5.3.2. Layer Filters
 
 Your `log_get` request includes layer filters. Make sure:
 1. The layers you're requesting are enabled on the server
@@ -588,14 +501,14 @@ Your `log_get` request includes layer filters. Make sure:
 - Open the Options panel in your app
 - Make sure at least one layer is enabled (e.g., RRC, NAS, S1AP)
 
-### Issue 3: Server Not Sending Data
+### 5.3.3. Server Not Sending Data
 
 The server might not have any data to send if:
 - No UE (User Equipment) is connected
 - No traffic is being generated
 - The layers you're requesting have no activity
 
-## Testing with a Simple Request
+## 5.4. Testing with a Simple Request
 
 You can test the WebSocket connection manually using a WebSocket client:
 
@@ -631,15 +544,7 @@ ws.onmessage = (event) => {
 };
 ```
 
-## Next Steps
-
-1. **Run your application** and check the logs for the emoji indicators (🔵 📨 📤 ✅)
-2. **Click the Next button** to trigger a `log_get` request
-3. **Check if you see the request being sent** (📤 messages)
-4. **Check if you receive a response** (🔵 and 📨 messages)
-5. **If no response**, check the Amarisoft server configuration for screen settings
-
-## Files Modified
+## 5.5. Files Modified
 
 I've added logging to:
 - `tramex-tools/src/interface/websocket/ws_connection.rs`
@@ -650,17 +555,18 @@ I've added logging to:
 
 All logs use `log::info!()` so they'll be visible by default.
 
+
 ---
 
-## 6. Event-Driven Architecture (Observer Pattern)
+# 6. Event-Driven Architecture (Observer Pattern)
 
 ### Implementation Date
 2025-11-09
 
-### Overview
+## 6.0. Overview
 Refactored the application to use an event-driven architecture with the Observer pattern, replacing the legacy polling-based system with a reactive, notification-based approach.
 
-### Architecture
+## 6.1. Architecture
 
 **Core Components:**
 
@@ -687,7 +593,7 @@ Refactored the application to use an event-driven architecture with the Observer
    - Receive notifications automatically
    - No manual polling required
 
-### Data Flow
+## 6.2. Data Flow
 
 **Loading Events:**
 ```
@@ -713,7 +619,7 @@ Frame loop → Application.update()
           → Auto-navigate to latest
 ```
 
-### Key Benefits
+## 6.3. Key Benefits
 
 | Aspect | Old System | New System |
 |--------|-----------|------------|
@@ -723,7 +629,7 @@ Frame loop → Application.update()
 | **Adding Panels** | Manually wire in multiple places | Implement EventSubscriber trait |
 | **Testing** | Hard to test individual parts | Easy to mock components |
 
-### API Examples
+## 6.4. API Examples
 
 **Basic Usage:**
 ```rust
@@ -763,7 +669,7 @@ FileSource::new(path, FileLoadingStrategy::Progressive {
 })
 ```
 
-### Panel Implementation
+## 6.5. Panel Implementation
 
 Panels implement `EventSubscriber`:
 
@@ -789,7 +695,7 @@ impl EventSubscriber for Chronograph {
 }
 ```
 
-### Performance Characteristics
+## 6.6. Performance Characteristics
 
 **Memory:**
 - Single copy of events in EventStore
@@ -806,7 +712,7 @@ impl EventSubscriber for Chronograph {
 - WebSocket: Server-controlled with timeout
 - Non-blocking: poll() never blocks main thread
 
-### Files Modified
+## 6.7. Files Modified
 
 **New Files:**
 - `tramex/src/event_system/mod.rs` - Module exports
@@ -823,7 +729,7 @@ impl EventSubscriber for Chronograph {
 - `tramex/src/panels/*.rs` - All panels implement EventSubscriber
 - `tramex/src/lib.rs` - Added event_system module
 
-### Migration Notes
+## 6.8. Migration Notes
 
 The migration preserved backward compatibility by:
 1. Keeping legacy `Data` structure for file/WebSocket handlers
@@ -831,7 +737,7 @@ The migration preserved backward compatibility by:
 3. Panels implement both old (`PanelController`) and new (`EventSubscriber`) traits
 4. Gradual removal of legacy code paths
 
-### Future Enhancements
+## 6.9. Future Enhancements
 
 1. **Complete DataSource migration**: Replace legacy file/WebSocket handlers
 2. **Remove Data bridge**: Direct DataSource → Application flow
@@ -844,17 +750,17 @@ The migration preserved backward compatibility by:
 
 ---
 
-## 7. Trace Association System
+# 7. Trace Association System
 
 ### Implementation Date
 2025-01-11
 
-### Overview
+## 7.0. Overview
 A flexible, rule-based system for linking related protocol messages across layers, enabling visibility into parent/child relationships between traces.
 
-### Key Principles
+## 7.1. Key Principles
 
-#### 1. Parent-Child Relationships
+### 7.1.1. Parent-Child Relationships
 
 Each `Trace` contains a `TraceRelation` that stores its associations:
 
@@ -879,7 +785,7 @@ pub enum AssociationStatus {
 **Why `Vec<usize>` for multiple associations?**  
 This is specific to **NAS**, which is carried by both RRC (radio layer) and NGAP (core network). A NAS message can have two parents simultaneously. For logic convenience and consistency, this multi-parent support has been applied to all layers, and extended to children as well for shared logic and possible evolution.
 
-#### 2. Window-Based Search
+### 7.1.2. Window-Based Search
 
 Associations are found by searching within a **configurable window** around the source trace:
 
@@ -894,7 +800,7 @@ Associations are found by searching within a **configurable window** around the 
 - **Efficiency**: Avoids scanning entire event list. 
 - **Configurable**: Each rule can override `window_size()`
 
-#### 3. Preferred Direction
+### 7.1.3. Preferred Direction
 
 Rules specify which direction to search first based on the trace's communication direction:
 
@@ -911,7 +817,7 @@ pub enum SearchDirection {
 - **Uplink (UL/TO)**: Search backward first (carrier came before because the ENB/GNB is reading encapsulation with lower level first)
 - **Downlink (DL/FROM)**: Search forward first (carrier comes after because the ENB/GNB is encapsulating higher level first)
 
-#### 4. Message Filtering
+### 7.1.4. Message Filtering
 
 Rules can filter which messages are eligible for association:
 
@@ -920,7 +826,7 @@ Rules can filter which messages are eligible for association:
 
 This prevents false matches between unrelated message types.
 
-#### 5. Relationship Direction (`source_is_child`)
+### 7.1.5. Relationship Direction (`source_is_child`)
 
 Each rule defines whether the source trace is the child or parent:
 
@@ -929,7 +835,7 @@ Each rule defines whether the source trace is the child or parent:
 | `true` | Child | Parent | NAS finds its RRC carrier |
 | `false` | Parent | Child | NGAP finds the NAS it carries |
 
-### Architecture
+## 7.2. Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -952,7 +858,7 @@ Each rule defines whether the source trace is the child or parent:
 └─────────────────────────────────────────────────────────┘
 ```
 
-### AssociationRule Trait
+## 7.3. AssociationRule Trait
 
 ```rust
 pub trait AssociationRule {
@@ -976,9 +882,9 @@ pub trait AssociationRule {
 }
 ```
 
-### Computation Flow
+## 7.4. Computation Flow
 
-#### compute_associations()
+### 7.4.1. compute_associations()
 
 Main entry point that processes traces and builds relationships:
 
@@ -1017,7 +923,7 @@ pub fn compute_associations(
 }
 ```
 
-#### rules_for_layer()
+### 7.4.2. rules_for_layer()
 
 Returns all rules where the given layer is the **source layer**:
 
@@ -1033,7 +939,7 @@ This means:
 - When processing a **NAS** trace → `NasToRrcRule` applies (NAS is source, finds RRC parent)
 - When processing an **NGAP** trace → `NgapToNasRule` applies (NGAP is source, finds NAS child)
 
-#### Lookback Window
+### 7.4.3. Lookback Window
 
 When new batches arrive, traces near the batch boundary are re-processed to catch associations that span batches:
 
@@ -1044,16 +950,16 @@ let lookback_start = start_index.saturating_sub(lookback_window);
 // Then recompute from lookback_start
 ```
 
-### Chronograph Integration
+## 7.5. Chronograph Integration
 
 Related traces are visually highlighted:
 - **Current trace**: Bright blue
 - **Parent/child traces**: Lighter blue
 - **Other traces**: Theme-aware default color
 
-### Implemented Rules
+## 7.6. Implemented Rules
 
-#### NasToRrcRule
+### NasToRrcRule
 | Parameter | Value |
 |-----------|-------|
 | Source Layer | NAS |
@@ -1064,7 +970,7 @@ Related traces are visually highlighted:
 | Valid Source | All NAS messages |
 | Valid Target | `dl information transfer`, `ul information transfer`, `rrc setup complete`, `rrc reconfiguration` |
 
-#### NgapToNasRule
+### NgapToNasRule
 | Parameter | Value |
 |-----------|-------|
 | Source Layer | NGAP |
@@ -1076,16 +982,7 @@ Related traces are visually highlighted:
 | Valid Target | All NAS messages |
 
 
-### Files Structure
-
-**New Files:**
-- `tramex-tools/src/interface/association/mod.rs` - `compute_associations()`
-- `tramex-tools/src/interface/association/relation.rs` - `TraceRelation`, `AssociationStatus`
-- `tramex-tools/src/interface/association/rules.rs` - `AssociationRule` trait, implementations
-- `tramex-tools/src/interface/association/matcher.rs` - `TraceMatcher`
-
-
-#### Note on Rule Direction
+### Note on Rule Direction
 
 | Rule | Direction |
 |------|-----------|
@@ -1096,9 +993,18 @@ There is no particular reason for this difference. Both orders are valid. The va
 
 **Performance consideration:** There is no difference in performance between the two approaches. However, `source_is_child = false` could be slightly faster if the hex parsing is reused across matches instead of being parsed every time.
 
+
+## 7.7. Files
+
+**New Files:**
+- `tramex-tools/src/interface/association/mod.rs` - `compute_associations()`
+- `tramex-tools/src/interface/association/relation.rs` - `TraceRelation`, `AssociationStatus`
+- `tramex-tools/src/interface/association/rules.rs` - `AssociationRule` trait, implementations
+- `tramex-tools/src/interface/association/matcher.rs` - `TraceMatcher`
+
 ---
 
-## 8. Resource Blocks Panel - 5G NR Resource Grid Visualization
+# 8. Resource Blocks Panel - 5G NR Resource Grid Visualization
 
 ### Implementation Timeline
 - **v1.0**: 2025-02-11 - Initial grid visualization
@@ -1107,9 +1013,9 @@ There is no particular reason for this difference. Both orders are valid. The va
 ### Overview
 A visual resource grid panel displaying 5G NR Physical Resource Block (PRB) allocations over time. Renders a scrollable matrix of **PRBs (y-axis) × Time (x-axis)** with two view modes: Symbol-level (detailed) and Slot-level (aggregated).
 
-### 8.1. Key principles
+## 8.1. Key principles
 
-#### 8.1.1. Frequency Axis
+### 8.1.1. Frequency Axis
 
 The Y axis is the frequency axis. 
 There is no specific name for the unit, it will be referenced as **Physical Resource Blocks (PRB)**, although one PRB is a unit of frequency x time.\
@@ -1117,7 +1023,7 @@ One PRB is composed on multiple subcarriers, but this level of precision is not 
 
 Here, the Y axis is composed of 51 PRBs of 180KHz each. This can vary depending on the bandwidth configuration.
 
-#### 8.1.2. Time Axis
+### 8.1.2. Time Axis
 The X axis is the time axis. 
 
 - A **frame** is 10ms
@@ -1125,7 +1031,7 @@ The X axis is the time axis.
 - The number of **Slot** per Subframe can vary from 2 to 8 depending of the antenna configuration. It is commonly 2 slots per subframe, so 1 slot = 0.5ms
 - There is 14 **Symbol** per Slot in 5G. This is the smallest allocation duration.
 
-#### 8.1.3. PHY layer
+### 8.1.3. PHY layer
 The Traces from Amarisoft provide enough information through the PHY layer to build most part of the resource grid. (Unfortunalty his does apply for PDSCH, where positions are more difficult to find)
 
 Exemple of a PHY event : 
@@ -1149,7 +1055,7 @@ This gives us : Frame 476, SubFrame 9, Slot 1, Symbol 0-13
 HFN: N, Frame 1023 → HFN: N+1, Frame 0
 ```
 
-#### 8.1.4. SSB
+### 8.1.4. SSB
 
 There is another type of event which can be easily displayed but which are not in the traces but in the antenna configuration: **SSB**
 
@@ -1164,9 +1070,9 @@ From there we can extract information to help us fill the grid :
 | Symbol | `symb=2` | Symbol 2 → 2 |
 | SFN | `period=20` | Every 20ms (2 frames) |
 
-### 8.2. Architecture Principles
+## 8.2. Architecture Principles
 
-#### 8.2.1. Data Pipeline
+### 8.2.1. Data Pipeline
 
 As for every panel the events are parsed from the data source (File / Websocket) to the `Trace` format. \
 This is where we extract the information from the events and store it in the `PHYInfos` struct based on the rules above. HFN is not present because is cannot be extracted from the PHY event itself.
@@ -1216,7 +1122,7 @@ impl EventSubscriber for ResourceBlocks {
 **Auto-Centering:** When a PHY event is focused in the navigation panel, the Resource Blocks grid automatically scrolls to center on that frame/slot.
 
 
-#### 8.2.3. Three-Dimensional Grid Model
+### 8.2.3. Three-Dimensional Grid Model
 
 For performance issues, it is not reasonable to think of building the whole grid : \
 1s = 100 Frames = 1k SubFrames = 2k Slots = 28k Symbols \
@@ -1248,7 +1154,7 @@ pub type SlotAddress = (u32, u16, u16);  // (hfn, frame, slot)
 let global_slot = (hfn as usize * 1024 + frame as usize) * slots_per_frame + slot;
 ```
 
-#### 8.2.3 HFN-Aware Event Caching
+### 8.2.3 HFN-Aware Event Caching
 
 5G NR frames loop every 1024 frames. Without Hyper Frame Number tracking, frame 0 at startup is indistinguishable from frame 0 after wraparound.
 
@@ -1283,9 +1189,9 @@ if frame > end_frame && (frame - end_frame) > 512 { // Anti-wrapped: 0 -> 1023
 }
 ```
 
-### 8.3. Data Structures
+## 8.3. Data Structures
 
-#### 8.3.1 SlotGrid
+### 8.3.1 SlotGrid
 ```rust
 pub struct SlotGrid {
     pub hfn: u32,               // HyperFrame number
@@ -1298,7 +1204,7 @@ pub struct SlotGrid {
 }
 ```
 
-#### 8.3.2 Resource Types
+### 8.3.2 Resource Types
 | Type | Color | Purpose |
 |------|-------|---------|
 | Empty | White | Unallocated |
@@ -1311,9 +1217,9 @@ pub struct SlotGrid {
 | DMRS | Red `200, 0, 0` | Reference signal |
 | Guard | Dark gray `100, 100, 100` | Guard band |
 
-### 8.4. UI Rendering
+## 8.4. UI Rendering
 
-#### 8.4.1 Dual View Mode Architecture
+### 8.4.1 Dual View Mode Architecture
 
 The panel supports two visualization modes with shared underlying data:
 
@@ -1341,7 +1247,7 @@ In case many resources are allocated to the same PRB and slot, we need to priori
 impl ResourceType -> pub fn priority(&self)
 ```
 
-#### 8.4.2 Sticky Header Rendering
+### 8.4.2 Sticky Header Rendering
 
 Traditional `egui::Grid` cannot handle both sticky row headers (PRB labels) and sticky column headers (slot info). The panel uses a custom overlay approach:
 
@@ -1350,7 +1256,7 @@ Traditional `egui::Grid` cannot handle both sticky row headers (PRB labels) and 
 - Headers/labels drawn as overlays using `painter` with viewport-relative coordinates
 - Content rect calculations account for label/header dimensions
 
-#### 8.4.3. Visible-Range Culling
+### 8.4.3. Visible-Range Culling
 
 Only render cells within the visible viewport for performance:
 
@@ -1366,7 +1272,7 @@ let vis_start_slot = vis_start_slot.min(total_slots);
 let vis_end_slot = vis_end_slot.min(total_slots);
 ```
 
-#### 8.4.4. Smart Border Drawing
+### 8.4.4. Smart Border Drawing
 
 Vertical-only borders with thickness indicating hierarchy:
 
@@ -1378,9 +1284,9 @@ Vertical-only borders with thickness indicating hierarchy:
 
 **No horizontal borders** - visual clarity through vertical separation only.
 
-### 8.5. Performance Optimizations
+## 8.5. Performance Optimizations
 
-#### 8.5.1. Hot Path Optimizations
+### 8.5.1. Hot Path Optimizations
 
 | Optimization | Before | After | Impact |
 |--------------|--------|-------|--------|
@@ -1425,12 +1331,12 @@ response.on_hover_ui(|ui| {
 });
 ```
 
-### 8.6. Files
+## 8.6. Files
 
 - `tramex/src/panels/ressources_blocks.rs` - Panel implementation
 - `tramex-tools/src/interface/layer.rs` - PHY layer visibility (default: on)
 
-### 8.7. Usage
+## 8.7. Usage
 
 1. Load a file with PHY traces (PDSCH, PUSCH, PUCCH, PRACH)
 2. Open Resource Blocks panel from Windows menu

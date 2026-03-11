@@ -10,6 +10,7 @@
 
 - [Architecture](./architecture.md)
 - [Development](./development.md)
+- [DevLog](./devlog.md) & [Dev Report](./dev_report.md)
 - [Documentation](./documentation.md)
 - [ASN.1](./asn1.md)
 - [CI/CD](./ci_cd.md)
