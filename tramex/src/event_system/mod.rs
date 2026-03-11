@@ -16,4 +16,4 @@ pub use file_source::FileSource;
 #[cfg(feature = "websocket")]
 pub use websocket_source::WebSocketSource;
 pub use application::Application;
-pub use integration::{EventSystemBridge, create_application_with_panels, should_use_new_system};
+pub use integration::create_application_with_panels;

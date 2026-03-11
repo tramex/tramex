@@ -561,7 +561,8 @@ All logs use `log::info!()` so they'll be visible by default.
 # 6. Event-Driven Architecture (Observer Pattern)
 
 ### Implementation Date
-2025-11-09
+2025-11-09 : Implementation
+2026-03-11 : Clean up the legacy system
 
 ## 6.0. Overview
 Refactored the application to use an event-driven architecture with the Observer pattern, replacing the legacy polling-based system with a reactive, notification-based approach.
@@ -712,41 +713,37 @@ impl EventSubscriber for Chronograph {
 - WebSocket: Server-controlled with timeout
 - Non-blocking: poll() never blocks main thread
 
-## 6.7. Files Modified
+## 6.7. Files
 
-**New Files:**
 - `tramex/src/event_system/mod.rs` - Module exports
 - `tramex/src/event_system/application.rs` - Application controller
 - `tramex/src/event_system/event_bus.rs` - Observer pattern dispatcher
 - `tramex/src/event_system/event_store.rs` - Event data management
-- `tramex/src/event_system/event_subscriber.rs` - Subscriber trait
-- `tramex/src/event_system/data_source.rs` - DataSource trait + FileSource
+- `tramex/src/event_system/data_source.rs` - DataSource trait
+- `tramex/src/event_system/file_source.rs` - File DataSource
 - `tramex/src/event_system/websocket_source.rs` - WebSocket DataSource
-- `tramex/src/event_system/integration.rs` - Helper functions
-
-**Modified Files:**
+- `tramex/src/event_system/integration.rs` - `create_application_with_panels()` factory
 - `tramex/src/frontend.rs` - Integrated Application controller
 - `tramex/src/panels/*.rs` - All panels implement EventSubscriber
-- `tramex/src/lib.rs` - Added event_system module
 
-## 6.8. Migration Notes
+## 6.8. Legacy Cleanup (2025-03-11)
 
-The migration preserved backward compatibility by:
-1. Keeping legacy `Data` structure for file/WebSocket handlers
-2. Transferring events from `Data` to `Application` as bridge
-3. Panels implement both old (`PanelController`) and new (`EventSubscriber`) traits
-4. Gradual removal of legacy code paths
+Removed legacy migration scaffolding:
+- `EventSystemBridge` struct and all methods
+- `should_use_new_system()` env-var toggle
+- `add_event()` (unused singular method)
+- `TRAMEX_USE_NEW_EVENT_SYSTEM` env var from `.cargo/config.toml`
+- Legacy comments throughout `application.rs` and `frontend.rs`
+
+**Still in place** (requires `Handler` trait refactoring):
+- `FrontEnd.data: Data` — handlers still write into `Data`
+- `Handler → Data → add_events() → Application` transfer pipeline
+- `sync_metadata_from_data()` bridge
 
 ## 6.9. Future Enhancements
 
-1. **Complete DataSource migration**: Replace legacy file/WebSocket handlers
-2. **Remove Data bridge**: Direct DataSource → Application flow
-3. **Panel UI separation**: Remove legacy `show()` method, use only `EventSubscriber`
-4. **Advanced features**:
-   - Event filtering at Application level
-   - Event search and bookmarks
-   - Timeline visualization
-   - Export/import event sets
+1. **Complete DataSource migration**: Replace `Handler` trait with `DataSource`, remove `Data` middleman
+2. **Advanced features**: Event filtering, search, bookmarks, export/import
 
 ---
 

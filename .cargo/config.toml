@@ -8,5 +8,4 @@
 
 
 [env]
-TRAMEX_USE_NEW_EVENT_SYSTEM = "1"
 RUST_LOG = "debug"

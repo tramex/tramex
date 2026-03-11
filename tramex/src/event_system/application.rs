@@ -92,12 +92,7 @@ impl Application {
         self.layers = layers;
     }
     
-    /// Add a single event manually (for bridging legacy code)
-    pub fn add_event(&mut self, event: tramex_tools::data::Trace) {
-        self.process_new_events(vec![event]).ok();
-    }
-    
-    /// Add multiple events manually (for bridging legacy code)
+    /// Add multiple events manually
     pub fn add_events(&mut self, events: Vec<tramex_tools::data::Trace>) {
         self.process_new_events(events).ok();
     }
@@ -427,7 +422,7 @@ impl Application {
         self.event_bus.notify_metadata_changed(&self.metadata);
     }
     
-    /// Update metadata from Data (for legacy compatibility)
+    /// Update metadata from Data
     pub fn sync_metadata_from_data(&mut self, data: &tramex_tools::data::Data) {
         if self.metadata.technology != data.metadata.technology {
             self.metadata = data.metadata.clone();

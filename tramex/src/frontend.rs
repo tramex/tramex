@@ -168,7 +168,6 @@ impl FrontEnd {
                                         self.last_transferred_count = 0;
                                         self.initial_load_done = false;  // Reset for next file
                                         
-                                        // Clear legacy data
                                         self.data.clear();
                                         
                                         // Clear Application (which notifies all panels)
@@ -248,7 +247,7 @@ impl FrontEnd {
         // Try to receive any incoming WebSocket messages or load file data
         let previous_count = self.data.events.len();
         
-        // Always load data into self.data first (legacy system)
+        // Load data into self.data
         if let Some(handle) = &mut self.handler {
             if let Err(errors_vect) = handle.try_recv(&mut self.data) {
                 for one_error in errors_vect {
@@ -322,7 +321,6 @@ impl FrontEnd {
                 self.nav_panel.total_count = self.handler.as_ref()
                     .and_then(|h| h.get_total_event_count())
                     .or(Some(self.application.event_count()));
-                // Use legacy handler's is_full_read since we're still using legacy file loading
                 self.nav_panel.is_full_read = self.handler.as_ref()
                     .map(|h| h.is_full_read())
                     .unwrap_or(true);
@@ -398,13 +396,11 @@ impl FrontEnd {
                         }
                     }
                     
-                    // Sync legacy data index with Application for panels that still use PanelController::show()
                     self.data.current_index = self.application.current_index();
                 }
                 if self.nav_panel.should_go_previous {
                     self.nav_panel.should_go_previous = false;
                     self.application.navigate_previous();
-                    // Sync legacy data index with Application for panels that still use PanelController::show()
                     self.data.current_index = self.application.current_index();
                 }
                 
