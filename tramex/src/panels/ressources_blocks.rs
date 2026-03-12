@@ -55,9 +55,14 @@ pub enum ResourceType {
 
 impl ResourceType {
     /// Get the color for this resource type
-    pub fn color(&self) -> Color32 {
+    pub fn color(&self, is_dark: bool) -> Color32 {
         match self {
-            ResourceType::Empty => Color32::WHITE,
+            // Empty uses theme background in dark mode, white in light mode
+            ResourceType::Empty => if is_dark {
+                Color32::from_gray(40)  // Dark gray for dark mode
+            } else {
+                Color32::WHITE
+            },
             ResourceType::Pdcch => Color32::from_rgb(0, 100, 0),     // Dark green
             ResourceType::Pucch => Color32::from_rgb(0,200,0),   // Light green
             ResourceType::Pdsch => Color32::from_rgb(0, 100, 200),   // Blue
@@ -633,16 +638,17 @@ impl ResourceBlocks {
             ui.separator();
 
             // Resource type legend
-            for (label, color) in [
-                ("PDCCH", ResourceType::Pdcch.color()),
-                ("PDSCH", ResourceType::Pdsch.color()),
-                ("PUSCH", ResourceType::Pusch.color()),
-                ("PUCCH", ResourceType::Pucch.color()),
-                ("PRACH", ResourceType::Prach.color()),
-                ("SSB", ResourceType::Ssb.color()),
+            let is_dark = ui.visuals().dark_mode;
+            for (label, rt) in [
+                ("PDCCH", ResourceType::Pdcch),
+                ("PDSCH", ResourceType::Pdsch),
+                ("PUSCH", ResourceType::Pusch),
+                ("PUCCH", ResourceType::Pucch),
+                ("PRACH", ResourceType::Prach),
+                ("SSB", ResourceType::Ssb),
             ] {
                 let (rect, _) = ui.allocate_exact_size(Vec2::new(10.0, 10.0), egui::Sense::hover());
-                ui.painter().rect_filled(rect, 2.0, color);
+                ui.painter().rect_filled(rect, 2.0, rt.color(is_dark));
                 ui.label(egui::RichText::new(label).small());
             }
         });
@@ -733,7 +739,7 @@ impl ResourceBlocks {
 
                                     let resource_type = slot.grid[prb][symbol];
                                     let color = if within_limits {
-                                        resource_type.color()
+                                        resource_type.color(ui.visuals().dark_mode)
                                     } else {
                                         Color32::from_gray(180)
                                     };
@@ -741,7 +747,7 @@ impl ResourceBlocks {
                                     painter.rect_stroke(
                                         cell_rect,
                                         0.0,
-                                        Stroke::new(sm_border, Color32::from_rgb(200, 200, 200)),
+                                        Stroke::new(sm_border, theme.text_weak),
                                     );
 
                                     // Highlight focused event cells
@@ -750,7 +756,7 @@ impl ResourceBlocks {
                                             painter.rect_stroke(
                                                 cell_rect,
                                                 0.0,
-                                                Stroke::new(1.5, Color32::from_rgb(0, 0, 0)),
+                                                Stroke::new(1.5, theme.text_strong),
                                             );
                                         }
                                     }
@@ -759,7 +765,7 @@ impl ResourceBlocks {
                                         painter.circle_filled(
                                             cell_rect.center(),
                                             cell_size / 4.0,
-                                            Color32::from_rgb(200, 0, 0),
+                                            Color32::from_rgb(180, 30, 30),
                                         );
                                     }
 
@@ -840,12 +846,12 @@ impl ResourceBlocks {
                             }
 
                             let color = if within_limits {
-                                best_type.color()
+                                best_type.color(ui.visuals().dark_mode)
                             } else {
                                 Color32::from_gray(180)
                             };
                             painter.rect_filled(cell_rect, 0.0, color);
-                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, Color32::from_rgb(200, 200, 200)));
+                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, theme.text_weak));
 
                             // Highlight focused event cells - single pass through symbols
                             if let Some(focused_idx) = self.focused_trace_index {
@@ -861,7 +867,7 @@ impl ResourceBlocks {
                                         painter.rect_stroke(
                                             cell_rect,
                                             0.0,
-                                            Stroke::new(1.5, Color32::from_rgb(0, 0, 0)),
+                                            Stroke::new(1.5, theme.text_strong),
                                         );
                                     }
                                 }

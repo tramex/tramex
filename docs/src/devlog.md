@@ -1341,3 +1341,174 @@ response.on_hover_ui(|ui| {
 4. Toggle Symbol/Slot view for detail vs overview
 5. Hover cells for detailed PHY allocation info
 6. Adjust cell size for visibility of dense allocations
+
+---
+
+# 9. HARQ Panel - PHY Channel Visualization
+
+### Implementation Date
+2026-03-12
+
+## 9.0. Overview
+
+Enhanced the HARQ panel to visualize all PHY channel types (PDCCH, PDSCH, PUSCH, PUCCH) with channel-specific parsing, proper labeling, and HARQ process color coding.
+
+### 9.0.1. Problem Solved
+- HARQ panel only showed PDSCH/PUSCH events
+- No visibility into control channel activity (PDCCH grants, PUCCH feedback)
+- Multi-line PDCCH traces were not parsed
+- Special cases like `harq=si` (MIB/SIB) cluttered the display
+- Colors were unreadable in dark mode
+
+### 9.0.2. Solution
+- Extended PHY parser with `PHYChannelData` enum for channel-specific fields
+- Multi-line PDCCH parsing with DCI format awareness
+- Filter out non-HARQ events (`harq=si`, PUCCH format=2)
+- Theme-aware color scheme for both light and dark modes
+
+## 9.1. PHY Parsing Enhancements
+
+### 9.1.1. PHYChannelData Enum
+
+Channel-specific data is now stored in a dedicated enum:
+
+```rust
+pub enum PHYChannelData {
+    Pdcch { 
+        dci: String,           // "0_1" (UL grant) or "1_1" (DL grant)
+        harq_process: Option<u8>, 
+        ndi: Option<u8>, 
+        rv_idx: Option<u8>, 
+        harq_feedback_timing: Option<u8>  // DCI 1_1 only
+    },
+    Pdsch { retx: Option<u8>, rv_idx: Option<u8> },
+    Pusch { retx: Option<u8>, rv_idx: Option<u8>, crc: Option<bool> },
+    Pucch { format: Option<u8>, ack: Option<bool> },
+    None,
+}
+```
+
+### 9.1.2. Multi-Line PDCCH Parsing
+
+PDCCH traces span multiple lines with indented continuation:
+
+```
+10:32:35.169 [PHY] DL 0001 01 476.19 PDCCH: ss_id=2 cce_index=6 al=2 dci=1_1 k1=4
+    harq_process=0
+    ndi1=1
+    rv_idx1=0
+    harq_feedback_timing=1
+```
+
+The parser now handles this with `parse_phy_lines()`:
+
+```rust
+pub fn parse_phy_lines(lines: &[String], direction: Direction) -> Option<PHYInfos>
+```
+
+### 9.1.3. DCI Format Optimization
+
+Fields vary by DCI format, so parsing branches early:
+
+| DCI Format | Direction | Fields |
+|------------|-----------|--------|
+| **0_1** | UL grant | `ndi=`, `rv_idx=` |
+| **1_1** | DL grant | `ndi1=`, `rv_idx1=`, `harq_feedback_timing=` |
+
+```rust
+let is_dci_1_1 = dci == "1_1";
+if is_dci_1_1 {
+    // Parse ndi1=, rv_idx1=, harq_feedback_timing=
+} else {
+    // Parse ndi=, rv_idx=
+}
+```
+
+### 9.1.4. Special Case Filtering
+
+**harq=si (MIB/SIB broadcasts):**
+- Parsed and flagged with `harq_si: bool`
+- Skipped in HARQ panel display (no HARQ process)
+
+**PUCCH format=2 (CSI only):**
+- Contains Channel State Information, not HARQ feedback
+- Skipped in HARQ panel display
+
+## 9.2. HARQ Panel Display
+
+### 9.2.1. Arrow Labels
+
+Each channel type has a specific label format:
+
+| Channel | Label Example |
+|---------|---------------|
+| **PDCCH** | `PDCCH dci=1_1 ndi=1 rv_idx=0` |
+| **PDSCH** | `PDSCH harq=0 retx=0 rv_idx=0` |
+| **PUSCH** | `PUSCH harq=0 retx=0 rv_idx=0 crc=OK` |
+| **PUCCH** | `PUCCH format=1 ACK` |
+
+### 9.2.2. Color Coding
+
+- **HARQ process colors**: 16-color palette for processes 0-15
+- **PUCCH**: Uses neutral theme color (no HARQ process)
+- **Focused arrow**: Theme-aware strong text color
+- **Highlight bar**: Semi-transparent HARQ color background
+
+### 9.2.3. Arrow Limit
+
+Maintains maximum 200 arrows with batch drain:
+
+```rust
+const MAX_ARROWS: usize = 200;
+
+if self.arrows.len() >= MAX_ARROWS {
+    self.arrows.drain(0..50);  // Remove oldest 50
+}
+```
+
+## 9.3. Theme Support (Dark/Light Mode)
+
+### 9.3.1. HARQ Panel Colors
+
+```rust
+let (arrow_color, arrow_width, label_color) = if is_current {
+    let highlight_bg = if is_dark {
+        base_color.linear_multiply(0.3)   // Brighter for dark bg
+    } else {
+        base_color.linear_multiply(0.15)  // Subtle for light bg
+    };
+    (theme.text_strong, 3.0, theme.text_strong)
+} else {
+    (base_color, 1.5, theme.text)
+};
+```
+
+### 9.3.2. Resource Blocks Colors
+
+`ResourceType::color()` now accepts dark mode flag:
+
+```rust
+pub fn color(&self, is_dark: bool) -> Color32 {
+    match self {
+        ResourceType::Empty => if is_dark {
+            Color32::from_gray(40)  // Dark gray for dark mode
+        } else {
+            Color32::WHITE
+        },
+        // Other colors unchanged
+    }
+}
+```
+
+Grid borders use theme colors:
+- Cell borders: `theme.text_weak`
+- Focused cell highlight: `theme.text_strong`
+
+## 9.4. Files Modified
+
+**tramex-tools:**
+- `src/interface/parser/parser_phy.rs` - PHYChannelData enum, multi-line parsing, DCI optimization
+
+**tramex:**
+- `src/panels/harq_panel.rs` - Channel-specific display, filtering, theme colors
+- `src/panels/ressources_blocks.rs` - Dark mode color support

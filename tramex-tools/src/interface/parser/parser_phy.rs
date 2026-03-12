@@ -25,6 +25,49 @@ pub enum PHYChannelType {
     Other,
 }
 
+/// Channel-specific data extracted from PHY traces
+#[derive(Debug, Clone)]
+pub enum PHYChannelData {
+    /// PDCCH scheduling info (DCI 0_1 or 1_1)
+    Pdcch {
+        /// DCI format (e.g. "0_1", "1_1")
+        dci: String,
+        /// HARQ process number
+        harq_process: Option<u8>,
+        /// New Data Indicator
+        ndi: Option<u8>,
+        /// Redundancy version index
+        rv_idx: Option<u8>,
+        /// HARQ feedback timing (DCI 1_1 only)
+        harq_feedback_timing: Option<u8>,
+    },
+    /// PDSCH downlink shared channel data
+    Pdsch {
+        /// Retransmission count
+        retx: Option<u8>,
+        /// Redundancy version index
+        rv_idx: Option<u8>,
+    },
+    /// PUSCH uplink shared channel data
+    Pusch {
+        /// Retransmission count
+        retx: Option<u8>,
+        /// Redundancy version index
+        rv_idx: Option<u8>,
+        /// CRC result (true = OK, false = KO)
+        crc: Option<bool>,
+    },
+    /// PUCCH uplink control channel data
+    Pucch {
+        /// PUCCH format (1, 2, etc.)
+        format: Option<u8>,
+        /// ACK/NACK (true = ACK, i.e. value != 0)
+        ack: Option<bool>,
+    },
+    /// No channel-specific data
+    None,
+}
+
 /// PHY layer information extracted from trace lines
 #[derive(Debug, Clone)]
 pub struct PHYInfos {
@@ -46,6 +89,10 @@ pub struct PHYInfos {
     pub symb_length: u8,
     /// HARQ process number (0-15 typically)
     pub harq: Option<u8>,
+    /// True if harq=si (MIB/SIB carry, not a real HARQ process)
+    pub harq_si: bool,
+    /// Channel-specific parsed data
+    pub channel_data: PHYChannelData,
 }
     
 /// PHY layer parser
@@ -75,11 +122,14 @@ impl FileParser for PHYParser {
             Direction::DL // Default to DL
         };
         
-        // Try to parse PHY info
-        match parse_phy_line(first_line, direction) {
+        // Try to parse PHY info (pass all lines for multi-line PDCCH parsing)
+        match parse_phy_lines(lines, direction) {
             Some(phy_infos) => {
-                // Only store info for PDSCH/PUSCH/PUCCH/PRACH channels
-                if matches!(phy_infos.channel_type, PHYChannelType::PDSCH | PHYChannelType::PUSCH | PHYChannelType::PUCCH | PHYChannelType::PRACH) {
+                // Store info for PDCCH/PDSCH/PUSCH/PUCCH/PRACH channels
+                if matches!(phy_infos.channel_type,
+                    PHYChannelType::PDCCH | PHYChannelType::PDSCH |
+                    PHYChannelType::PUSCH | PHYChannelType::PUCCH |
+                    PHYChannelType::PRACH) {
                     Ok(AdditionalInfos::PHYInfos(phy_infos))
                 } else {
                     Ok(AdditionalInfos::None)
@@ -125,47 +175,66 @@ impl FileParser for PHYParser {
     }
 }
 
-/// Parse a PHY layer trace line and extract RB information
+/// Parse a PHY layer trace line and extract RB & HARQ informations
+/// Accepts all lines of a PHY trace (first line + optional indented continuation
+/// lines for PDCCH). Extracts frame/slot, PRB, symbol, HARQ, and channel-specific data.
 ///
 /// Example trace formats:
 /// - 5G PDSCH: `10:32:34.715 [PHY] DL 0001 01 4601  431.16 PDSCH: harq=0 prb=50 symb=1:13 k1=12...`
 /// - 4G PDSCH: `10:37:50.654 [PHY] DL 0001 01 003d   421.0 PDSCH: harq=0 k1=4 prb=23:2...` (no symb)
 ///
 /// # Arguments
-/// * `line` - The first line of the PHY trace
+/// * `lines` - All lines of the PHY trace (first line + indented fields)
 /// * `direction` - Direction (UL/DL) parsed from the trace header
 ///
 /// # Returns
-/// * `Some(PHYInfos)` if the channel is handled (PDSCH, PUSCH, PUCCH, PRACH)
+/// * `Some(PHYInfos)` for handled channels (PDCCH, PDSCH, PUSCH, PUCCH, PRACH)
 /// * `None` for other PHY channels or if parsing fails
-pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
-    // Check if this is PDSCH or PUSCH
-    let channel_type = if line.contains("PDSCH:") {
+pub fn parse_phy_lines(lines: &[String], direction: Direction) -> Option<PHYInfos> {
+    if lines.is_empty() {
+        return None;
+    }
+    let first_line = &lines[0];
+
+    // Detect channel type from first line
+    let channel_type = if first_line.contains("PDSCH:") {
         PHYChannelType::PDSCH
-    } else if line.contains("PUSCH:") {
+    } else if first_line.contains("PUSCH:") {
         PHYChannelType::PUSCH
-    } else if line.contains("PUCCH:") {
+    } else if first_line.contains("PUCCH:") {
         PHYChannelType::PUCCH
-    } else if line.contains("PDCCH:") {
+    } else if first_line.contains("PDCCH:") {
         PHYChannelType::PDCCH
-    } else if line.contains("PRACH:") {
+    } else if first_line.contains("PRACH:") {
         PHYChannelType::PRACH
     } else {
-        // Not a channel we visualize in resource grid
-        return None;
+        PHYChannelType::Other
     };
 
     // Parse frame and slot from the "frame.slot" field (e.g., "421.0")
-    let (frame, slot) = parse_frame_slot(line)?;
+    let (frame, slot) = parse_frame_slot(first_line)?;
 
-    // Parse prb field: "prb=50" or "prb=23:2"
-    let (prb_start, prb_length) = parse_prb(line)?;
+    // Parse prb field — PDCCH has no prb= on first line
+    let (prb_start, prb_length) = if matches!(channel_type, PHYChannelType::PDCCH) {
+        (0, 0)
+    } else {
+        parse_prb(first_line)?
+    };
 
-    // Parse symb field: "symb=0:13" - if missing, assume full slot (0:14)
-    let (symb_start, symb_length) = parse_symb(line).unwrap_or((0, 14));
+    // Parse symb field — if missing, assume full slot (0:14)
+    let (symb_start, symb_length) = parse_symb(first_line).unwrap_or((0, 14));
 
-    // Parse harq field: "harq=2" -> Some(2)
-    let harq = parse_harq(line);
+    // Parse harq field: "harq=2" -> (Some(2), false), "harq=si" -> (None, true)
+    let (harq, harq_si) = parse_harq(first_line);
+
+    // Parse channel-specific data
+    let channel_data = match channel_type {
+        PHYChannelType::PDCCH => parse_pdcch_data(lines),
+        PHYChannelType::PDSCH => parse_pdsch_data(first_line),
+        PHYChannelType::PUSCH => parse_pusch_data(first_line),
+        PHYChannelType::PUCCH => parse_pucch_data(first_line),
+        _ => PHYChannelData::None,
+    };
 
     Some(PHYInfos {
         direction,
@@ -177,7 +246,14 @@ pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
         symb_start,
         symb_length,
         harq,
+        harq_si,
+        channel_data,
     })
+}
+
+/// Convenience wrapper for single-line parsing (used in tests)
+pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
+    parse_phy_lines(&[line.to_string()], direction)
 }
 
 /// Parse the frame.slot field from the trace line
@@ -215,18 +291,117 @@ fn parse_frame_slot(line: &str) -> Option<(u16, u8)> {
 
 /// Parse the harq field from the trace line
 /// 
-/// Format: "harq=2" -> Some(2)
-/// Returns None if the harq field is not present
-fn parse_harq(line: &str) -> Option<u8> {
-    let harq_start_idx = line.find("harq=")?;
+/// Format: "harq=2" -> (Some(2), false), "harq=si" -> (None, true)
+/// Returns (None, false) if the harq field is not present
+fn parse_harq(line: &str) -> (Option<u8>, bool) {
+    let harq_start_idx = match line.find("harq=") {
+        Some(idx) => idx,
+        None => return (None, false),
+    };
     let harq_value_start = harq_start_idx + 5; // Skip "harq="
     
     let value_part: String = line[harq_value_start..]
         .chars()
-        .take_while(|c| c.is_ascii_digit())
+        .take_while(|c| c.is_ascii_alphanumeric())
         .collect();
     
-    value_part.parse::<u8>().ok()
+    if value_part == "si" {
+        return (None, true);
+    }
+    
+    (value_part.parse::<u8>().ok(), false)
+}
+
+/// Extract a u8 value from a "key=value" field in a line
+fn extract_field_u8(line: &str, prefix: &str) -> Option<u8> {
+    let start = line.find(prefix)? + prefix.len();
+    let value: String = line[start..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    value.parse::<u8>().ok()
+}
+
+/// Extract a string value from a "key=value" field in a line (until whitespace)
+fn extract_field_str(line: &str, prefix: &str) -> Option<String> {
+    let start = line.find(prefix)? + prefix.len();
+    let value: String = line[start..]
+        .chars()
+        .take_while(|c| !c.is_whitespace())
+        .collect();
+    if value.is_empty() { None } else { Some(value) }
+}
+
+/// Parse PDCCH channel-specific data from multi-line trace
+///
+/// First line: `... PDCCH: ss_id=2 cce_index=6 al=2 dci=0_1 k2=4`
+/// Subsequent indented lines: `harq_process=0`, `ndi=1`, `rv_idx=0`, etc.
+fn parse_pdcch_data(lines: &[String]) -> PHYChannelData {
+    let first_line = &lines[0];
+    let dci = extract_field_str(first_line, "dci=").unwrap_or_default();
+    let is_dci_1_1 = dci == "1_1";
+    
+    let mut harq_process = None;
+    let mut ndi = None;
+    let mut rv_idx = None;
+    let mut harq_feedback_timing = None;
+    
+    for line in lines.iter().skip(1) {
+        let trimmed = line.trim();
+        if trimmed.starts_with("harq_process=") {
+            harq_process = trimmed[13..].split_whitespace().next()
+                .and_then(|v| v.parse::<u8>().ok());
+        } else if is_dci_1_1 {
+            // DCI 1_1 (DL grant): ndi1, rv_idx1, harq_feedback_timing
+            if trimmed.starts_with("ndi1=") {
+                ndi = trimmed[5..].split_whitespace().next()
+                    .and_then(|v| v.parse::<u8>().ok());
+            } else if trimmed.starts_with("rv_idx1=") {
+                rv_idx = trimmed[8..].split_whitespace().next()
+                    .and_then(|v| v.parse::<u8>().ok());
+            } else if trimmed.starts_with("harq_feedback_timing=") {
+                harq_feedback_timing = trimmed[21..].split_whitespace().next()
+                    .and_then(|v| v.parse::<u8>().ok());
+            }
+        } else {
+            // DCI 0_1 (UL grant): ndi, rv_idx
+            if trimmed.starts_with("ndi=") {
+                ndi = trimmed[4..].split_whitespace().next()
+                    .and_then(|v| v.parse::<u8>().ok());
+            } else if trimmed.starts_with("rv_idx=") {
+                rv_idx = trimmed[7..].split_whitespace().next()
+                    .and_then(|v| v.parse::<u8>().ok());
+            }
+        }
+    }
+    
+    PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, harq_feedback_timing }
+}
+
+/// Parse PDSCH channel-specific data from the first line
+fn parse_pdsch_data(line: &str) -> PHYChannelData {
+    let retx = extract_field_u8(line, "retx=");
+    let rv_idx = extract_field_u8(line, "rv_idx=");
+    PHYChannelData::Pdsch { retx, rv_idx }
+}
+
+/// Parse PUSCH channel-specific data from the first line
+fn parse_pusch_data(line: &str) -> PHYChannelData {
+    let retx = extract_field_u8(line, "retx=");
+    let rv_idx = extract_field_u8(line, "rv_idx=");
+    let crc = extract_field_str(line, "crc=").map(|s| s != "KO");
+    PHYChannelData::Pusch { retx, rv_idx, crc }
+}
+
+/// Parse PUCCH channel-specific data from the first line
+///
+/// `ack` is only present on format=1. Sometimes `sr` appears instead of `ack`.
+/// ack != 0 means ACK (true), ack == 0 means NACK (false).
+fn parse_pucch_data(line: &str) -> PHYChannelData {
+    let format = extract_field_u8(line, "format=");
+    // ack field: may be multi-digit (e.g. "11", "111") — treat any non-"0" as true
+    let ack = extract_field_str(line, "ack=").map(|s| s != "0");
+    PHYChannelData::Pucch { format, ack }
 }
 
 /// Parse the prb field from the trace line
@@ -304,12 +479,15 @@ mod tests {
         let info = parse_phy_line(line, Direction::DL).unwrap();
         
         assert_eq!(info.frame, 431);
-        assert_eq!(info.slot, 16); // .16 in log, but our parsing will give 16
+        assert_eq!(info.slot, 16);
         assert_eq!(info.prb_start, 50);
         assert_eq!(info.prb_length, 1);
         assert_eq!(info.symb_start, 1);
         assert_eq!(info.symb_length, 13);
         assert!(matches!(info.channel_type, PHYChannelType::PDSCH));
+        assert_eq!(info.harq, Some(0));
+        assert!(!info.harq_si);
+        assert!(matches!(info.channel_data, PHYChannelData::Pdsch { retx: Some(0), rv_idx: Some(0) }));
     }
 
     #[test]
@@ -324,6 +502,7 @@ mod tests {
         assert_eq!(info.symb_start, 0);
         assert_eq!(info.symb_length, 14); // Default for missing symb
         assert!(matches!(info.channel_type, PHYChannelType::PDSCH));
+        assert_eq!(info.harq, Some(0));
     }
 
     #[test]
@@ -338,6 +517,15 @@ mod tests {
         assert_eq!(info.symb_start, 0);
         assert_eq!(info.symb_length, 13);
         assert!(matches!(info.channel_type, PHYChannelType::PUSCH));
+        assert_eq!(info.harq, Some(3));
+        assert!(matches!(info.channel_data, PHYChannelData::Pusch { retx: Some(0), rv_idx: Some(0), crc: Some(true) }));
+    }
+
+    #[test]
+    fn test_parse_pusch_crc_ko() {
+        let line = "10:32:34.569 [PHY] UL 0001 01 4601  416.19 PUSCH: harq=0 prb=2 symb=0:14 CW0: tb_len=145 mod=8 rv_idx=0 cr=0.94 retx=0 crc=KO snr=37.1 epre=-86.9 ta=-0.5";
+        let info = parse_phy_line(line, Direction::UL).unwrap();
+        assert!(matches!(info.channel_data, PHYChannelData::Pusch { crc: Some(false), .. }));
     }
 
     #[test]
@@ -349,8 +537,109 @@ mod tests {
     }
 
     #[test]
-    fn test_non_pdsch_pusch() {
-        let line = "10:37:38.873 [PHY] UL    - 01    -   266.4 PRACH: sequence_index=9 ta=21 prb=2:6 snr=28.5";
-        assert!(parse_phy_line(line, Direction::UL).is_none());
+    fn test_parse_pdcch_dci_0_1() {
+        let lines: Vec<String> = vec![
+            "10:32:29.584 [PHY] DL 0001 01 4601  942.15 PDCCH: ss_id=2 cce_index=6 al=2 dci=0_1 k2=4".into(),
+            "\t\trb_alloc=0x30".into(),
+            "\t\ttime_domain_rsc=1".into(),
+            "\t\tmcs=27".into(),
+            "\t\tndi=1".into(),
+            "\t\trv_idx=0".into(),
+            "\t\tharq_process=0".into(),
+            "\t\tdai=3".into(),
+            "\t\ttpc_command=1".into(),
+            "\t\tantenna_ports=0".into(),
+            "\t\tsrs_request=0".into(),
+            "\t\tdmrs_seq_init=0".into(),
+            "\t\tul_sch_indicator=1".into(),
+        ];
+        let info = parse_phy_lines(&lines, Direction::DL).unwrap();
+        assert!(matches!(info.channel_type, PHYChannelType::PDCCH));
+        assert_eq!(info.frame, 942);
+        assert_eq!(info.slot, 15);
+        assert_eq!(info.prb_start, 0); // PDCCH has no prb on first line
+        match &info.channel_data {
+            PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, harq_feedback_timing } => {
+                assert_eq!(dci, "0_1");
+                assert_eq!(*harq_process, Some(0));
+                assert_eq!(*ndi, Some(1));
+                assert_eq!(*rv_idx, Some(0));
+                assert_eq!(*harq_feedback_timing, None);
+            }
+            _ => panic!("Expected Pdcch channel data"),
+        }
+    }
+
+    #[test]
+    fn test_parse_pdcch_dci_1_1() {
+        let lines: Vec<String> = vec![
+            "10:32:22.293 [PHY] DL 0001 01 4601  213.13 PDCCH: ss_id=2 cce_index=4 al=2 dci=1_1".into(),
+            "\t\trb_alloc=0x32".into(),
+            "\t\tmcs1=27".into(),
+            "\t\tndi1=0".into(),
+            "\t\trv_idx1=0".into(),
+            "\t\tharq_process=0".into(),
+            "\t\tharq_feedback_timing=2".into(),
+        ];
+        let info = parse_phy_lines(&lines, Direction::DL).unwrap();
+        match &info.channel_data {
+            PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, harq_feedback_timing } => {
+                assert_eq!(dci, "1_1");
+                assert_eq!(*harq_process, Some(0));
+                assert_eq!(*ndi, Some(0));
+                assert_eq!(*rv_idx, Some(0));
+                assert_eq!(*harq_feedback_timing, Some(2));
+            }
+            _ => panic!("Expected Pdcch channel data"),
+        }
+    }
+
+    #[test]
+    fn test_parse_pucch_ack() {
+        let line = "10:32:22.299 [PHY] UL 0001 01 4601  213.19 PUCCH: format=1 prb=50 prb2=0 symb=0:14 cs=1 occ=0 ack=1 snr=35.7 epre=-88.5";
+        let info = parse_phy_line(line, Direction::UL).unwrap();
+        assert!(matches!(info.channel_type, PHYChannelType::PUCCH));
+        match &info.channel_data {
+            PHYChannelData::Pucch { format, ack } => {
+                assert_eq!(*format, Some(1));
+                assert_eq!(*ack, Some(true));
+            }
+            _ => panic!("Expected Pucch channel data"),
+        }
+    }
+
+    #[test]
+    fn test_parse_pucch_sr() {
+        let line = "13:20:47.884 [PHY] UL 003d 01 4644   960.8 PUCCH: format=1 prb=50 prb2=0 symb=0:14 cs=9 occ=2 sr=1 snr=18.9 epre=-53.8";
+        let info = parse_phy_line(line, Direction::UL).unwrap();
+        match &info.channel_data {
+            PHYChannelData::Pucch { format, ack } => {
+                assert_eq!(*format, Some(1));
+                assert_eq!(*ack, None); // sr present, not ack
+            }
+            _ => panic!("Expected Pucch channel data"),
+        }
+    }
+
+    #[test]
+    fn test_parse_harq_si() {
+        let line = "13:20:47.877 [PHY] DL    - 01 ffff   960.0 PDSCH: harq=si prb=41:7 symb=2:12 CW0: tb_len=84 mod=2 rv_idx=0 cr=0.44";
+        let info = parse_phy_line(line, Direction::DL).unwrap();
+        assert_eq!(info.harq, None);
+        assert!(info.harq_si);
+        assert!(matches!(info.channel_type, PHYChannelType::PDSCH));
+    }
+
+    #[test]
+    fn test_parse_pucch_format2_no_ack() {
+        let line = "13:20:47.885 [PHY] UL 003d 01 4644   960.9 PUCCH: format=2 prb=1 prb2=49 symb=8:2 csi=0101 epre=-51.3";
+        let info = parse_phy_line(line, Direction::UL).unwrap();
+        match &info.channel_data {
+            PHYChannelData::Pucch { format, ack } => {
+                assert_eq!(*format, Some(2));
+                assert_eq!(*ack, None); // format=2 has no ack
+            }
+            _ => panic!("Expected Pucch channel data"),
+        }
     }
 }

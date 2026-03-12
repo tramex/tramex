@@ -1,6 +1,6 @@
 //! HARQ Panel
 //!
-//! Displays a chronograph-like timeline of PHY events (PDSCH/PUSCH),
+//! Displays a chronograph-like timeline of PHY events (PDCCH, PDSCH, PUSCH, PUCCH),
 //! colored by HARQ process number. The focused event arrow is highlighted.
 
 use crate::event_system::{EventSubscriber, EventContext};
@@ -10,8 +10,10 @@ use tramex_tools::{
     data::{AdditionalInfos, Trace},
     errors::TramexError,
     interface::types::Direction,
-    interface::parser::parser_phy::PHYChannelType,
+    interface::parser::parser_phy::{PHYChannelType, PHYChannelData},
 };
+
+const MAX_ARROWS: usize = 200;
 
 /// HARQ process color palette (16 colors for HARQ 0-15)
 const HARQ_COLORS: [Color32; 16] = [
@@ -45,12 +47,17 @@ struct HarqArrow {
     trace_index: usize,
     /// Direction (UL / DL)
     direction: Direction,
-    /// Channel type (PDSCH / PUSCH)
+    /// Channel type
     channel_type: PHYChannelType,
-    /// HARQ process number
-    harq: u8,
-    /// Label text (e.g. "PDSCH harq=0 prb=2:47")
+    /// HARQ process number (None for PUCCH which has no direct harq id)
+    harq: Option<u8>,
+    /// Label text displayed on the arrow
     label: String,
+}
+
+/// Format helper: display Option<u8> as value or "-"
+fn fmt_opt(v: Option<u8>) -> String {
+    v.map_or("-".to_string(), |v| v.to_string())
 }
 
 impl HarqArrow {
@@ -61,17 +68,51 @@ impl HarqArrow {
             _ => return None,
         };
 
-        // Only keep PDSCH and PUSCH (the channels that carry HARQ)
-        if !matches!(phy.channel_type, PHYChannelType::PDSCH | PHYChannelType::PUSCH) {
+        // Skip harq=si events (MIB/SIB carry)
+        if phy.harq_si {
             return None;
         }
 
-        let harq = phy.harq?;
+        // Only keep PDCCH, PDSCH, PUSCH, PUCCH
+        if !matches!(phy.channel_type,
+            PHYChannelType::PDCCH | PHYChannelType::PDSCH |
+            PHYChannelType::PUSCH | PHYChannelType::PUCCH) {
+            return None;
+        }
 
-        let label = format!(
-            "{:?} harq={} prb={}:{} f={}.{}",
-            phy.channel_type, harq, phy.prb_start, phy.prb_length, phy.frame, phy.slot,
-        );
+        let (harq, label) = match &phy.channel_data {
+            PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, .. } => {
+                // Skip PDCCH without harq_process (e.g. DCI 1_0 for SIB)
+                if harq_process.is_none() {
+                    return None;
+                }
+                let label = format!("PDCCH dci={} ndi={} rv_idx={}",
+                    dci, fmt_opt(*ndi), fmt_opt(*rv_idx));
+                (*harq_process, label)
+            }
+            PHYChannelData::Pdsch { retx, rv_idx } => {
+                let label = format!("PDSCH harq={} retx={} rv_idx={}",
+                    fmt_opt(phy.harq), fmt_opt(*retx), fmt_opt(*rv_idx));
+                (phy.harq, label)
+            }
+            PHYChannelData::Pusch { retx, rv_idx, crc } => {
+                let crc_str = crc.map_or("-", |v| if v { "OK" } else { "KO" });
+                let label = format!("PUSCH harq={} retx={} rv_idx={} crc={}",
+                    fmt_opt(phy.harq), fmt_opt(*retx), fmt_opt(*rv_idx), crc_str);
+                (phy.harq, label)
+            }
+            PHYChannelData::Pucch { format, ack } => {
+                // Skip format=2 (CSI only, no HARQ feedback)
+                if *format == Some(2) {
+                    return None;
+                }
+                let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
+                let label = format!("PUCCH format={} {}",
+                    fmt_opt(*format), ack_str);
+                (None, label) // No HARQ process on PUCCH
+            }
+            PHYChannelData::None => return None,
+        };
 
         Some(HarqArrow {
             trace_index: index,
@@ -195,18 +236,34 @@ impl HarqPanel {
                     _ => (bst_x, ue_x),
                 };
 
-                // Color by HARQ process; brighten / thicken if focused
-                let base_color = harq_color(arrow.harq);
-                let (color, width) = if is_current {
-                    (Color32::WHITE, 3.5)
+                // Color by HARQ process
+                let base_color = arrow.harq.map(harq_color)
+                    .unwrap_or(theme.text_weak); // PUCCH: neutral color
+                let is_dark = ui.visuals().dark_mode;
+
+                // Focused: highlight bar + contrasting arrow/text
+                // Normal: harq-colored arrow, theme-aware label text
+                let (arrow_color, arrow_width, label_color) = if is_current {
+                    let highlight_bg = if is_dark {
+                        base_color.linear_multiply(0.3)
+                    } else {
+                        base_color.linear_multiply(0.15)
+                    };
+                    let highlight_rect = Rect::from_min_max(
+                        Pos2::new(rect.left(), y - arrow_height / 2.0 + 2.0),
+                        Pos2::new(rect.right(), y + arrow_height / 2.0 - 2.0),
+                    );
+                    painter.rect_filled(highlight_rect, 2.0, highlight_bg);
+                    // Use strong text for focused label, bright arrow
+                    (theme.text_strong, 3.0, theme.text_strong)
                 } else {
-                    (base_color, 1.5)
+                    (base_color, 1.5, theme.text)
                 };
 
                 // Draw arrow line
                 painter.line_segment(
                     [Pos2::new(from_x, y), Pos2::new(to_x, y)],
-                    Stroke::new(width, color),
+                    Stroke::new(arrow_width, arrow_color),
                 );
 
                 // Arrowhead
@@ -217,22 +274,9 @@ impl HarqPanel {
                 let base2 = Pos2::new(to_x - dir * arrow_size, y + arrow_size / 2.0);
                 painter.add(egui::Shape::convex_polygon(
                     vec![tip, base1, base2],
-                    color,
+                    arrow_color,
                     Stroke::NONE,
                 ));
-
-                // If current, draw a colored highlight bar behind the arrow
-                if is_current {
-                    let highlight_rect = Rect::from_min_max(
-                        Pos2::new(rect.left(), y - arrow_height / 2.0 + 2.0),
-                        Pos2::new(rect.right(), y + arrow_height / 2.0 - 2.0),
-                    );
-                    painter.rect_filled(highlight_rect, 2.0, base_color.linear_multiply(0.18));
-                }
-
-                // HARQ color indicator dot
-                let dot_x = from_x + (to_x - from_x).signum() * 14.0;
-                painter.circle_filled(Pos2::new(dot_x, y), 5.0, base_color);
 
                 // Label text above arrow
                 let text_pos = Pos2::new((from_x + to_x) / 2.0, y - 10.0);
@@ -241,7 +285,7 @@ impl HarqPanel {
                     egui::Align2::CENTER_CENTER,
                     &arrow.label,
                     egui::FontId::proportional(10.0),
-                    color,
+                    label_color,
                 );
             }
 
@@ -258,7 +302,7 @@ impl HarqPanel {
         ui.horizontal_wrapped(|ui| {
             ui.label("HARQ: ");
             // Determine which HARQ IDs are actually present
-            let mut seen: Vec<u8> = self.arrows.iter().map(|a| a.harq).collect();
+            let mut seen: Vec<u8> = self.arrows.iter().filter_map(|a| a.harq).collect();
             seen.sort();
             seen.dedup();
             for h in seen {
@@ -266,12 +310,14 @@ impl HarqPanel {
                 let (response, painter) = ui.allocate_painter(Vec2::new(30.0, 16.0), egui::Sense::hover());
                 let r = response.rect;
                 painter.rect_filled(r, 3.0, color);
+                // Use theme text color for dark mode compatibility
+                let text_color = ui.visuals().strong_text_color();
                 painter.text(
                     r.center(),
                     egui::Align2::CENTER_CENTER,
                     format!("{}", h),
                     egui::FontId::proportional(10.0),
-                    Color32::BLACK,
+                    text_color,
                 );
             }
         });
@@ -299,8 +345,9 @@ impl EventSubscriber for HarqPanel {
 
             self.arrows.insert(insert_pos, arrow);
 
-            if self.arrows.len() > 500 {
-                self.arrows.remove(0);
+            // Limit arrow history — drop first 50 when reaching limit
+            if self.arrows.len() >= MAX_ARROWS {
+                self.arrows.drain(0..50);
             }
         }
     }
