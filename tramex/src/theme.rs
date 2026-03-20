@@ -21,10 +21,20 @@ pub struct ThemeColors {
     pub warning: Color32,
     /// Error/negative color
     pub error: Color32,
-    /// Inactive element background
-    pub inactive_bg: Color32,
     /// Panel/section header color
     pub header: Color32,
+    /// Light background color
+    pub bg_light: Color32,
+    /// Medium background color
+    pub bg_medium: Color32,
+    /// Dark background color
+    pub bg_dark: Color32,
+    /// Small line color
+    pub line_small: Color32,
+    /// Medium line color
+    pub line_medium: Color32,
+    /// Strong line color
+    pub line_strong: Color32,
 }
 
 impl ThemeColors {
@@ -47,8 +57,13 @@ impl ThemeColors {
             success: Color32::from_rgb(40, 160, 40),
             warning: Color32::from_rgb(200, 140, 0),
             error: Color32::from_rgb(200, 50, 50),
-            inactive_bg: Color32::from_rgb(240, 240, 240),
             header: Color32::from_rgb(0, 100, 150),
+            bg_light: Color32::from_rgb(240, 240, 240),
+            bg_medium: Color32::from_rgb(220, 220, 220),
+            bg_dark: Color32::from_rgb(200, 200, 200),
+            line_small: Color32::from_rgb(200, 200, 200),
+            line_medium: Color32::from_rgb(180, 180, 180),
+            line_strong: Color32::from_rgb(150, 150, 150),
         }
     }
 
@@ -62,8 +77,13 @@ impl ThemeColors {
             success: Color32::from_rgb(100, 220, 100),
             warning: Color32::from_rgb(255, 200, 80),
             error: Color32::from_rgb(255, 100, 100),
-            inactive_bg: Color32::from_rgb(60, 60, 60),
             header: Color32::from_rgb(100, 180, 255),
+            bg_light: Color32::from_rgb(60, 60, 60),
+            bg_medium: Color32::from_rgb(40, 40, 40),
+            bg_dark: Color32::from_rgb(20, 20, 20),
+            line_small: Color32::from_rgb(80, 80, 80),
+            line_medium: Color32::from_rgb(100, 100, 100),
+            line_strong: Color32::from_rgb(120, 120, 120),
         }
     }
 }

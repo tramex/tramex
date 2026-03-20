@@ -747,7 +747,7 @@ impl ResourceBlocks {
                                     painter.rect_stroke(
                                         cell_rect,
                                         0.0,
-                                        Stroke::new(sm_border, theme.text_weak),
+                                        Stroke::new(sm_border, theme.line_small),
                                     );
 
                                     // Highlight focused event cells
@@ -792,7 +792,7 @@ impl ResourceBlocks {
                             // Left edge of this slot
                             painter.line_segment(
                                 [Pos2::new(slot_x, grid_origin_y), Pos2::new(slot_x, grid_bottom)],
-                                Stroke::new(border_width, theme.text_weak),
+                                Stroke::new(border_width, if is_subframe_boundary { theme.line_strong } else { theme.line_medium }),
                             );
 
                             // Draw symbol separators (thin vertical lines within slot)
@@ -800,7 +800,7 @@ impl ResourceBlocks {
                                 let x = slot_x + (symbol as f32 * cell_size);
                                 painter.line_segment(
                                     [Pos2::new(x, grid_origin_y), Pos2::new(x, grid_bottom)],
-                                    Stroke::new(sm_border, theme.text_weak),
+                                    Stroke::new(sm_border, theme.line_small),
                                 );
                             }
                         }
@@ -851,7 +851,7 @@ impl ResourceBlocks {
                                 Color32::from_gray(180)
                             };
                             painter.rect_filled(cell_rect, 0.0, color);
-                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, theme.text_weak));
+                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, theme.line_small));
 
                             // Highlight focused event cells - single pass through symbols
                             if let Some(focused_idx) = self.focused_trace_index {
@@ -905,7 +905,7 @@ impl ResourceBlocks {
 
                         painter.line_segment(
                             [Pos2::new(slot_x, grid_origin_y), Pos2::new(slot_x, grid_bottom)],
-                            Stroke::new(border_width, theme.text_weak),
+                            Stroke::new(border_width, if is_frame_boundary { theme.line_strong } else { theme.line_medium }),
                         );
                     }
                 }
