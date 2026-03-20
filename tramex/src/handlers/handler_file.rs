@@ -1,16 +1,13 @@
-//! File handler panel
+//! File handler panel — UI-only connector for file selection
 use std::path::Path;
 
 use eframe::egui;
 use poll_promise::Promise;
 use tramex_tools::{
-    data::Data,
     errors::TramexError,
-    interface::{interface_file::file_handler::File, interface_types::InterfaceTrait},
+    interface::interface_file::file_handler::File,
     tramex_error,
 };
-
-use super::Handler;
 
 #[derive(Debug, serde::Deserialize)]
 /// Item to show in the file list
@@ -23,7 +20,7 @@ struct Item {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Default)]
-/// File handler
+/// File handler — UI for selecting and loading files
 pub struct FileHandler {
     #[serde(skip)]
     /// Picked path
@@ -39,7 +36,7 @@ pub struct FileHandler {
     url_files: String,
 
     #[serde(skip)]
-    /// File
+    /// Loaded file ready to be consumed
     file: Option<File>,
 }
 
@@ -162,7 +159,8 @@ impl FileHandler {
             None => Ok(None),
         };
         match &res {
-            Ok(_) => log::debug!("File parsed successfully"),
+            Ok(Some(_)) => log::debug!("File parsed successfully"),
+            Ok(None) => {}
             Err(e) => log::debug!("File parsing failed: {:?}", e),
         }
         if should_clean {
@@ -389,8 +387,9 @@ impl FileHandler {
     }
 }
 
-impl Handler for FileHandler {
-    fn ui_options(&mut self, ui: &mut egui::Ui) {
+impl FileHandler {
+    /// Show file options UI
+    pub fn ui_options(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("File Options", |ui| {
             ui.label("Index of files URL:");
             ui.add(egui::TextEdit::singleline(&mut self.url_files));
@@ -400,9 +399,11 @@ impl Handler for FileHandler {
         });
     }
 
-    fn ui(&mut self, ui: &mut egui::Ui, data: &mut Data, _new_ctx: egui::Context) -> Result<bool, TramexError> {
-        self.internal_ui(ui)?; // may return error
-        if self.picked_path.is_some() && self.file.is_none() {
+    /// Show file selection UI.
+    /// Returns Ok(true) if close was requested, Ok(false) otherwise.
+    pub fn show_ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
+        self.internal_ui(ui)?;
+        if self.picked_path.is_some() && self.file.is_none() && self.file_upload.is_some() {
             match self.get_result() {
                 Ok(Some(curr_file)) => {
                     self.file = curr_file.into();
@@ -418,35 +419,29 @@ impl Handler for FileHandler {
         };
         if self.get_picket_path().is_some() && ui.button("Close").on_hover_text("Close file").clicked() {
             self.reset();
-            data.clear();
+            self.file = None;
             return Ok(true);
         }
         Ok(false)
     }
 
-    fn close(&mut self) -> Result<(), TramexError> {
-        if let Some(file) = &mut self.file {
-            file.close()?;
-        }
-        Ok(())
+    /// Take the loaded file out (consumed once to create a FileSource)
+    pub fn take_file(&mut self) -> Option<File> {
+        self.file.take()
     }
 
-    fn get_more_data(
-        &mut self,
-        layer_list: tramex_tools::interface::layer::Layers,
-        data: &mut tramex_tools::data::Data,
-    ) -> Result<(), Vec<TramexError>> {
-        if let Some(file) = &mut self.file {
-            return file.get_more_data(layer_list, data);
-        }
-        Ok(())
+    /// Check if a file is loaded and ready
+    pub fn has_file(&self) -> bool {
+        self.file.is_some()
     }
 
-    fn try_recv(&mut self, _data: &mut tramex_tools::data::Data) -> Result<(), Vec<TramexError>> {
-        Ok(())
+    /// Check if the file interface is available (file loaded and ready)
+    pub fn is_available(&self) -> bool {
+        self.file.as_ref().map_or(false, |f| f.available)
     }
 
-    fn show_available(&self, ui: &mut egui::Ui) {
+    /// Show status when not yet available
+    pub fn show_status(&self, ui: &mut egui::Ui) {
         if self.file.is_some() {
             ui.label("File available");
         } else {
@@ -454,29 +449,8 @@ impl Handler for FileHandler {
         }
     }
 
-    fn is_full_read(&self) -> bool {
-        if let Some(file) = &self.file {
-            return file.full_read;
-        }
-        false
-    }
-
-    fn is_interface(&self) -> bool {
+    /// Check if handler has an active file selection (picker used or file loaded)
+    pub fn is_active(&self) -> bool {
         self.file.is_some()
-    }
-
-    fn is_interface_available(&self) -> bool {
-        if let Some(file) = &self.file {
-            return file.available;
-        }
-        false
-    }
-    
-    fn supports_preloading(&self) -> bool {
-        self.file.as_ref().map_or(false, |f| f.index.is_some())
-    }
-    
-    fn get_total_event_count(&self) -> Option<usize> {
-        self.file.as_ref().and_then(|f| f.index.as_ref().map(|idx| idx.total_count))
     }
 }

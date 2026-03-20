@@ -1,20 +1,17 @@
-//! ws handler panel
+//! WebSocket handler panel — UI-only connector for WebSocket
 use eframe::egui;
 use tramex_tools::{
-    data::Data,
     errors::{ErrorCode, TramexError},
-    interface::{interface_types::InterfaceTrait, layer::Layers, websocket::ws_connection::WsConnection},
+    interface::websocket::ws_connection::WsConnection,
     tramex_error,
 };
 
-use super::Handler;
-
-/// Ws handler
+/// WebSocket handler — UI for connecting to WebSocket
 pub struct WsHandler {
     /// Url Websocket
     pub url: String,
 
-    /// WsConnection
+    /// WsConnection (held temporarily until consumed by Application)
     inner: Option<WsConnection>,
 }
 
@@ -28,7 +25,7 @@ impl WsHandler {
     /// Create a new ws handler
     pub fn new() -> Self {
         Self {
-            url: "ws://137.194.194.36:9001".to_owned(), // TODO: change to default ws url (127.0.0.1:9001)
+            url: "ws://137.194.194.36:9001".to_owned(),
             inner: None,
         }
     }
@@ -60,25 +57,16 @@ impl WsHandler {
     }
 
     /// Close the websocket
-    /// # Errors
-    /// Return an error if the closing failed
     fn close_ws(&mut self) -> Result<(), TramexError> {
         if let Some(interface_ws) = &mut self.inner {
             return interface_ws.close_impl();
         }
         Ok(())
     }
-}
 
-impl Handler for WsHandler {
-    fn ui_options(&mut self, _ui: &mut egui::Ui) {
-        // ui.label("Websocket Options");
-        // if let Some(interface_ws) = &mut self.inner {
-            
-        // }
-    }
-
-    fn ui(&mut self, ui: &mut egui::Ui, _data: &mut Data, new_ctx: egui::Context) -> Result<bool, TramexError> {
+    /// Show WebSocket UI.
+    /// Returns Ok(true) if close was requested, Ok(false) otherwise.
+    pub fn show_ui(&mut self, ui: &mut egui::Ui, ctx: egui::Context) -> Result<bool, TramexError> {
         if self.inner.is_some() {
             self.display_url(ui, false);
             if let Some(interface_ws) = &mut self.inner {
@@ -88,10 +76,8 @@ impl Handler for WsHandler {
                 } else {
                     ui.label(format!("Name: {}", &interface_ws.name));
                     if ui.button("Close").clicked() {
-                        match self.close_ws() {
-                            Ok(_) => {}
-                            Err(err) => return Err(err),
-                        }
+                        self.close_ws()?;
+                        self.inner = None;
                         return Ok(true);
                     }
                 }
@@ -101,36 +87,35 @@ impl Handler for WsHandler {
             if (self.display_url(ui, true) && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                 || ui.button("Connect").clicked()
             {
-                let wakeup_fn = move || new_ctx.request_repaint(); // wake up UI thread on new message
-                match self.connect(wakeup_fn) {
-                    Ok(_) => {}
-                    Err(err) => return Err(err),
-                }
+                let wakeup_fn = move || ctx.request_repaint();
+                self.connect(wakeup_fn)?;
             }
-
             Ok(false)
         }
     }
 
-    fn close(&mut self) -> Result<(), TramexError> {
-        self.close_ws()
+    /// Take the connection out (consumed once to create a WebSocketSource)
+    pub fn take_connection(&mut self) -> Option<WsConnection> {
+        self.inner.take()
     }
 
-    fn try_recv(&mut self, data: &mut Data) -> Result<(), Vec<TramexError>> {
-        if let Some(interface_ws) = &mut self.inner {
-            return interface_ws.try_recv(data);
-        }
-        Ok(())
+    /// Check if a connection is established and ready
+    pub fn is_available(&self) -> bool {
+        self.inner.as_ref().map_or(false, |ws| ws.available)
     }
 
-    fn get_more_data(&mut self, layer_list: Layers, data: &mut Data) -> Result<(), Vec<TramexError>> {
-        if let Some(interface_ws) = &mut self.inner {
-            return interface_ws.get_more_data(layer_list, data);
-        }
-        Ok(())
+    /// Check if connecting
+    pub fn is_connecting(&self) -> bool {
+        self.inner.as_ref().map_or(false, |ws| ws.connecting)
     }
 
-    fn show_available(&self, ui: &mut egui::Ui) {
+    /// Check if handler has an active connection
+    pub fn is_active(&self) -> bool {
+        self.inner.is_some()
+    }
+
+    /// Show status when not yet available
+    pub fn show_status(&self, ui: &mut egui::Ui) {
         if let Some(interface_ws) = &self.inner {
             if interface_ws.connecting {
                 ui.label("Websocket connecting...");
@@ -143,45 +128,5 @@ impl Handler for WsHandler {
             }
         }
         ui.label("Websocket Not connected");
-    }
-
-    fn is_full_read(&self) -> bool {
-        false
-    }
-
-    fn is_interface(&self) -> bool {
-        self.inner.is_some()
-    }
-
-    fn is_interface_available(&self) -> bool {
-        if let Some(interface_ws) = &self.inner {
-            return interface_ws.available;
-        }
-        false
-    }
-    
-    fn is_websocket(&self) -> bool {
-        true
-    }
-    
-    fn toggle_ws_auto_loading(&mut self) {
-        if let Some(interface_ws) = &mut self.inner {
-            interface_ws.auto_loading = !interface_ws.auto_loading;
-            log::info!("WebSocket auto-loading: {}", if interface_ws.auto_loading { "▶ Resumed" } else { "⏸ Paused" });
-        }
-    }
-    
-    fn is_ws_auto_loading(&self) -> bool {
-        if let Some(interface_ws) = &self.inner {
-            return interface_ws.auto_loading;
-        }
-        false
-    }
-    
-    fn should_ws_request_more(&self) -> bool {
-        if let Some(interface_ws) = &self.inner {
-            return interface_ws.should_request_more();
-        }
-        false
     }
 }

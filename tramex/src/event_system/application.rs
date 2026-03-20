@@ -92,11 +92,6 @@ impl Application {
         self.layers = layers;
     }
     
-    /// Add multiple events manually
-    pub fn add_events(&mut self, events: Vec<tramex_tools::data::Trace>) {
-        self.process_new_events(events).ok();
-    }
-    
     /// Update - poll data source and process new events
     /// Should be called every frame
     pub fn update(&mut self) -> Result<(), Vec<TramexError>> {
@@ -123,11 +118,21 @@ impl Application {
             }
         }
         
-        // 3. For auto-loading sources, request more data
+        // 3. Sync metadata from data source if changed
+        let new_meta = self.data_source.as_ref()
+            .and_then(|s| s.metadata())
+            .filter(|m| m.technology != self.metadata.technology)
+            .cloned();
+        if let Some(meta) = new_meta {
+            log::info!("Application: Synced metadata from source - Technology: {:?}", meta.technology);
+            self.metadata = meta;
+            self.event_bus.notify_metadata_changed(&self.metadata);
+        }
+        
+        // 4. For auto-loading sources, request more data
         if let Some(source) = &mut self.data_source {
             if source.is_auto_loading() && source.has_more() {
                 if let Err(e) = source.request_more(&self.layers) {
-                    // Filter out non-critical errors
                     for error in e {
                         if !matches!(error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
                             errors.push(error);
@@ -358,7 +363,17 @@ impl Application {
     /// Request more data from source (for on-demand loading)
     pub fn request_more_data(&mut self) -> Result<(), Vec<TramexError>> {
         if let Some(source) = &mut self.data_source {
-            source.request_more(&self.layers)?;
+            log::debug!("Application: Requesting more data from source");
+            if let Err(e) = source.request_more(&self.layers) {
+                log::error!("Application: request_more failed with {} errors", e.len());
+                for err in &e {
+                    log::error!("  - {:?}: {}", err.get_code(), err.message);
+                }
+                return Err(e);
+            }
+            log::debug!("Application: request_more succeeded");
+        } else {
+            log::warn!("Application: request_more_data called but no data source");
         }
         Ok(())
     }
@@ -396,17 +411,23 @@ impl Application {
         self.data_source.is_some()
     }
     
+    /// Get reference to data source (for downcasting to concrete types)
+    pub fn data_source(&self) -> Option<&dyn DataSource> {
+        self.data_source.as_deref()
+    }
+    
     /// Get names of all subscribed panels
     pub fn panel_names(&self) -> Vec<&'static str> {
         self.event_bus.subscriber_names()
     }
     
     /// Show windows for all subscribed panels
+    /// Returns (panel_name, is_open, result) so the caller can update open_windows
     pub fn show_panel_windows(
         &mut self,
         ctx: &egui::Context,
         open_windows: &std::collections::BTreeSet<String>,
-    ) -> Vec<(String, Result<(), TramexError>)> {
+    ) -> Vec<(String, bool, Result<(), TramexError>)> {
         self.event_bus.show_windows(ctx, open_windows)
     }
     
@@ -428,14 +449,7 @@ impl Application {
         self.event_bus.set_ai_config(key, provider);
     }
 
-    /// Update metadata from Data
-    pub fn sync_metadata_from_data(&mut self, data: &tramex_tools::data::Data) {
-        if self.metadata.technology != data.metadata.technology {
-            self.metadata = data.metadata.clone();
-            log::info!("Application: Synced metadata from Data - Technology: {:?}", self.metadata.technology);
-            self.event_bus.notify_metadata_changed(&self.metadata);
-        }
-    }
+
 }
 
 impl Default for Application {

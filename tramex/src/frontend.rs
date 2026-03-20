@@ -1,17 +1,15 @@
 //! Frontend module
-use crate::handlers::Handler;
 use crate::handlers::handler_file::FileHandler;
 #[cfg(feature = "websocket")]
 use crate::handlers::handler_ws::WsHandler;
 
-use crate::panels::{
-    navigation_panel::NavigationPanel,
-};
-use crate::event_system::{Application, create_application_with_panels};
+use crate::panels::navigation_panel::{NavigationPanel, NavState};
+use crate::event_system::{Application, FileSource, create_application_with_panels};
+#[cfg(feature = "websocket")]
+use crate::event_system::WebSocketSource;
 use crate::set_open;
 use egui::Ui;
 use std::collections::BTreeSet;
-use tramex_tools::data::Data;
 use tramex_tools::errors::{ErrorCode, TramexError};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Default)]
@@ -26,56 +24,52 @@ pub enum Choice {
     WebSocket,
 }
 
+/// Connector state — holds the UI-only handler for the active mode
+enum Connector {
+    File(FileHandler),
+    #[cfg(feature = "websocket")]
+    WebSocket(WsHandler),
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 /// FrontEnd struct
 pub struct FrontEnd {
-    /// Data
-    #[serde(skip)]
-    pub data: Data,
-
     /// Open windows
     pub open_windows: BTreeSet<String>,
 
     /// Open menu connector
     pub open_menu_connector: bool,
 
-    #[serde(skip)]
-    /// File upload
-    handler: Option<Box<dyn Handler>>,
-
-
     /// Radio choice
     pub radio_choice: Choice,
-    
+
     #[serde(skip)]
-    /// Navigation panel (separate reference for button handling)
+    /// Connector UI (file picker or WS connector)
+    connector: Option<Connector>,
+
+    #[serde(skip)]
+    /// Navigation panel
     nav_panel: NavigationPanel,
-    
+
     #[serde(skip)]
     /// Event-driven application controller
     application: Application,
-    
+
     #[serde(skip)]
-    /// Last count of events transferred to Application (to avoid duplicates)
-    last_transferred_count: usize,
-    
-    #[serde(skip)]
-    /// Track if we've done initial data load for current file
-    initial_load_done: bool,
+    /// Whether a data source has been set on Application for the current connector
+    source_set: bool,
 }
 
 impl Default for FrontEnd {
     fn default() -> Self {
         Self {
-            data: Data::default(),
             open_windows: BTreeSet::new(),
             open_menu_connector: true,
             radio_choice: Choice::default(),
-            handler: None,
+            connector: None,
             nav_panel: NavigationPanel::new(),
-            application: Application::new(), // Will be properly initialized in new()
-            last_transferred_count: 0,
-            initial_load_done: false,
+            application: Application::new(),
+            source_set: false,
         }
     }
 }
@@ -83,18 +77,15 @@ impl Default for FrontEnd {
 impl FrontEnd {
     /// Create a new frontend
     pub fn new() -> Self {
-        // Initialize event system with all panels
         log::info!("FrontEnd: Initializing event system");
         let application = create_application_with_panels();
-        
-        // Build open_windows set from Application's panels
+
         let mut open_windows = BTreeSet::new();
         for panel_name in application.panel_names() {
             open_windows.insert(panel_name.to_owned());
         }
-        // Add Navigation panel to open windows by default
         open_windows.insert("Navigation".to_owned());
-        
+
         Self {
             open_windows,
             application,
@@ -103,14 +94,12 @@ impl FrontEnd {
     }
 
     pub fn menu_bar(&mut self, ui: &mut Ui) {
-        if self.interface_available() {
+        if self.source_set {
             ui.menu_button("Windows", |ui| {
-                // Navigation panel
                 let mut nav_open = self.open_windows.contains("Navigation");
                 ui.checkbox(&mut nav_open, "Navigation");
                 set_open(&mut self.open_windows, "Navigation", nav_open);
-                
-                // Panels from Application
+
                 for panel_name in self.application.panel_names() {
                     let mut is_open: bool = self.open_windows.contains(panel_name);
                     ui.checkbox(&mut is_open, panel_name);
@@ -118,6 +107,11 @@ impl FrontEnd {
                 }
             });
         }
+    }
+
+    /// Check if interface is available (source set on Application)
+    pub fn interface_available(&self) -> bool {
+        self.source_set
     }
 
     /// Show the UI connector
@@ -134,11 +128,7 @@ impl FrontEnd {
                         ui.heading("Connector");
                         let save = self.radio_choice.clone();
                         ui.vertical(|ui| {
-                            let enabled = if let Some(handle) = &self.handler {
-                                !handle.is_interface()
-                            } else {
-                                true
-                            };
+                            let enabled = !self.source_set;
                             ui.add_enabled_ui(enabled, |ui| {
                                 ui.label("Choose ws or file");
                                 ui.radio_value(&mut self.radio_choice, Choice::File, "File");
@@ -146,81 +136,100 @@ impl FrontEnd {
                                 ui.radio_value(&mut self.radio_choice, Choice::WebSocket, "WebSocket");
                             });
                         });
+
+                        // Create connector if needed
                         match &self.radio_choice {
                             #[cfg(feature = "websocket")]
                             Choice::WebSocket => {
-                                if save != self.radio_choice || self.handler.is_none() {
-                                    self.handler = Some(Box::new(WsHandler::new()));
+                                if save != self.radio_choice || self.connector.is_none() {
+                                    self.connector = Some(Connector::WebSocket(WsHandler::new()));
                                 }
                             }
                             Choice::File => {
-                                if save != self.radio_choice || self.handler.is_none() {
-                                    self.handler = Some(Box::new(FileHandler::new()));
+                                if save != self.radio_choice || self.connector.is_none() {
+                                    self.connector = Some(Connector::File(FileHandler::new()));
                                 }
                             }
                         };
+
+                        // Show connector UI
                         ui.vertical(|ui| {
-                            if let Some(handle) = &mut self.handler {
-                                match handle.ui(ui, &mut self.data, ctx.clone()) {
-                                    Ok(true) => {
-                                        self.handler = None;
-                                        // Reset transfer counter when clearing
-                                        self.last_transferred_count = 0;
-                                        self.initial_load_done = false;  // Reset for next file
-                                        
-                                        self.data.clear();
-                                        
-                                        // Clear Application (which notifies all panels)
-                                        self.application.clear_all();
-                                    }
-                                    Ok(false) => {
-                                        // Transfer new events from Data to Application
-                                        let current_count = self.data.events.len();
-                                        if current_count > self.last_transferred_count {
-                                            // Transfer only new events
-                                            let new_events: Vec<_> = self.data.events[self.last_transferred_count..].to_vec();
-                                            let batch_size = new_events.len();
-                                            self.application.add_events(new_events);
-                                            log::info!("Transferred {} new events to Application (total: {})", 
-                                                batch_size, current_count);
-                                            self.last_transferred_count = current_count;
+                            match &mut self.connector {
+                                Some(Connector::File(file_handler)) => {
+                                    match file_handler.show_ui(ui) {
+                                        Ok(true) => {
+                                            // Close requested
+                                            self.connector = Some(Connector::File(FileHandler::new()));
+                                            self.application.clear_all();
+                                            self.source_set = false;
+                                        }
+                                        Ok(false) => {
+                                            // Check if file became available and source not yet set
+                                            if !self.source_set && file_handler.is_available() {
+                                                if let Some(file) = file_handler.take_file() {
+                                                    log::info!("File loaded — creating FileSource");
+                                                    let source = FileSource::from_file(file);
+                                                    self.application.set_data_source(Box::new(source));
+                                                    self.source_set = true;
+
+                                                    // Load first batch
+                                                    if let Err(err) = self.application.request_more_data() {
+                                                        Self::collect_errors(&mut errors, err);
+                                                    }
+                                                    // Process the loaded events
+                                                    if let Err(err) = self.application.update() {
+                                                        Self::collect_errors(&mut errors, err);
+                                                    }
+                                                    // Metadata sync happens inside Application.update()
+                                                }
+                                            }
+                                        }
+                                        Err(err) => {
+                                            errors.push(err);
                                         }
                                     }
-                                    Err(err) => {
-                                        errors.push(err);
+                                }
+                                #[cfg(feature = "websocket")]
+                                Some(Connector::WebSocket(ws_handler)) => {
+                                    match ws_handler.show_ui(ui, ctx.clone()) {
+                                        Ok(true) => {
+                                            // Close requested
+                                            self.connector = Some(Connector::WebSocket(WsHandler::new()));
+                                            self.application.clear_all();
+                                            self.source_set = false;
+                                        }
+                                        Ok(false) => {
+                                            // Check if WS connected and source not yet set
+                                            if !self.source_set && ws_handler.is_available() {
+                                                if let Some(connection) = ws_handler.take_connection() {
+                                                    log::info!("WebSocket connected — creating WebSocketSource");
+                                                    let url = ws_handler.url.clone();
+                                                    let source = WebSocketSource::new(url, connection);
+                                                    self.application.set_data_source(Box::new(source));
+                                                    self.source_set = true;
+                                                }
+                                            }
+                                        }
+                                        Err(err) => {
+                                            errors.push(err);
+                                        }
                                     }
                                 }
+                                None => {}
                             }
                         });
-                        // Show file options only in File mode (under the Open File button)
+
+                        // Show file options only in File mode
                         if matches!(self.radio_choice, Choice::File) {
-                            if let Some(handle) = &mut self.handler {
-                                handle.ui_options(ui);
+                            if let Some(Connector::File(file_handler)) = &mut self.connector {
+                                file_handler.ui_options(ui);
                             }
                         }
                     });
                     ui.separator();
-                    
+
                     // Show layer options
                     self.show_layer_options(ui);
-                    
-                    if self.interface_available() {
-                        if let Some(handle) = &mut self.handler {
-                            // Trigger initial data load when file first becomes available
-                            if !self.initial_load_done && self.data.events.is_empty() {
-                                log::info!("File available - triggering initial data load");
-                                // Load first batch of events
-                                if let Err(err) = handle.get_more_data(self.application.layers().clone(), &mut self.data) {
-                                    for one_error in err {
-                                        if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
-                                            errors.push(one_error);
-                                        }
-                                    }
-                                }
-                                self.initial_load_done = true;
-                            }
-                        }
-                    }
                 });
         }
         if !errors.is_empty() {
@@ -235,203 +244,78 @@ impl FrontEnd {
         self.application.set_ai_config(key, provider);
     }
 
-    /// Check if the interface is available
-    pub fn interface_available(&self) -> bool {
-        if let Some(handle) = &self.handler {
-            handle.is_interface_available()
-        } else {
-            false
-        }
-    }
-
     /// Show the UI
     /// # Errors
     /// Return a vector of TramexError
     pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
         let mut error_to_return = vec![];
-        
-        // Try to receive any incoming WebSocket messages or load file data
-        let previous_count = self.data.events.len();
-        
-        // Load data into self.data
-        if let Some(handle) = &mut self.handler {
-            if let Err(errors_vect) = handle.try_recv(&mut self.data) {
-                for one_error in errors_vect {
-                    if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
-                        error_to_return.push(one_error);
-                    }
-                }
-            }
+
+        // Poll data source and process new events
+        if let Err(err) = self.application.update() {
+            Self::collect_errors(&mut error_to_return, err);
         }
-        
-        // Sync metadata from Data to Application
-        self.application.sync_metadata_from_data(&self.data);
-        
-        // Transfer new events from Data to Application
-        let current_count = self.data.events.len();
-        // log::debug!("{}, {}", current_count, self.last_transferred_count);
-        if current_count > self.last_transferred_count {
-            // Transfer only new events
-            let new_events: Vec<_> = self.data.events[self.last_transferred_count..].to_vec();
-            let batch_size = new_events.len();
-            self.application.add_events(new_events);
-            log::debug!("UI loop: Transferred {} new events to Application (total: {})", 
-                batch_size, current_count);
-            self.last_transferred_count = current_count;
-        }
-        
-        // Call Application::update() for any data source polling
-        if let Err(errors_vect) = self.application.update() {
-            for one_error in errors_vect {
-                if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
-                    error_to_return.push(one_error);
-                }
-            }
-        }
-        
-        // Check if new events arrived during auto-loading
-        let should_navigate = if let Some(handle) = &self.handler {
-            handle.is_websocket() && handle.is_ws_auto_loading() && current_count > previous_count
-        } else {
-            false
-        };
-        
-        if should_navigate {
-            // New events received during auto-loading - navigate to last event
-            let new_events_count = current_count - previous_count;
-            log::debug!("Auto-loading: {} new events received, navigating to last", new_events_count);
-            
-            // Navigate to the last event
-            if current_count > 0 {
-                self.application.navigate_to(current_count - 1);
-                self.data.current_index = self.application.current_index();
-            }
-        }
-        
-        // For WebSocket: check if we should send a new request (after receiving previous response)
-        if let Some(handle) = &mut self.handler {
-            if handle.is_websocket() && handle.should_ws_request_more() {
-                if let Err(errors_vect) = handle.get_more_data(self.application.layers().clone(), &mut self.data) {
-                    for one_error in errors_vect {
-                        if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
-                            error_to_return.push(one_error);
-                        }
-                    }
-                }
-            }
-        }
+
         egui::CentralPanel::default().show(ctx, |ui| {
-            if self.interface_available() {
-                // Update total count and is_full_read in navigation panel
-                // Use total file size if known (for files), otherwise use loaded count
-                self.nav_panel.total_count = self.handler.as_ref()
-                    .and_then(|h| h.get_total_event_count())
-                    .or(Some(self.application.event_count()));
-                self.nav_panel.is_full_read = self.handler.as_ref()
-                    .map(|h| h.is_full_read())
-                    .unwrap_or(true);
-                
-                // Show navigation panel with WebSocket info if applicable
+            if self.source_set {
+                // Build NavState from Application
+                let nav_state = NavState {
+                    current_index: self.application.current_index(),
+                    event_count: self.application.event_count(),
+                    current_event: self.application.current_event(),
+                    total_count: self.application.total_event_count(),
+                    is_fully_loaded: self.application.is_fully_loaded(),
+                    ws_info: self.get_ws_info(),
+                };
+
+                // Show navigation panel
                 let mut nav_open = self.open_windows.contains("Navigation");
-                let ws_info = self.handler.as_ref().and_then(|h| {
-                    if h.is_websocket() && h.is_interface_available() {
-                        Some((true, h.is_ws_auto_loading()))
-                    } else {
-                        None
-                    }
-                });
-                if let Err(err) = self.nav_panel.show_with_ws_info(
-                    ctx, 
-                    &mut nav_open, 
-                    &mut self.data,
-                    ws_info
-                ) {
+                if let Err(err) = self.nav_panel.show_nav(ctx, &mut nav_open, &nav_state) {
                     log::error!("Error in Navigation panel");
                     error_to_return.push(err);
                 }
                 set_open(&mut self.open_windows, "Navigation", nav_open);
-                
-                // Handle navigation button clicks
+
+                // Handle navigation
                 if self.nav_panel.should_go_next {
                     self.nav_panel.should_go_next = false;
-                    
-                    // Try to navigate
-                    let mut navigated = self.application.navigate_next();
-                    log::debug!("Navigation result: {}, current index: {}, total events: {}", 
-                        navigated, self.application.current_index(), self.application.event_count());
-                    
-                    // If we couldn't navigate (reached end), keep loading batches until we find an enabled event
-                    if !navigated {
-                        log::debug!("Failed to navigate, will try loading more batches");
-                    }
-                    while !navigated {
-                        if let Some(handle) = &mut self.handler {
-                            if !handle.is_full_read() {
-                                log::info!("Reached end of loaded events ({}), loading more...", self.application.event_count());
-                                
-                                // Load next batch
-                                if let Err(err) = handle.get_more_data(self.application.layers().clone(), &mut self.data) {
-                                    for one_error in err {
-                                        if !matches!(one_error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
-                                            error_to_return.push(one_error);
-                                        }
-                                    }
-                                    break; // Stop on error
-                                } else {
-                                    // Transfer new events to Application
-                                    let current_count = self.data.events.len();
-                                    if current_count > self.last_transferred_count {
-                                        let new_events: Vec<_> = self.data.events[self.last_transferred_count..].to_vec();
-                                        let batch_size = new_events.len();
-                                        self.application.add_events(new_events);
-                                        log::debug!("Loaded {} more events", batch_size);
-                                        self.last_transferred_count = current_count;
-                                        
-                                        // Try navigating again
-                                        navigated = self.application.navigate_next();
-                                        // Loop continues if still not navigated
-                                    } else {
-                                        break; // No new events loaded
-                                    }
-                                }
-                            } else {
-                                break; // File fully read
-                            }
-                        } else {
-                            break; // No handler
-                        }
-                    }
-                    
-                    self.data.current_index = self.application.current_index();
+                    self.handle_navigate_next(&mut error_to_return);
                 }
                 if self.nav_panel.should_go_previous {
                     self.nav_panel.should_go_previous = false;
                     self.application.navigate_previous();
-                    self.data.current_index = self.application.current_index();
                 }
-                
+
+                // Handle goto event
+                if let Some(target_index) = self.nav_panel.should_goto_event.take() {
+                    self.handle_goto_event(target_index, &mut error_to_return);
+                }
+
                 // Handle WebSocket auto-loading toggle
                 if self.nav_panel.should_toggle_auto_loading {
                     self.nav_panel.should_toggle_auto_loading = false;
-                    if let Some(handle) = &mut self.handler {
-                        handle.toggle_ws_auto_loading();
-                    }
+                    self.application.toggle_auto_loading();
                 }
-                
-                // Show panel windows through Application's EventSubscriber system
-                let panel_errors = self.application.show_panel_windows(ctx, &self.open_windows);
-                for (_panel_name, result) in panel_errors {
+
+                // Show panel windows and sync open state (X button)
+                let panel_results = self.application.show_panel_windows(ctx, &self.open_windows);
+                for (panel_name, is_open, result) in panel_results {
+                    if is_open {
+                        self.open_windows.insert(panel_name.clone());
+                    } else {
+                        self.open_windows.remove(&panel_name);
+                    }
                     if let Err(err) = result {
                         log::error!("Error showing panel: {:?}", err);
                         error_to_return.push(err);
                     }
                 }
             } else {
-                match &self.handler {
-                    Some(handle) => handle.show_available(ui),
-                    None => {
-                        ui.label("Not connected");
-                    }
+                // Show connector status
+                match &self.connector {
+                    Some(Connector::File(fh)) => fh.show_status(ui),
+                    #[cfg(feature = "websocket")]
+                    Some(Connector::WebSocket(wh)) => wh.show_status(ui),
+                    None => { ui.label("Not connected"); }
                 };
             }
         });
@@ -440,11 +324,89 @@ impl FrontEnd {
         }
         Ok(())
     }
-    
+
+    /// Handle navigate-next with on-demand loading
+    fn handle_navigate_next(&mut self, errors: &mut Vec<TramexError>) {
+        let mut navigated = self.application.navigate_next();
+        log::debug!("Navigation result: {}, current: {}, total: {}",
+            navigated, self.application.current_index(), self.application.event_count());
+
+        // If at end, keep loading batches until we find an enabled event
+        while !navigated {
+            if self.application.has_more_data() {
+                log::info!("Reached end of loaded events ({}), loading more...", self.application.event_count());
+                if let Err(err) = self.application.request_more_data() {
+                    Self::collect_errors(errors, err);
+                    break;
+                }
+                // Process newly loaded events
+                if let Err(err) = self.application.update() {
+                    Self::collect_errors(errors, err);
+                    break;
+                }
+                // Check if new events were actually loaded
+                if self.application.event_count() == 0 {
+                    break;
+                }
+                navigated = self.application.navigate_next();
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// Handle goto-event: load data until target index is available, then navigate
+    fn handle_goto_event(&mut self, target_index: usize, errors: &mut Vec<TramexError>) {
+        log::info!("Goto event: target index {} (loaded: {})", target_index, self.application.event_count());
+
+        // Load batches until we have enough events
+        while self.application.event_count() <= target_index {
+            if !self.application.has_more_data() {
+                log::warn!("Goto event: cannot reach index {}, source exhausted at {} events",
+                    target_index, self.application.event_count());
+                break;
+            }
+            if let Err(err) = self.application.request_more_data() {
+                Self::collect_errors(errors, err);
+                break;
+            }
+            if let Err(err) = self.application.update() {
+                Self::collect_errors(errors, err);
+                break;
+            }
+        }
+
+        // Navigate to the target
+        if target_index < self.application.event_count() {
+            self.application.navigate_to(target_index);
+        }
+    }
+
+    /// Get WebSocket info for NavigationPanel
+    fn get_ws_info(&self) -> Option<(bool, bool)> {
+        // Check if the connector is a WebSocket and source is set
+        #[cfg(feature = "websocket")]
+        if self.source_set {
+            if let Some(Connector::WebSocket(_)) = &self.connector {
+                return Some((true, self.application.is_auto_loading()));
+            }
+        }
+        None
+    }
+
+    /// Collect errors, filtering out non-critical ones
+    fn collect_errors(errors: &mut Vec<TramexError>, new_errors: Vec<TramexError>) {
+        for err in new_errors {
+            if !matches!(err.get_code(), ErrorCode::ParsingLayerNotImplemented) {
+                errors.push(err);
+            }
+        }
+    }
+
     /// Show layer filtering options
     fn show_layer_options(&mut self, ui: &mut egui::Ui) {
         let layers = self.application.layers_mut();
-        
+
         ui.collapsing("Layers", |ui| {
             ui.collapsing("Radio", |ui| {
                 layer_checkbox(ui, &mut layers.phy, "PHY");
@@ -474,9 +436,9 @@ impl FrontEnd {
 /// Helper function to create a checkbox for LayerLogLevel
 fn layer_checkbox(ui: &mut egui::Ui, layer: &mut tramex_tools::interface::layer::LayerLogLevel, text: &str) {
     use tramex_tools::interface::layer::LayerLogLevel;
-    
+
     let mut checked = matches!(layer, LayerLogLevel::Debug);
-    
+
     if ui.checkbox(&mut checked, text).changed() {
         *layer = if checked {
             LayerLogLevel::Debug

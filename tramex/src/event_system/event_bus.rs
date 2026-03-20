@@ -104,23 +104,23 @@ impl EventBus {
     }
     
     /// Show windows for all subscribers
+    /// Returns a list of (panel_name, is_open, result) so the caller can update open_windows
     pub fn show_windows(
         &mut self,
         ctx: &egui::Context,
         open_windows: &std::collections::BTreeSet<String>,
-    ) -> Vec<(String, Result<(), tramex_tools::errors::TramexError>)> {
-        let mut errors = Vec::new();
+    ) -> Vec<(String, bool, Result<(), tramex_tools::errors::TramexError>)> {
+        let mut results = Vec::new();
         
         for subscriber in &mut self.subscribers {
             let name = subscriber.name().to_owned();
             let mut is_open = open_windows.contains(&name);
             
-            if let Err(err) = subscriber.show_window(ctx, &mut is_open) {
-                errors.push((name, Err(err)));
-            }
+            let result = subscriber.show_window(ctx, &mut is_open);
+            results.push((name, is_open, result));
         }
         
-        errors
+        results
     }
 
     #[cfg(feature = "ai")]

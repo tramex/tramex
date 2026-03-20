@@ -106,13 +106,16 @@ impl InterfaceTrait for File {
         
         data.events.append(&mut traces);
         if !err_processed.is_empty() {
-            let filtered = err_processed
+            let filtered: Vec<TramexError> = err_processed
                 .iter()
                 .filter(|tmx_err| !matches!(tmx_err.get_code(), ErrorCode::EndOfFile))
                 .filter(|tmx_err| !matches!(tmx_err.get_code(), ErrorCode::ParsingLayerNotImplemented))
                 .cloned()
                 .collect();
-            return Err(filtered);
+            // Only return Err if there are real errors remaining
+            if !filtered.is_empty() {
+                return Err(filtered);
+            }
         }
         Ok(())
     }

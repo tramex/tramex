@@ -2,6 +2,7 @@
 
 use tramex_tools::data::Trace;
 use tramex_tools::interface::layer::Layers;
+use tramex_tools::interface::parse_config::FileMetadata;
 use tramex_tools::errors::TramexError;
 use std::path::PathBuf;
 use std::any::Any;
@@ -101,10 +102,13 @@ pub trait DataSource: Send {
     /// Total event count or None
     fn total_count(&self) -> Option<usize> {None}
     
-    /// Cast to Any for downcasting
-    /// 
-    /// # Returns
-    /// Mutable reference to Any
+    /// Get file metadata if available (e.g., technology type)
+    fn metadata(&self) -> Option<&FileMetadata> { None }
+    
+    /// Cast to Any for downcasting (immutable)
+    fn as_any(&self) -> &dyn Any;
+    
+    /// Cast to Any for downcasting (mutable)
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 /// Single threaded version
@@ -134,7 +138,13 @@ pub trait DataSource {
     /// Get total event count if known
     fn total_count(&self) -> Option<usize> {None}
     
-    /// Cast to Any for downcasting
+    /// Get file metadata if available
+    fn metadata(&self) -> Option<&FileMetadata> { None }
+    
+    /// Cast to Any for downcasting (immutable)
+    fn as_any(&self) -> &dyn Any;
+    
+    /// Cast to Any for downcasting (mutable)
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
@@ -145,8 +155,7 @@ impl dyn DataSource {
     /// # Returns
     /// Reference to the concrete type if successful
     pub fn downcast_ref<T: 'static>(&self) -> Option<&T> {
-        // This would require adding as_any() method to trait
-        None
+        self.as_any().downcast_ref::<T>()
     }
     
     /// Downcast to concrete type (for accessing source-specific methods)
