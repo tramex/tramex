@@ -6,15 +6,15 @@ use crate::panels::PanelView;
 use tramex_tools::{
     data::Trace,
     errors::TramexError,
-    interface::{layer::Layer},
 };
+#[cfg(feature = "ai")]
+use tramex_tools::ai::{AIProvider, AIExplainStatus, create_connector};
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::{
     export::asn1_codecs::{PerCodecData, uper::UperCodec},
     uper::spec_rrc,
 };
 /// Message box
-#[derive(Default)]
 pub struct MessageBox {
     /// current trace
     current_trace: Option<Trace>,
@@ -30,12 +30,183 @@ pub struct MessageBox {
 
     /// save text
     save_text: Vec<String>,
+
+    #[cfg(feature = "ai")]
+    /// AI API key (synced from settings)
+    ai_api_key: String,
+
+    #[cfg(feature = "ai")]
+    /// AI provider (synced from settings)
+    ai_provider: AIProvider,
+
+    #[cfg(feature = "ai")]
+    /// Current AI explanation status
+    ai_status: AIExplainStatus,
+
+    #[cfg(feature = "ai")]
+    /// In-flight AI request promise
+    ai_promise: Option<poll_promise::Promise<Result<String, String>>>,
+}
+
+impl Default for MessageBox {
+    fn default() -> Self {
+        Self {
+            current_trace: None,
+            events_len: 0,
+            current_index: 0,
+            show_full: false,
+            save_text: Vec::new(),
+            #[cfg(feature = "ai")]
+            ai_api_key: String::new(),
+            #[cfg(feature = "ai")]
+            ai_provider: AIProvider::default(),
+            #[cfg(feature = "ai")]
+            ai_status: AIExplainStatus::default(),
+            #[cfg(feature = "ai")]
+            ai_promise: None,
+        }
+    }
 }
 
 impl MessageBox {
     /// Create a new MessageBox
     pub fn new() -> Self {
         Self { ..Default::default() }
+    }
+
+    #[cfg(feature = "ai")]
+    /// Fire an AI explain request for the current trace
+    fn request_ai_explain(&mut self) {
+        let trace = match &self.current_trace {
+            Some(t) => t.clone(),
+            None => return,
+        };
+
+        let connector = create_connector(&self.ai_provider);
+        let request = match connector.build_request(&trace, &self.ai_api_key) {
+            Ok(r) => r,
+            Err(e) => {
+                self.ai_status = AIExplainStatus::Error(e.get_msg());
+                return;
+            }
+        };
+
+        // Build ehttp request
+        let mut ehttp_req = ehttp::Request::post(&request.url, request.body.into_bytes());
+        for (key, value) in &request.headers {
+            ehttp_req.headers.insert(key.clone(), value.clone());
+        }
+
+        let (sender, promise) = poll_promise::Promise::new();
+        let provider = self.ai_provider.clone();
+
+        ehttp::fetch(ehttp_req, move |response| {
+            let result = match response {
+                Ok(resp) => {
+                    let body = resp.text().unwrap_or("").to_string();
+                    let conn = create_connector(&provider);
+                    match conn.parse_response(&body) {
+                        Ok(explanation) => Ok(explanation),
+                        Err(e) => Err(e.get_msg()),
+                    }
+                }
+                Err(err) => Err(format!("HTTP error: {err}")),
+            };
+            sender.send(result);
+        });
+
+        self.ai_promise = Some(promise);
+        self.ai_status = AIExplainStatus::Loading;
+    }
+
+    #[cfg(feature = "ai")]
+    /// Poll the in-flight AI promise and update status
+    fn poll_ai_promise(&mut self) {
+        let done = if let Some(promise) = &self.ai_promise {
+            promise.ready().is_some()
+        } else {
+            false
+        };
+
+        if done {
+            if let Some(promise) = self.ai_promise.take() {
+                match promise.block_and_take() {
+                    Ok(explanation) => {
+                        self.ai_status = AIExplainStatus::Done(explanation);
+                    }
+                    Err(err) => {
+                        self.ai_status = AIExplainStatus::Error(err);
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(feature = "ai")]
+    /// Render the AI explain button and response section
+    fn ui_ai_section(&mut self, ui: &mut egui::Ui) {
+        // Poll promise first
+        self.poll_ai_promise();
+
+        if self.current_trace.is_none() {
+            return;
+        }
+
+        ui.separator();
+
+        let can_request = self.ai_api_key.is_empty().then_some("No API key set (configure in Settings > AI)")
+            .or_else(|| matches!(self.ai_status, AIExplainStatus::Loading).then_some("Request in progress…"));
+
+        ui.horizontal(|ui| {
+            let button = egui::Button::new("🤖 AI Explain");
+            let enabled = can_request.is_none();
+            let response = ui.add_enabled(enabled, button);
+            let clicked = response.clicked();
+            if let Some(tooltip) = can_request {
+                response.on_disabled_hover_text(tooltip);
+            }
+            if clicked {
+                self.request_ai_explain();
+            }
+
+            match &self.ai_status {
+                AIExplainStatus::Loading => {
+                    ui.spinner();
+                    ui.label("Thinking…");
+                }
+                AIExplainStatus::Idle => {}
+                AIExplainStatus::Done(_) => {
+                    ui.colored_label(egui::Color32::GREEN, "✓");
+                }
+                AIExplainStatus::Error(_) => {
+                    ui.colored_label(egui::Color32::RED, "✗ Error");
+                }
+            }
+        });
+
+        // Display response or error
+        match &self.ai_status {
+            AIExplainStatus::Done(text) => {
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .id_salt("scroll_area_ai")
+                    .max_height(300.0)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        let mut text_ref = text.as_str();
+                        ui.add(
+                            egui::TextEdit::multiline(&mut text_ref)
+                                .desired_width(f32::INFINITY)
+                                .interactive(true)
+                        );
+                    });
+            }
+            AIExplainStatus::Error(err) => {
+                ui.separator();
+                ui.colored_label(egui::Color32::RED, format!("Error: {err}"));
+            }
+            _ => {}
+        }
     }
 }
 
@@ -45,6 +216,9 @@ impl super::PanelView for MessageBox {
         if let Some(one_trace) = &self.current_trace {
             display_log(ui, one_trace, &mut self.show_full, &self.save_text);
         }
+
+        #[cfg(feature = "ai")]
+        self.ui_ai_section(ui);
     }
 }
 
@@ -144,6 +318,13 @@ impl EventSubscriber for MessageBox {
         self.current_trace = Some(event.clone());
         self.events_len = _context.all_events.len();
         
+        // Reset AI state when navigating to a different trace
+        #[cfg(feature = "ai")]
+        {
+            self.ai_status = AIExplainStatus::Idle;
+            self.ai_promise = None;
+        }
+
         // Hexe decoding removed since hexa field no longer exists
         #[cfg(feature = "types_lte_3gpp")]
         {
@@ -157,6 +338,17 @@ impl EventSubscriber for MessageBox {
         self.events_len = 0;
         self.current_index = 0;
         self.save_text.clear();
+        #[cfg(feature = "ai")]
+        {
+            self.ai_status = AIExplainStatus::Idle;
+            self.ai_promise = None;
+        }
+    }
+
+    #[cfg(feature = "ai")]
+    fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
+        self.ai_api_key = key.to_string();
+        self.ai_provider = provider.clone();
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

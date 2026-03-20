@@ -13,3 +13,6 @@ pub mod data;
 pub mod errors;
 pub mod interface;
 pub mod asn1_parser;
+
+#[cfg(feature = "ai")]
+pub mod ai;

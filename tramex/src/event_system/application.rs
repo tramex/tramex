@@ -422,6 +422,12 @@ impl Application {
         self.event_bus.notify_metadata_changed(&self.metadata);
     }
     
+    #[cfg(feature = "ai")]
+    /// Forward AI config to all subscriber panels
+    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
+        self.event_bus.set_ai_config(key, provider);
+    }
+
     /// Update metadata from Data
     pub fn sync_metadata_from_data(&mut self, data: &tramex_tools::data::Data) {
         if self.metadata.technology != data.metadata.technology {

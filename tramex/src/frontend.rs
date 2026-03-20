@@ -229,6 +229,12 @@ impl FrontEnd {
         Ok(())
     }
 
+    #[cfg(feature = "ai")]
+    /// Forward AI config to all subscriber panels
+    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
+        self.application.set_ai_config(key, provider);
+    }
+
     /// Check if the interface is available
     pub fn interface_available(&self) -> bool {
         if let Some(handle) = &self.handler {

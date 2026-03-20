@@ -6,6 +6,9 @@ use tramex_tools::errors::TramexError;
 use crate::frontend::FrontEnd;
 use crate::make_hyperlink;
 
+#[cfg(feature = "ai")]
+use crate::ai_settings::AISettings;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -20,6 +23,14 @@ pub struct TramexApp {
 
     /// Show about windows
     show_about_windows: bool,
+
+    #[cfg(feature = "ai")]
+    /// Show settings window
+    show_settings_window: bool,
+
+    #[cfg(feature = "ai")]
+    /// AI settings (provider, API key)
+    pub ai_settings: AISettings,
 }
 
 impl TramexApp {
@@ -58,6 +69,14 @@ impl TramexApp {
         // Windows menu button
         self.frontend.menu_bar(ui);
         
+        #[cfg(feature = "ai")]
+        ui.menu_button("Settings", |ui| {
+            if ui.button("AI Configuration").clicked() {
+                self.show_settings_window = !self.show_settings_window;
+                ui.close_menu();
+            }
+        });
+
         ui.menu_button("About", |ui| {
             make_hyperlink(ui, "User documentation", "https://tramex.github.io/tramex/docs/", true);
             make_hyperlink(ui, "tramex types", "https://tramex.github.io/tramex/crates/tramex/", true);
@@ -111,6 +130,18 @@ impl TramexApp {
         }
     }
 
+    #[cfg(feature = "ai")]
+    /// Display the AI settings window
+    fn ui_settings_window(&mut self, ctx: &egui::Context) {
+        egui::Window::new("Settings — AI")
+            .open(&mut self.show_settings_window)
+            .resizable([true, false])
+            .default_width(320.0)
+            .show(ctx, |ui| {
+                self.ai_settings.ui(ui);
+            });
+    }
+
     /// Display the about windows
     fn ui_about_windows(&mut self, ctx: &egui::Context) {
         egui::Window::new("About")
@@ -158,6 +189,10 @@ impl Default for TramexApp {
             frontend: FrontEnd::new(),
             error_panel: vec![],
             show_about_windows: false,
+            #[cfg(feature = "ai")]
+            show_settings_window: false,
+            #[cfg(feature = "ai")]
+            ai_settings: AISettings::default(),
         }
     }
 }
@@ -181,6 +216,15 @@ impl eframe::App for TramexApp {
         self.ui_error_panel(ctx);
         if self.show_about_windows {
             self.ui_about_windows(ctx);
+        }
+
+        #[cfg(feature = "ai")]
+        {
+            self.ai_settings.try_load_env_key();
+            self.frontend.set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider);
+            if self.show_settings_window {
+                self.ui_settings_window(ctx);
+            }
         }
     }
 }

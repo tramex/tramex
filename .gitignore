@@ -18,3 +18,4 @@ Cargo.lock
 dist/
 .vscode/
 .windsurf/
+.env

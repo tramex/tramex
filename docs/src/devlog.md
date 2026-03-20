@@ -1344,41 +1344,113 @@ response.on_hover_ui(|ui| {
 
 ---
 
-# 9. HARQ Panel - PHY Channel Visualization
+# 9. HARQ Panel - PHY Layer Visualization
 
 ### Implementation Date
 2026-03-12
 
 ## 9.0. Overview
 
-Enhanced the HARQ panel to visualize all PHY channel types (PDCCH, PDSCH, PUSCH, PUCCH) with channel-specific parsing, proper labeling, and HARQ process color coding.
+The HARQ panel provides a chronograph-style visualization of PHY layer events, showing the communication flow between UE (User Equipment) and BST (Base Station). It displays PDCCH grants, PDSCH/PUSCH data transfers, and PUCCH feedback with color-coded HARQ process identification.
 
-### 9.0.1. Problem Solved
-- HARQ panel only showed PDSCH/PUSCH events
-- No visibility into control channel activity (PDCCH grants, PUCCH feedback)
-- Multi-line PDCCH traces were not parsed
-- Special cases like `harq=si` (MIB/SIB) cluttered the display
-- Colors were unreadable in dark mode
+### 9.0.1. Purpose
+- Visualize the HARQ (Hybrid Automatic Repeat Request) process flow
+- Track retransmissions via `retx`, `rv_idx`, and `crc` fields
+- Understand ACK/NACK feedback timing
+- Identify scheduling patterns by HARQ process number
 
-### 9.0.2. Solution
-- Extended PHY parser with `PHYChannelData` enum for channel-specific fields
-- Multi-line PDCCH parsing with DCI format awareness
-- Filter out non-HARQ events (`harq=si`, PUCCH format=2)
-- Theme-aware color scheme for both light and dark modes
+### 9.0.2. Supported Channels
 
-## 9.1. PHY Parsing Enhancements
+| Channel | Direction | Role in HARQ |
+|---------|-----------|--------------|
+| **PDCCH** | DL | Control channel carrying DCI grants |
+| **PDSCH** | DL | Downlink data (carries TB from gNB to UE) |
+| **PUSCH** | UL | Uplink data (carries TB from UE to gNB) |
+| **PUCCH** | UL | Uplink control (ACK/NACK feedback) |
 
-### 9.1.1. PHYChannelData Enum
+## 9.1. Panel Layout
 
-Channel-specific data is now stored in a dedicated enum:
+```
+┌─────────────────────────────────────────────────────────┐
+│                    UE              BST                  │
+│                    │                │                   │
+│  PDCCH dci=1_1     │ ◄──────────────┤  (DL grant)       │
+│  PDSCH harq=0      │ ◄──────────────┤  (DL data)        │
+│  PUCCH format=1    ├───────────────►│  ACK              │
+│  PDCCH dci=0_1     │ ◄──────────────┤  (UL grant)       │
+│  PUSCH harq=0      ├───────────────►│  crc=OK           │
+│                    │                │                   │
+├─────────────────────────────────────────────────────────┤
+│  HARQ: [0] [1] [2] ...              (color legend)      │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **Vertical lifelines**: UE on left, BST on right
+- **Arrows**: Direction indicates UL (→) or DL (←)
+- **Labels**: Channel-specific info above each arrow
+- **Legend**: Shows active HARQ processes with their colors
+
+## 9.2. Arrow Display
+
+### 9.2.1. Arrow Labels by Channel
+
+| Channel | Label Format | Example |
+|---------|--------------|---------|
+| **PDCCH** | `PDCCH dci={format} ndi={} rv_idx={}` | `PDCCH dci=1_1 ndi=1 rv_idx=0` |
+| **PDSCH** | `PDSCH harq={} retx={} rv_idx={}` | `PDSCH harq=0 retx=0 rv_idx=0` |
+| **PUSCH** | `PUSCH harq={} retx={} rv_idx={} crc={}` | `PUSCH harq=0 retx=0 rv_idx=0 crc=OK` |
+| **PUCCH** | `PUCCH format={} {ACK/NACK}` | `PUCCH format=1 ACK` |
+
+### 9.2.2. Color Coding
+
+**HARQ Process Colors** (16-color palette for processes 0-15):
+
+| HARQ | Color | HARQ | Color |
+|------|-------|------|-------|
+| 0 | Red | 8 | Pink |
+| 1 | Green | 9 | Teal |
+| 2 | Blue | 10 | Lavender |
+| 3 | Orange | 11 | Brown |
+| 4 | Purple | 12 | Maroon |
+| 5 | Cyan | 13 | Mint |
+| 6 | Magenta | 14 | Olive |
+| 7 | Lime | 15 | Apricot |
+
+- **PUCCH**: Uses neutral theme color (no HARQ process ID)
+- **Focused arrow**: Highlighted with semi-transparent background bar
+- Support Theme Colors
+
+### 9.2.3. Focus & Navigation
+
+When an event is focused in the navigation panel:
+- The corresponding arrow is highlighted with a colored background
+- The panel auto-scrolls to center on the focused arrow
+- Arrow line becomes thicker (3.0 vs 1.5)
+
+## 9.3. Filtering Logic
+
+The panel automatically filters out non-HARQ events:
+
+| Filtered Out | Reason |
+|--------------|--------|
+| `harq=si` | MIB/SIB broadcasts (system info, no HARQ) |
+| PUCCH format=2 | CSI (Channel State Info) only, no HARQ feedback |
+| PDCCH without `harq_process` | DCI 1_0 for SIB (no HARQ) |
+| PRACH | Random access, not HARQ |
+
+## 9.4. PHY Trace Parsing
+
+### 9.4.1. PHYChannelData Structure
+
+Channel-specific fields are stored in a dedicated enum:
 
 ```rust
 pub enum PHYChannelData {
     Pdcch { 
-        dci: String,           // "0_1" (UL grant) or "1_1" (DL grant)
+        dci: String,                      // "0_1" or "1_1"
         harq_process: Option<u8>, 
-        ndi: Option<u8>, 
-        rv_idx: Option<u8>, 
+        ndi: Option<u8>,                  // New Data Indicator
+        rv_idx: Option<u8>,               // Redundancy Version
         harq_feedback_timing: Option<u8>  // DCI 1_1 only
     },
     Pdsch { retx: Option<u8>, rv_idx: Option<u8> },
@@ -1388,9 +1460,9 @@ pub enum PHYChannelData {
 }
 ```
 
-### 9.1.2. Multi-Line PDCCH Parsing
+### 9.4.2. Multi-Line PDCCH Parsing
 
-PDCCH traces span multiple lines with indented continuation:
+PDCCH traces from Amarisoft span multiple lines:
 
 ```
 10:32:35.169 [PHY] DL 0001 01 476.19 PDCCH: ss_id=2 cce_index=6 al=2 dci=1_1 k1=4
@@ -1400,63 +1472,20 @@ PDCCH traces span multiple lines with indented continuation:
     harq_feedback_timing=1
 ```
 
-The parser now handles this with `parse_phy_lines()`:
+The parser handles continuation lines with `parse_phy_lines()`.
 
-```rust
-pub fn parse_phy_lines(lines: &[String], direction: Direction) -> Option<PHYInfos>
-```
+### 9.4.3. DCI Format Differences
 
-### 9.1.3. DCI Format Optimization
-
-Fields vary by DCI format, so parsing branches early:
-
-| DCI Format | Direction | Fields |
-|------------|-----------|--------|
+| DCI Format | Direction | Specific Fields |
+|------------|-----------|-----------------|
 | **0_1** | UL grant | `ndi=`, `rv_idx=` |
 | **1_1** | DL grant | `ndi1=`, `rv_idx1=`, `harq_feedback_timing=` |
 
-```rust
-let is_dci_1_1 = dci == "1_1";
-if is_dci_1_1 {
-    // Parse ndi1=, rv_idx1=, harq_feedback_timing=
-} else {
-    // Parse ndi=, rv_idx=
-}
-```
+## 9.5. Performance
 
-### 9.1.4. Special Case Filtering
+### 9.5.1. Arrow Limit
 
-**harq=si (MIB/SIB broadcasts):**
-- Parsed and flagged with `harq_si: bool`
-- Skipped in HARQ panel display (no HARQ process)
-
-**PUCCH format=2 (CSI only):**
-- Contains Channel State Information, not HARQ feedback
-- Skipped in HARQ panel display
-
-## 9.2. HARQ Panel Display
-
-### 9.2.1. Arrow Labels
-
-Each channel type has a specific label format:
-
-| Channel | Label Example |
-|---------|---------------|
-| **PDCCH** | `PDCCH dci=1_1 ndi=1 rv_idx=0` |
-| **PDSCH** | `PDSCH harq=0 retx=0 rv_idx=0` |
-| **PUSCH** | `PUSCH harq=0 retx=0 rv_idx=0 crc=OK` |
-| **PUCCH** | `PUCCH format=1 ACK` |
-
-### 9.2.2. Color Coding
-
-- **HARQ process colors**: 16-color palette for processes 0-15
-- **PUCCH**: Uses neutral theme color (no HARQ process)
-- **Focused arrow**: Theme-aware strong text color
-- **Highlight bar**: Semi-transparent HARQ color background
-
-### 9.2.3. Arrow Limit
-
-Maintains maximum 200 arrows with batch drain:
+The panel maintains a maximum of 200 arrows for memory efficiency:
 
 ```rust
 const MAX_ARROWS: usize = 200;
@@ -1466,49 +1495,250 @@ if self.arrows.len() >= MAX_ARROWS {
 }
 ```
 
-## 9.3. Theme Support (Dark/Light Mode)
+### 9.5.2. Event System Integration
 
-### 9.3.1. HARQ Panel Colors
+The panel implements `EventSubscriber`:
+- `on_event_added`: Creates arrow if PHY event matches criteria
+- `on_event_focused`: Updates highlight and triggers auto-scroll
+- `on_events_cleared`: Clears all arrows
+
+
+## 9.7. Files
+
+- `tramex/src/panels/harq_panel.rs` — Panel implementation
+- `tramex-tools/src/interface/parser/parser_phy.rs` — PHY parsing with `PHYChannelData`
+
+## 9.8. Usage
+
+1. Load a file containing PHY layer traces
+2. Open HARQ panel from Windows menu
+3. Navigate through events — panel auto-scrolls to focused PHY event
+4. Identify HARQ processes by color
+5. Track retransmissions by watching `retx`, `rv_idx` changes
+6. Monitor ACK/NACK feedback in PUCCH arrows
+
+---
+
+# 10. AI Explain Feature
+
+### Implementation Date
+2026-03-20
+
+## 10.0. Overview
+### 10.0.1. Problem Solved
+- Understanding complex 4G/5G protocol traces requires deep domain knowledge
+- Users need quick explanations of what each trace represents without consulting external documentation
+- No built-in assistance for interpreting RRC, NAS, NGAP, and other protocol layers
+
+### 10.0.2. Solution: AI-Powered Trace Explanation
+Integrated an AI chatbot feature that sends trace context to Mistral AI (with extensible connector architecture) and displays a concise explanation directly in the Messages panel.
+
+### 10.0.3. Benefits
+- **Instant context**: Get human-readable explanations of any trace with one click
+- **Educational**: Learn protocol behavior as you analyze traces
+- **Extensible**: Connector trait supports multiple AI providers
+- **Secure**: API key loaded from environment or settings, never committed to git
+
+## 10.1. Architecture
+
+### 10.1.1. AI Connector System (`tramex-tools` crate)
+
+**Trait-based design** for multiple providers:
 
 ```rust
-let (arrow_color, arrow_width, label_color) = if is_current {
-    let highlight_bg = if is_dark {
-        base_color.linear_multiply(0.3)   // Brighter for dark bg
-    } else {
-        base_color.linear_multiply(0.15)  // Subtle for light bg
-    };
-    (theme.text_strong, 3.0, theme.text_strong)
-} else {
-    (base_color, 1.5, theme.text)
-};
+pub trait AIConnector: Send {
+    fn build_request(&self, trace: &Trace, api_key: &str) -> Result<AIRequest, TramexError>;
+    fn parse_response(&self, response_body: &str) -> Result<String, TramexError>;
+}
 ```
 
-### 9.3.2. Resource Blocks Colors
-
-`ResourceType::color()` now accepts dark mode flag:
-
+**AIProvider enum** with factory function:
 ```rust
-pub fn color(&self, is_dark: bool) -> Color32 {
-    match self {
-        ResourceType::Empty => if is_dark {
-            Color32::from_gray(40)  // Dark gray for dark mode
-        } else {
-            Color32::WHITE
-        },
-        // Other colors unchanged
+pub enum AIProvider {
+    Mistral,
+    // Future: OpenAI, Anthropic, etc.
+}
+
+pub fn create_connector(provider: &AIProvider) -> Box<dyn AIConnector> {
+    match provider {
+        AIProvider::Mistral => Box::new(MistralConnector::default()),
     }
 }
 ```
 
-Grid borders use theme colors:
-- Cell borders: `theme.text_weak`
-- Focused cell highlight: `theme.text_strong`
+### 10.1.2. Request/Response Flow
 
-## 9.4. Files Modified
+```
+User clicks "AI Explain"
+    ↓
+MessageBox.request_ai_explain()
+    ↓
+MistralConnector.build_request(trace, api_key)
+    ↓
+ehttp::fetch() async request
+    ↓
+poll_promise::Promise polls for response
+    ↓
+MistralConnector.parse_response()
+    ↓
+AIExplainStatus::Done(explanation)
+    ↓
+UI displays explanation in scrollable text area
+```
 
-**tramex-tools:**
-- `src/interface/parser/parser_phy.rs` - PHYChannelData enum, multi-line parsing, DCI optimization
+### 10.1.3. Prompt Engineering
 
-**tramex:**
-- `src/panels/harq_panel.rs` - Channel-specific display, filtering, theme colors
-- `src/panels/ressources_blocks.rs` - Dark mode color support
+**System prompt** (Mistral `mistral-medium-latest`):
+- Concise telecom expert persona
+- Structured context format with layer, timestamp, direction, channel, and raw text
+- Bullet-point output format
+- Key fields identification
+- Brief 5-7 sentence summary
+
+**Request structure**:
+```rust
+AIRequest {
+    url: "https://api.mistral.ai/v1/chat/completions",
+    headers: {"Authorization": "Bearer {api_key}"},
+    body: JSON with system prompt + user context,
+}
+```
+
+## 10.2. UI Integration
+
+### 10.2.1. Settings Menu
+
+New **Settings** menu added to top bar (next to Menu, Windows, About):
+
+```
+┌─────────────────────────────────────────┐
+│ Menu │ Windows │ Settings │ About      │
+└─────────────────────────────────────────┘
+              ↓
+        ┌──────────────────┐
+        │ AI Configuration │
+        └──────────────────┘
+              ↓
+        ┌─────────────────────────────┐
+        │  AI Configuration             │
+        │  ─────────────────────────    │
+        │  Provider: [Mistral ▼]        │
+        │                               │
+        │  API Key: [sk-xxxxxxxxxxxx]   │
+        │                               │
+        │  [Clear]         [Save]       │
+        │                               │
+        │  Loaded from env: Yes/No      │
+        └─────────────────────────────┘
+```
+
+### 10.2.2. Messages Panel Integration
+
+**AI explain button** appears below "Show full message":
+
+```
+┌─────────────────────────────────────────┐
+│ Layer: RRC                              │
+│ AdditionalInfos(...)                    │
+│ [ ] Show full message                   │
+│ ─────────────────────────────────────   │
+│ 🤖 AI Explain           ✓              │  ← AI section
+└─────────────────────────────────────────┘
+              ↓ (after clicking)
+┌─────────────────────────────────────────┐
+│ 🤖 AI Explain          ✓               │
+│ ─────────────────────────────────────   │
+│ • Message Type: RRCConnectionRequest      │
+│ • Direction: Uplink (UE → eNB)          │
+│ • Purpose: UE initiates connection      │
+│ • Key Fields: initial UE identity,      │
+│   establishment cause                   │
+│ • Summary: This is the first message    │
+│   the UE sends when trying to connect   │
+└─────────────────────────────────────────┘
+```
+
+### 10.2.3. State Management
+
+**AIExplainStatus enum**:
+```rust
+pub enum AIExplainStatus {
+    Idle,           // No request made yet
+    Loading,        // Request in flight (spinner shown)
+    Done(String),   // Successful explanation
+    Error(String),  // HTTP or parsing error
+}
+```
+
+**State transitions**:
+- `Idle → Loading`: User clicks button
+- `Loading → Done`: Response received successfully
+- `Loading → Error`: HTTP error or invalid response
+- `Done/Error → Idle`: User navigates to different trace
+
+## 10.3. Configuration
+
+### 10.3.1. Environment Variable
+
+Set `TRAMEX_AI_API_KEY` before running:
+```bash
+export TRAMEX_AI_API_KEY="sk-xxxxxxxxxxxxxxxx"
+cargo run
+```
+
+Or in `.env` file (gitignored):
+```
+TRAMEX_AI_API_KEY=sk-xxxxxxxxxxxxxxxx
+```
+
+### 10.3.2. Runtime Configuration
+
+Settings are passed from `TramexApp` → `FrontEnd` → `Application` → `EventBus` → all panels:
+
+```rust
+// In TramexApp::update()
+self.frontend.set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider);
+
+// EventSubscriber trait method
+fn set_ai_config(&mut self, key: &str, provider: &AIProvider) {
+    self.ai_api_key = key.to_string();
+    self.ai_provider = provider.clone();
+}
+```
+
+## 10.4. Feature Flag
+
+The AI feature is **enabled by default** via `default = ["websocket", "ai"]` in `tramex/Cargo.toml`.
+
+To build without AI:
+```bash
+cargo build --no-default-features --features websocket
+```
+
+## 10.5. Files Modified
+
+**New Files:**
+- `tramex-tools/src/ai/mod.rs` — `AIConnector` trait, types, factory
+- `tramex-tools/src/ai/mistral.rs` — `MistralConnector` implementation
+- `tramex/src/ai_settings.rs` — `AISettings` with UI and env loading
+
+**Modified Files:**
+- `tramex-tools/Cargo.toml` — Added `ai` feature
+- `tramex-tools/src/lib.rs` — Registered `ai` module
+- `tramex/Cargo.toml` — Added `ai` to default features, `poll-promise` dependency
+- `tramex/src/lib.rs` — Registered `ai_settings` module
+- `tramex/src/app.rs` — Settings menu, AI config window, config forwarding
+- `tramex/src/frontend.rs` — `set_ai_config()` forwarding
+- `tramex/src/event_system/event_bus.rs` — `set_ai_config` trait method + forwarding
+- `tramex/src/event_system/application.rs` — `set_ai_config()` forwarding
+- `tramex/src/panels/panel_message.rs` — AI button, async request, response display
+- `.gitignore` — Added `.env`
+
+## 10.6. Future Enhancements
+
+1. **Multiple providers**: OpenAI GPT-4, Anthropic Claude, local LLMs via Ollama
+2. **Context history**: Include previous traces in prompt for richer explanations
+3. **Custom prompts**: User-defined system prompts for specific use cases
+4. **Caching**: Store explanations to avoid duplicate API calls
+5. **Offline mode**: Pre-trained model on-device for disconnected operation
+6. **Multi-language**: Translated explanations for international users

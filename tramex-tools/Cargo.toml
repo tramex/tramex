@@ -22,6 +22,7 @@ categories = ["visualization", "network-programming"]
 debug = []
 websocket = ["dep:ewebsock"]
 tokio = ["ewebsock/tokio"]
+ai = []
 
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"] }

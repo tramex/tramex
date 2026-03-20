@@ -20,11 +20,12 @@ categories = ["visualization", "network-programming"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["websocket"]
+default = ["websocket", "ai"]
 debug = ["tramex-tools/debug"]
 types_lte_3gpp = ["dep:types_lte_3gpp"]
 
 websocket = ["tramex-tools/websocket"]
+ai = ["tramex-tools/ai"]
 
 ## Test the tokio backend:
 tokio = ["tramex-tools/tokio", "dep:tokio"]

@@ -22,3 +22,6 @@ pub use utils::*;
 
 pub mod theme;
 pub use theme::{ThemeColors, ChannelColors, ArrowColors};
+
+#[cfg(feature = "ai")]
+pub mod ai_settings;
