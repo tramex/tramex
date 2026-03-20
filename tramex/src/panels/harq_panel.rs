@@ -155,79 +155,80 @@ impl HarqPanel {
         }
     }
 
-    /// Get X position for UE (left) or BST (right)
-    fn endpoint_x(is_ue: bool, rect: &Rect) -> f32 {
-        let padding = rect.width() * 0.12;
-        if is_ue {
-            rect.left() + padding
-        } else {
-            rect.right() - padding
-        }
-    }
-
     /// Draw the HARQ chronograph
     fn draw_harq(&mut self, ui: &mut egui::Ui) {
-        let available_size = ui.available_size();
+        // ── Fixed legend ──
+        self.draw_legend(ui);
+        
+        let available_width = ui.available_width();
         let arrow_height = 40.0_f32;
-        let header_height = 50.0_f32;
+        let theme = ThemeColors::get(ui);
 
-        // Build scroll area, optionally scrolling to current arrow
+        // Calculate UE/BST X positions based on available width
+        let padding = available_width * 0.12;
+        let ue_x = padding;
+        let bst_x = available_width - padding;
+
+        // ── Fixed header: UE / BST labels ──
+        let header_rect = ui.allocate_space(Vec2::new(available_width, 30.0)).1;
+        let painter = ui.painter();
+        painter.text(
+            Pos2::new(header_rect.left() + ue_x, header_rect.center().y),
+            egui::Align2::CENTER_CENTER,
+            "UE",
+            egui::FontId::proportional(16.0),
+            theme.text,
+        );
+        painter.text(
+            Pos2::new(header_rect.left() + bst_x, header_rect.center().y),
+            egui::Align2::CENTER_CENTER,
+            "BST",
+            egui::FontId::proportional(16.0),
+            theme.text,
+        );
+
+        ui.separator();
+
+        // ── Scrollable arrow area ──
+        let scroll_height = ui.available_height();
         let mut scroll_area = egui::ScrollArea::vertical()
             .auto_shrink([false, false]);
 
         if self.should_scroll {
             if let Some(pos) = self.arrows.iter().position(|a| a.trace_index == self.current_index) {
-                let arrow_y = (pos as f32 * arrow_height) + header_height + 10.0;
-                let centered = (arrow_y - available_size.y / 2.0).max(0.0);
+                let arrow_y = pos as f32 * arrow_height;
+                let centered = (arrow_y - scroll_height / 2.0).max(0.0);
                 scroll_area = scroll_area.vertical_scroll_offset(centered);
             }
         }
 
         scroll_area.show(ui, |ui| {
-            let total_height = self.arrows.len() as f32 * arrow_height + 100.0;
+            let total_height = (self.arrows.len() as f32 * arrow_height).max(100.0);
             let (rect, _) = ui.allocate_exact_size(
-                Vec2::new(available_size.x - 20.0, total_height),
+                Vec2::new(available_width - 20.0, total_height),
                 egui::Sense::hover(),
             );
 
             let painter = ui.painter();
-            let theme = ThemeColors::get(ui);
 
-            let ue_x = Self::endpoint_x(true, &rect);
-            let bst_x = Self::endpoint_x(false, &rect);
-            let arrow_start_y = rect.top() + header_height;
+            // Recalculate X positions relative to scroll area rect
+            let ue_x = rect.left() + padding;
+            let bst_x = rect.right() - padding;
 
             // Vertical lifelines
             let line_stroke = Stroke::new(2.0, theme.text_weak);
             painter.line_segment(
-                [Pos2::new(ue_x, arrow_start_y), Pos2::new(ue_x, rect.bottom())],
+                [Pos2::new(ue_x, rect.top()), Pos2::new(ue_x, rect.bottom())],
                 line_stroke,
             );
             painter.line_segment(
-                [Pos2::new(bst_x, arrow_start_y), Pos2::new(bst_x, rect.bottom())],
+                [Pos2::new(bst_x, rect.top()), Pos2::new(bst_x, rect.bottom())],
                 line_stroke,
             );
 
-            // Column headers
-            painter.text(
-                Pos2::new(ue_x, rect.top() + 20.0),
-                egui::Align2::CENTER_CENTER,
-                "UE",
-                egui::FontId::proportional(16.0),
-                theme.text,
-            );
-            painter.text(
-                Pos2::new(bst_x, rect.top() + 20.0),
-                egui::Align2::CENTER_CENTER,
-                "BST",
-                egui::FontId::proportional(16.0),
-                theme.text,
-            );
-
             // Draw arrows
-            let start_y = arrow_start_y + 10.0;
             for (i, arrow) in self.arrows.iter().enumerate() {
-                let y = start_y + (i as f32 * arrow_height);
+                let y = rect.top() + (i as f32 * arrow_height) + arrow_height / 2.0;
                 let is_current = arrow.trace_index == self.current_index;
 
                 // Arrow direction: UL = UE→BST, DL = BST→UE
@@ -288,17 +289,13 @@ impl HarqPanel {
                     label_color,
                 );
             }
-
-            // Draw HARQ legend at the bottom of the visible area
-            self.draw_legend(ui, &rect, &theme);
         });
 
         self.should_scroll = false;
     }
 
     /// Draw a compact HARQ color legend
-    fn draw_legend(&self, ui: &mut egui::Ui, _rect: &Rect, _theme: &ThemeColors) {
-        ui.add_space(10.0);
+    fn draw_legend(&self, ui: &mut egui::Ui) {
         ui.horizontal_wrapped(|ui| {
             ui.label("HARQ: ");
             // Determine which HARQ IDs are actually present
