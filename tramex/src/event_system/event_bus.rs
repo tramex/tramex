@@ -41,8 +41,8 @@ pub trait EventSubscriber: Send {
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), tramex_tools::errors::TramexError>;
 
     #[cfg(feature = "ai")]
-    /// Set the AI API key and provider for panels that support AI features
-    fn set_ai_config(&mut self, _key: &str, _provider: &tramex_tools::ai::AIProvider) {}
+    /// Set the AI API key, provider, and model for panels that support AI features
+    fn set_ai_config(&mut self, _key: &str, _provider: &tramex_tools::ai::AIProvider, _model: &str) {}
 }
 
 /// Central event dispatcher
@@ -125,9 +125,9 @@ impl EventBus {
 
     #[cfg(feature = "ai")]
     /// Forward AI config to all subscribers
-    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
+    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider, model: &str) {
         for subscriber in &mut self.subscribers {
-            subscriber.set_ai_config(key, provider);
+            subscriber.set_ai_config(key, provider, model);
         }
     }
 }

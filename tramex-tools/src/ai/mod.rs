@@ -87,9 +87,34 @@ impl std::fmt::Display for AIProvider {
     }
 }
 
-/// Create an AIConnector from a provider type
-pub fn create_connector(provider: &AIProvider) -> Box<dyn AIConnector> {
+impl AIProvider {
+    /// Return the list of all available providers
+    pub fn all() -> &'static [AIProvider] {
+        &[AIProvider::Mistral]
+    }
+
+    /// Return available (display_name, model_id) pairs for this provider
+    pub fn available_models(&self) -> &'static [(&'static str, &'static str)] {
+        match self {
+            AIProvider::Mistral => &[
+                ("Small", "mistral-small-latest"),
+                ("Medium", "mistral-medium-latest"),
+                ("Large", "mistral-large-latest"),
+            ],
+        }
+    }
+
+    /// Return the default model ID for this provider
+    pub fn default_model(&self) -> &'static str {
+        match self {
+            AIProvider::Mistral => "mistral-medium-latest",
+        }
+    }
+}
+
+/// Create an AIConnector from a provider type and model ID
+pub fn create_connector(provider: &AIProvider, model: &str) -> Box<dyn AIConnector> {
     match provider {
-        AIProvider::Mistral => Box::new(mistral::MistralConnector::new()),
+        AIProvider::Mistral => Box::new(mistral::MistralConnector::with_model(model)),
     }
 }

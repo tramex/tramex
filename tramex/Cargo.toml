@@ -25,7 +25,7 @@ debug = ["tramex-tools/debug"]
 types_lte_3gpp = ["dep:types_lte_3gpp"]
 
 websocket = ["tramex-tools/websocket"]
-ai = ["tramex-tools/ai"]
+ai = ["tramex-tools/ai", "dep:egui_commonmark"]
 
 ## Test the tokio backend:
 tokio = ["tramex-tools/tokio", "dep:tokio"]
@@ -48,6 +48,7 @@ rfd = "0.15.2"
 poll-promise = { version = "0.3.0", features = ["web"] }
 tramex-tools = { path = "../tramex-tools" }
 ehttp = { version = "0.5.0" }
+egui_commonmark = { version = "0.19", optional = true }
 types_lte_3gpp = { version = "1.0.6", features = ["rrc"], optional = true }
 chrono = "0.4"
 

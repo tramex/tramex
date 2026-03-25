@@ -240,8 +240,8 @@ impl FrontEnd {
 
     #[cfg(feature = "ai")]
     /// Forward AI config to all subscriber panels
-    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
-        self.application.set_ai_config(key, provider);
+    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider, model: &str) {
+        self.application.set_ai_config(key, provider, model);
     }
 
     /// Show the UI

@@ -31,6 +31,14 @@ impl MistralConnector {
         }
     }
 
+    /// Create a MistralConnector with a specific model
+    pub fn with_model(model: &str) -> Self {
+        Self {
+            endpoint: "https://api.mistral.ai/v1/chat/completions".to_string(),
+            model: model.to_string(),
+        }
+    }
+
     /// Build the user message from a Trace
     fn build_user_message(trace: &Trace) -> String {
         let mut parts = Vec::new();

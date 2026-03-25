@@ -9,6 +9,8 @@ use tramex_tools::{
 };
 #[cfg(feature = "ai")]
 use tramex_tools::ai::{AIProvider, AIExplainStatus, create_connector};
+#[cfg(feature = "ai")]
+use egui_commonmark::{CommonMarkViewer, CommonMarkCache};
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::{
     export::asn1_codecs::{PerCodecData, uper::UperCodec},
@@ -40,12 +42,20 @@ pub struct MessageBox {
     ai_provider: AIProvider,
 
     #[cfg(feature = "ai")]
+    /// AI model ID (synced from settings)
+    ai_model: String,
+
+    #[cfg(feature = "ai")]
     /// Current AI explanation status
     ai_status: AIExplainStatus,
 
     #[cfg(feature = "ai")]
     /// In-flight AI request promise
     ai_promise: Option<poll_promise::Promise<Result<String, String>>>,
+
+    #[cfg(feature = "ai")]
+    /// Markdown rendering cache
+    commonmark_cache: CommonMarkCache,
 }
 
 impl Default for MessageBox {
@@ -61,9 +71,13 @@ impl Default for MessageBox {
             #[cfg(feature = "ai")]
             ai_provider: AIProvider::default(),
             #[cfg(feature = "ai")]
+            ai_model: AIProvider::default().default_model().to_string(),
+            #[cfg(feature = "ai")]
             ai_status: AIExplainStatus::default(),
             #[cfg(feature = "ai")]
             ai_promise: None,
+            #[cfg(feature = "ai")]
+            commonmark_cache: CommonMarkCache::default(),
         }
     }
 }
@@ -82,7 +96,7 @@ impl MessageBox {
             None => return,
         };
 
-        let connector = create_connector(&self.ai_provider);
+        let connector = create_connector(&self.ai_provider, &self.ai_model);
         let request = match connector.build_request(&trace, &self.ai_api_key) {
             Ok(r) => r,
             Err(e) => {
@@ -99,12 +113,13 @@ impl MessageBox {
 
         let (sender, promise) = poll_promise::Promise::new();
         let provider = self.ai_provider.clone();
+        let model_clone = self.ai_model.clone();
 
         ehttp::fetch(ehttp_req, move |response| {
             let result = match response {
                 Ok(resp) => {
                     let body = resp.text().unwrap_or("").to_string();
-                    let conn = create_connector(&provider);
+                    let conn = create_connector(&provider, &model_clone);
                     match conn.parse_response(&body) {
                         Ok(explanation) => Ok(explanation),
                         Err(e) => Err(e.get_msg()),
@@ -158,7 +173,7 @@ impl MessageBox {
             .or_else(|| matches!(self.ai_status, AIExplainStatus::Loading).then_some("Request in progress…"));
 
         ui.horizontal(|ui| {
-            let button = egui::Button::new("🤖 AI Explain");
+            let button = egui::Button::new("AI Explain");
             let enabled = can_request.is_none();
             let response = ui.add_enabled(enabled, button);
             let clicked = response.clicked();
@@ -176,10 +191,10 @@ impl MessageBox {
                 }
                 AIExplainStatus::Idle => {}
                 AIExplainStatus::Done(_) => {
-                    ui.colored_label(egui::Color32::GREEN, "✓");
+                    ui.colored_label(egui::Color32::GREEN, "OK");
                 }
                 AIExplainStatus::Error(_) => {
-                    ui.colored_label(egui::Color32::RED, "✗ Error");
+                    ui.colored_label(egui::Color32::RED, "Error");
                 }
             }
         });
@@ -188,17 +203,15 @@ impl MessageBox {
         match &self.ai_status {
             AIExplainStatus::Done(text) => {
                 ui.separator();
+                let text_clone = text.clone();
                 egui::ScrollArea::vertical()
                     .id_salt("scroll_area_ai")
                     .max_height(300.0)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
-                        let mut text_ref = text.as_str();
-                        ui.add(
-                            egui::TextEdit::multiline(&mut text_ref)
-                                .desired_width(f32::INFINITY)
-                                .interactive(true)
-                        );
+                        CommonMarkViewer::new()
+                            .max_image_width(Some(512))
+                            .show(ui, &mut self.commonmark_cache, &text_clone);
                     });
             }
             AIExplainStatus::Error(err) => {
@@ -346,9 +359,10 @@ impl EventSubscriber for MessageBox {
     }
 
     #[cfg(feature = "ai")]
-    fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
+    fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider, model: &str) {
         self.ai_api_key = key.to_string();
         self.ai_provider = provider.clone();
+        self.ai_model = model.to_string();
     }
     
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

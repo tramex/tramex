@@ -16,6 +16,9 @@ pub struct AISettings {
     /// Selected AI provider
     pub provider: AIProvider,
 
+    /// Selected model ID (e.g. "mistral-medium-latest")
+    pub model: String,
+
     /// Whether to attempt loading the API key from environment variable
     pub use_env_var: bool,
 
@@ -30,9 +33,12 @@ pub struct AISettings {
 #[cfg(feature = "ai")]
 impl Default for AISettings {
     fn default() -> Self {
+        let provider = AIProvider::default();
+        let model = provider.default_model().to_string();
         Self {
             api_key: String::new(),
-            provider: AIProvider::default(),
+            provider,
+            model,
             use_env_var: true,
             env_var_name: "TRAMEX_AI_API_KEY".to_string(),
             env_checked: false,
@@ -72,15 +78,44 @@ impl AISettings {
         ui.add_space(4.0);
 
         // Provider selector
+        let previous_provider = self.provider.clone();
         ui.horizontal(|ui| {
             ui.label("Provider:");
             eframe::egui::ComboBox::from_id_salt("ai_provider")
                 .selected_text(self.provider.to_string())
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.provider, AIProvider::Mistral, "Mistral");
+                    for provider in AIProvider::all() {
+                        ui.selectable_value(&mut self.provider, provider.clone(), provider.to_string());
+                    }
                 });
         });
 
+        // Reset model to provider default when switching providers
+        if self.provider != previous_provider {
+            self.model = self.provider.default_model().to_string();
+        }
+
+        ui.add_space(4.0);
+
+        // Model selector
+        let models = self.provider.available_models();
+        let current_display = models.iter()
+            .find(|(_, id)| *id == self.model)
+            .map(|(name, _)| *name)
+            .unwrap_or("Unknown");
+        ui.horizontal(|ui| {
+            ui.label("Model:");
+            eframe::egui::ComboBox::from_id_salt("ai_model")
+                .selected_text(current_display)
+                .show_ui(ui, |ui| {
+                    for (display_name, model_id) in models {
+                        ui.selectable_value(&mut self.model, model_id.to_string(), *display_name);
+                    }
+                });
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
         ui.add_space(4.0);
 
         // Env var option
@@ -90,6 +125,7 @@ impl AISettings {
                 ui.label("Env var:");
                 ui.text_edit_singleline(&mut self.env_var_name);
             });
+            ui.label("Set this in your system environment variables, then restart the app.");
         }
 
         ui.add_space(4.0);
@@ -99,13 +135,13 @@ impl AISettings {
         let key_edit = eframe::egui::TextEdit::singleline(&mut self.api_key)
             .password(true)
             .hint_text("Enter API key…")
-            .desired_width(200.0);
+            .desired_width(300.0);
         ui.add(key_edit);
 
         if self.api_key.is_empty() {
-            ui.colored_label(eframe::egui::Color32::YELLOW, "⚠ No API key set");
+            ui.colored_label(eframe::egui::Color32::YELLOW, "No API key set");
         } else {
-            ui.colored_label(eframe::egui::Color32::GREEN, "✓ API key set");
+            ui.colored_label(eframe::egui::Color32::GREEN, "API key set");
         }
     }
 }

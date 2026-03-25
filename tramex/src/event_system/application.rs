@@ -445,8 +445,8 @@ impl Application {
     
     #[cfg(feature = "ai")]
     /// Forward AI config to all subscriber panels
-    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider) {
-        self.event_bus.set_ai_config(key, provider);
+    pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider, model: &str) {
+        self.event_bus.set_ai_config(key, provider, model);
     }
 
 

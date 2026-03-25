@@ -221,7 +221,7 @@ impl eframe::App for TramexApp {
         #[cfg(feature = "ai")]
         {
             self.ai_settings.try_load_env_key();
-            self.frontend.set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider);
+            self.frontend.set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider, &self.ai_settings.model);
             if self.show_settings_window {
                 self.ui_settings_window(ctx);
             }
