@@ -40,6 +40,9 @@ fn harq_color(harq: u8) -> Color32 {
     HARQ_COLORS[(harq as usize) % HARQ_COLORS.len()]
 }
 
+/// Sort key for chronological ordering: (HFN, frame, slot)
+type SfnKey = (u32, u16, u8);
+
 /// Arrow representation for a PHY event with HARQ info
 #[derive(Debug, Clone)]
 struct HarqArrow {
@@ -53,6 +56,12 @@ struct HarqArrow {
     harq: Option<u8>,
     /// Label text displayed on the arrow
     label: String,
+    /// Hyper Frame Number (for frame wrap handling)
+    hfn: u32,
+    /// System Frame Number
+    frame: u16,
+    /// Slot number within frame
+    slot: u8,
 }
 
 /// Format helper: display Option<u8> as value or "-"
@@ -86,19 +95,19 @@ impl HarqArrow {
                 if harq_process.is_none() {
                     return None;
                 }
-                let label = format!("PDCCH dci={} ndi={} rv_idx={}",
-                    dci, fmt_opt(*ndi), fmt_opt(*rv_idx));
+                let label = format!("{}:{} PDCCH dci={} ndi={} rv_idx={}",
+                    phy.frame, phy.slot, dci, fmt_opt(*ndi), fmt_opt(*rv_idx));
                 (*harq_process, label)
             }
             PHYChannelData::Pdsch { retx, rv_idx } => {
-                let label = format!("PDSCH harq={} retx={} rv_idx={}",
-                    fmt_opt(phy.harq), fmt_opt(*retx), fmt_opt(*rv_idx));
+                let label = format!("{}:{} PDSCH retx={} rv_idx={}",
+                    phy.frame, phy.slot, fmt_opt(*retx), fmt_opt(*rv_idx));
                 (phy.harq, label)
             }
             PHYChannelData::Pusch { retx, rv_idx, crc } => {
                 let crc_str = crc.map_or("-", |v| if v { "OK" } else { "KO" });
-                let label = format!("PUSCH harq={} retx={} rv_idx={} crc={}",
-                    fmt_opt(phy.harq), fmt_opt(*retx), fmt_opt(*rv_idx), crc_str);
+                let label = format!("{}:{} PUSCH retx={} rv_idx={} crc={}",
+                    phy.frame, phy.slot, fmt_opt(*retx), fmt_opt(*rv_idx), crc_str);
                 (phy.harq, label)
             }
             PHYChannelData::Pucch { format, ack } => {
@@ -107,8 +116,8 @@ impl HarqArrow {
                     return None;
                 }
                 let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
-                let label = format!("PUCCH format={} {}",
-                    fmt_opt(*format), ack_str);
+                let label = format!("{}:{} PUCCH format={} {}",
+                    phy.frame, phy.slot, fmt_opt(*format), ack_str);
                 (None, label) // No HARQ process on PUCCH
             }
             PHYChannelData::None => return None,
@@ -120,6 +129,9 @@ impl HarqArrow {
             channel_type: phy.channel_type,
             harq,
             label,
+            hfn: 0, // Will be set by HarqPanel during insertion
+            frame: phy.frame,
+            slot: phy.slot,
         })
     }
 }
@@ -137,6 +149,14 @@ pub struct HarqPanel {
 
     /// Flag to scroll to current arrow on next frame
     should_scroll: bool,
+
+    /// HFN tracking: (hfn, frame, slot) of the latest event seen
+    #[serde(skip)]
+    end_limit: (u32, u16, u8),
+
+    /// Whether we have received any event yet
+    #[serde(skip)]
+    has_first_event: bool,
 }
 
 impl Default for HarqPanel {
@@ -152,7 +172,43 @@ impl HarqPanel {
             current_index: 0,
             arrows: Vec::new(),
             should_scroll: false,
+            end_limit: (0, 0, 0),
+            has_first_event: false,
         }
+    }
+
+    /// Compute the HFN for a new event, handling frame wraparound (0..1023)
+    fn compute_hfn(&mut self, frame: u16, slot: u8) -> u32 {
+        if !self.has_first_event {
+            self.has_first_event = true;
+            self.end_limit = (0, frame, slot);
+            return 0;
+        }
+
+        let mut hfn = self.end_limit.0;
+        let candidate_pos = (frame, slot);
+        let end_pos = (self.end_limit.1, self.end_limit.2);
+
+        if candidate_pos > end_pos {
+            // Candidate is numerically ahead of end_limit
+            // Check for anti-wrap: frame jumped far ahead → actually from previous HFN
+            let end_frame = self.end_limit.1;
+            if frame > end_frame && (frame - end_frame) > 512 {
+                hfn = hfn.saturating_sub(1);
+            } else {
+                self.end_limit = (hfn, frame, slot);
+            }
+        } else if candidate_pos < end_pos {
+            // Candidate is numerically behind end_limit
+            // Check for wrap: frame went from ~1023 to ~0 → new HFN
+            let end_frame = self.end_limit.1;
+            if frame < end_frame && (end_frame - frame) > 512 {
+                hfn += 1;
+                self.end_limit = (hfn, frame, slot);
+            }
+        }
+
+        hfn
     }
 
     /// Draw the HARQ chronograph
@@ -331,13 +387,18 @@ impl EventSubscriber for HarqPanel {
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {}
 
     fn on_event_added(&mut self, event: &Trace, index: usize, _context: &EventContext) {
-        if let Some(arrow) = HarqArrow::from_trace(event, index) {
+        if let Some(mut arrow) = HarqArrow::from_trace(event, index) {
             if self.arrows.iter().any(|a| a.trace_index == index) {
                 return;
             }
 
+            // Compute HFN for this arrow using anti-wrap logic
+            arrow.hfn = self.compute_hfn(arrow.frame, arrow.slot);
+
+            // Insert sorted by (hfn, frame, slot)
+            let key: SfnKey = (arrow.hfn, arrow.frame, arrow.slot);
             let insert_pos = self.arrows.iter()
-                .position(|a| a.trace_index > index)
+                .position(|a| (a.hfn, a.frame, a.slot) > key)
                 .unwrap_or(self.arrows.len());
 
             self.arrows.insert(insert_pos, arrow);
@@ -358,6 +419,8 @@ impl EventSubscriber for HarqPanel {
         self.arrows.clear();
         self.current_index = 0;
         self.should_scroll = false;
+        self.end_limit = (0, 0, 0);
+        self.has_first_event = false;
     }
 
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
