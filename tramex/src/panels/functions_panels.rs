@@ -1,26 +1,18 @@
 //! Panels functions
 
+use crate::theme::{ArrowColors, ChannelColors, ThemeColors};
 use egui::{Color32, TextFormat};
-use crate::theme::{ThemeColors, ChannelColors, ArrowColors};
 
 /// Create a label with a background color (using Color32 directly)
 pub fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) -> egui::Response {
     use egui::text::LayoutJob;
     let mut job = LayoutJob::default();
     let theme = ThemeColors::get(ui);
-    
+
     // Use theme-aware text color - dark text on colored backgrounds for readability
-    let text_color = if show {
-        ChannelColors::TEXT_ON_COLOR
-    } else {
-        theme.text
-    };
-    
-    let background = if show {
-        color
-    } else {
-        Color32::TRANSPARENT
-    };
+    let text_color = if show { ChannelColors::TEXT_ON_COLOR } else { theme.text };
+
+    let background = if show { color } else { Color32::TRANSPARENT };
 
     job.append(
         label,

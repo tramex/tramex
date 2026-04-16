@@ -7,12 +7,12 @@
     clippy::missing_panics_doc,
     clippy::cargo
 )]
-#![warn(clippy::multiple_crate_versions)]
+#![allow(clippy::multiple_crate_versions)]
 
+pub mod asn1_parser;
 pub mod data;
 pub mod errors;
 pub mod interface;
-pub mod asn1_parser;
 
 #[cfg(feature = "ai")]
 pub mod ai;

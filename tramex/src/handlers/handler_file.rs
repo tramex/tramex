@@ -3,11 +3,7 @@ use std::path::Path;
 
 use eframe::egui;
 use poll_promise::Promise;
-use tramex_tools::{
-    errors::TramexError,
-    interface::interface_file::file_handler::File,
-    tramex_error,
-};
+use tramex_tools::{errors::TramexError, interface::interface_file::file_handler::File, tramex_error};
 
 #[derive(Debug, serde::Deserialize)]
 /// Item to show in the file list

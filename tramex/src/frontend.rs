@@ -3,10 +3,10 @@ use crate::handlers::handler_file::FileHandler;
 #[cfg(feature = "websocket")]
 use crate::handlers::handler_ws::WsHandler;
 
-use crate::panels::navigation_panel::{NavigationPanel, NavState};
-use crate::event_system::{Application, FileSource, create_application_with_panels};
 #[cfg(feature = "websocket")]
 use crate::event_system::WebSocketSource;
+use crate::event_system::{Application, FileSource, create_application_with_panels};
+use crate::panels::navigation_panel::{NavState, NavigationPanel};
 use crate::set_open;
 use egui::Ui;
 use std::collections::BTreeSet;
@@ -315,7 +315,9 @@ impl FrontEnd {
                     Some(Connector::File(fh)) => fh.show_status(ui),
                     #[cfg(feature = "websocket")]
                     Some(Connector::WebSocket(wh)) => wh.show_status(ui),
-                    None => { ui.label("Not connected"); }
+                    None => {
+                        ui.label("Not connected");
+                    }
                 };
             }
         });
@@ -328,13 +330,20 @@ impl FrontEnd {
     /// Handle navigate-next with on-demand loading
     fn handle_navigate_next(&mut self, errors: &mut Vec<TramexError>) {
         let mut navigated = self.application.navigate_next();
-        log::debug!("Navigation result: {}, current: {}, total: {}",
-            navigated, self.application.current_index(), self.application.event_count());
+        log::debug!(
+            "Navigation result: {}, current: {}, total: {}",
+            navigated,
+            self.application.current_index(),
+            self.application.event_count()
+        );
 
         // If at end, keep loading batches until we find an enabled event
         while !navigated {
             if self.application.has_more_data() {
-                log::info!("Reached end of loaded events ({}), loading more...", self.application.event_count());
+                log::info!(
+                    "Reached end of loaded events ({}), loading more...",
+                    self.application.event_count()
+                );
                 if let Err(err) = self.application.request_more_data() {
                     Self::collect_errors(errors, err);
                     break;
@@ -357,13 +366,20 @@ impl FrontEnd {
 
     /// Handle goto-event: load data until target index is available, then navigate
     fn handle_goto_event(&mut self, target_index: usize, errors: &mut Vec<TramexError>) {
-        log::info!("Goto event: target index {} (loaded: {})", target_index, self.application.event_count());
+        log::info!(
+            "Goto event: target index {} (loaded: {})",
+            target_index,
+            self.application.event_count()
+        );
 
         // Load batches until we have enough events
         while self.application.event_count() <= target_index {
             if !self.application.has_more_data() {
-                log::warn!("Goto event: cannot reach index {}, source exhausted at {} events",
-                    target_index, self.application.event_count());
+                log::warn!(
+                    "Goto event: cannot reach index {}, source exhausted at {} events",
+                    target_index,
+                    self.application.event_count()
+                );
                 break;
             }
             if let Err(err) = self.application.request_more_data() {
@@ -440,10 +456,6 @@ fn layer_checkbox(ui: &mut egui::Ui, layer: &mut tramex_tools::interface::layer:
     let mut checked = matches!(layer, LayerLogLevel::Debug);
 
     if ui.checkbox(&mut checked, text).changed() {
-        *layer = if checked {
-            LayerLogLevel::Debug
-        } else {
-            LayerLogLevel::Warn
-        };
+        *layer = if checked { LayerLogLevel::Debug } else { LayerLogLevel::Warn };
     }
 }

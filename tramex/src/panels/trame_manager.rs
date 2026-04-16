@@ -45,7 +45,7 @@ impl TrameManager {
                 checkbox(ui, &mut self.layers_list.rrc, "RRC");
                 checkbox(ui, &mut self.layers_list.nas, "NAS");
             });
-                ui.collapsing("Core Network", |ui| {
+            ui.collapsing("Core Network", |ui| {
                 checkbox(ui, &mut self.layers_list.s72, "S72");
                 checkbox(ui, &mut self.layers_list.s1ap, "S1AP");
                 checkbox(ui, &mut self.layers_list.ngap, "NGAP");
@@ -65,20 +65,20 @@ impl TrameManager {
         log::debug!("Continuing navigation from index {}", data.current_index);
         self.go_to_next_enabled_event(data, is_full_read);
     }
-    
+
     /// Public method to go to previous enabled event
     pub fn go_to_previous_enabled(&mut self, data: &mut Data) {
         log::debug!("Going to previous enabled event from index {}", data.current_index);
         self.go_to_previous_enabled_event(data);
     }
-    
+
     /// Navigate to the next event that matches the enabled layer filters
-    fn go_to_next_enabled_event(&mut self, data: &mut Data, is_full_read: bool) {        
+    fn go_to_next_enabled_event(&mut self, data: &mut Data, is_full_read: bool) {
         // Try to find the next enabled event
         loop {
             if data.events.len() > data.current_index + 1 {
                 data.current_index += 1;
-                
+
                 // Check if this event's layer is enabled
                 if let Some(trace) = data.events.get(data.current_index) {
                     if self.layers_list.is_layer_enabled(&trace.layer) {
@@ -105,7 +105,7 @@ impl TrameManager {
                 }
             }
         }
-        
+
         // Preloading: if we're near the end, request more logs
         if !data.events.is_empty() && data.current_index >= (data.events.len() - 5) && !is_full_read {
             log::debug!("Preloading: near end of loaded events");
@@ -118,12 +118,12 @@ impl TrameManager {
         if data.current_index == 0 {
             return;
         }
-        
+
         // Try to find the previous enabled event
         loop {
             if data.current_index > 0 {
                 data.current_index -= 1;
-                
+
                 // Check if this event's layer is enabled
                 if let Some(trace) = data.events.get(data.current_index) {
                     if self.layers_list.is_layer_enabled(&trace.layer) {

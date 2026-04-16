@@ -1,15 +1,15 @@
 //! This module contains the data structures used to store the data of the application.
-use crate::interface::association::{
-    TraceRelation, AssociationStatus, AssociationRules, TraceMatcher,
-};
+use crate::asn1_parser::parse_asn1_to_json;
+use crate::interface::association::{AssociationRules, AssociationStatus, TraceMatcher, TraceRelation};
 use crate::interface::{
-    parse_config::FileMetadata, 
-    layer::Layer, 
-    parser::{parser_rrc::RRCInfos, parser_nas::NASInfos, parser_ngap::NGAPInfos, parser_gtpu::GTPUInfos, parser_phy::PHYInfos},
+    layer::Layer,
+    parse_config::FileMetadata,
+    parser::{
+        parser_gtpu::GTPUInfos, parser_nas::NASInfos, parser_ngap::NGAPInfos, parser_phy::PHYInfos, parser_rrc::RRCInfos,
+    },
     types::Direction,
 };
 use core::fmt::Debug;
-use crate::asn1_parser::parse_asn1_to_json;
 
 #[derive(Debug)]
 /// Data structure to store Trace of the application.
@@ -45,19 +45,19 @@ impl Data {
 
     /// Compute parent association for a trace at the given index using lazy evaluation.
     /// If already computed, returns the cached result. Otherwise, computes and caches it.
-    /// 
+    ///
     /// # Arguments
     /// * `index` - Index of the trace to compute parent for
     /// * `rules` - The association rules to use for matching
-    /// 
+    ///
     /// # Returns
     /// * The parent index if found, None otherwise
     pub fn compute_parent(&mut self, index: usize, rules: &AssociationRules) -> Option<usize> {
         // Check if already computed
-        if let Some(trace) = self.events.get(index) {
-            if trace.relation.parent.is_computed() {
-                return trace.relation.get_parent_index();
-            }
+        if let Some(trace) = self.events.get(index)
+            && trace.relation.parent.is_computed()
+        {
+            return trace.relation.get_parent_index();
         }
 
         // Get the trace's layer to find applicable rules
@@ -70,7 +70,7 @@ impl Data {
         let applicable_rules = rules.rules_for_layer(&layer);
         for rule in applicable_rules {
             let status = TraceMatcher::find_relative(index, &self.events, rule, &layer, &rule.target_layer());
-            
+
             // Update the trace's relation
             // If we found a parent, set the relations
             if let AssociationStatus::Found(parent_indices) = status {
@@ -92,10 +92,10 @@ impl Data {
         }
 
         // Mark as not found if no rules matched
-        if let Some(trace) = self.events.get_mut(index) {
-            if !trace.relation.parent.is_computed() {
-                trace.relation.set_parent_not_applicable();
-            }
+        if let Some(trace) = self.events.get_mut(index)
+            && !trace.relation.parent.is_computed()
+        {
+            trace.relation.set_parent_not_applicable();
         }
 
         None
@@ -105,8 +105,8 @@ impl Data {
     /// This applies all rules to each trace automatically:
     /// - For each trace, finds rules where the trace's layer is the source layer
     /// - Computes the relationship and updates both parent (on source) and child (on target)
-    /// 
-    /// After calling this method, you can use `trace.relation.get_parent_index()` or 
+    ///
+    /// After calling this method, you can use `trace.relation.get_parent_index()` or
     /// `trace.relation.get_child_index()` to get related traces.
     pub fn compute_all_associations(&mut self, rules: &AssociationRules) {
         crate::interface::association::compute_associations(&mut self.events, rules, 0);
@@ -114,11 +114,11 @@ impl Data {
 
     /// Get the parent trace for a trace at the given index.
     /// This will compute the association if not already done.
-    /// 
+    ///
     /// # Arguments
     /// * `index` - Index of the trace
     /// * `rules` - The association rules to use
-    /// 
+    ///
     /// # Returns
     /// * Reference to the parent trace if found
     pub fn get_parent_trace(&mut self, index: usize, rules: &AssociationRules) -> Option<&Trace> {
@@ -128,10 +128,10 @@ impl Data {
 
     /// Get the child trace for a trace at the given index.
     /// Note: child relation is set when the child's parent is computed.
-    /// 
+    ///
     /// # Arguments
     /// * `index` - Index of the trace
-    /// 
+    ///
     /// # Returns
     /// * Reference to the child trace if found
     pub fn get_child_trace(&self, index: usize) -> Option<&Trace> {
@@ -149,14 +149,14 @@ impl Data {
 
     /// Invalidate associations in a range around newly added traces
     /// This is more efficient than invalidating all associations
-    /// 
+    ///
     /// # Arguments
     /// * `start_index` - Start of the range where new traces were added
     /// * `window` - Window size to invalidate around the new traces
     pub fn invalidate_associations_in_range(&mut self, start_index: usize, window: usize) {
         let start = start_index.saturating_sub(window);
         let end = (start_index + window).min(self.events.len());
-        
+
         for trace in &mut self.events[start..end] {
             trace.relation.invalidate();
         }
@@ -198,11 +198,11 @@ pub struct Trace {
 
 impl Trace {
     /// Parse ASN.1 text from RRC messages and return as JSON
-    /// 
+    ///
     /// # Returns
     /// * `Some(Value)` - Parsed JSON if the trace has ASN.1 text and is an RRC layer
     /// * `None` - If no text available or not an RRC layer
-    /// 
+    ///
     /// # Errors
     /// Logs error if parsing fails but returns None
     pub fn parse_asn1_to_json(&self) -> Option<serde_json::Value> {
@@ -210,31 +210,29 @@ impl Trace {
         if !matches!(self.layer, Layer::RRC) {
             return None;
         }
-        
+
         // Check if we have text to parse
         let text = self.text.as_ref()?;
-        
+
         // Find the start of ASN.1 structure (first line starting with '{')
         // Skip header lines and hex dump
-        let asn1_lines: Vec<&String> = text.iter()
+        let asn1_lines: Vec<&String> = text
+            .iter()
             .skip_while(|line| {
                 let trimmed = line.trim();
                 // Skip until we find a line that starts with '{'
                 !trimmed.starts_with('{')
             })
             .collect();
-        
+
         if asn1_lines.is_empty() {
             log::debug!("No ASN.1 structure found in text");
             return None;
         }
-        
+
         // Join the ASN.1 lines
-        let asn1_text: String = asn1_lines.iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<&str>>()
-            .join("\n");
-        
+        let asn1_text: String = asn1_lines.iter().map(|s| s.as_str()).collect::<Vec<&str>>().join("\n");
+
         // Parse ASN.1 to JSON
         match parse_asn1_to_json(&asn1_text) {
             Ok(json) => {
@@ -278,7 +276,7 @@ impl AdditionalInfos {
             AdditionalInfos::None => None,
         }
     }
-    
+
     /// Get message name from additional infos
     pub fn get_message_name(&self) -> Option<String> {
         match self {

@@ -58,12 +58,7 @@ impl NavigationPanel {
     }
 
     /// Show the navigation panel
-    pub fn show_nav(
-        &mut self,
-        ctx: &egui::Context,
-        open: &mut bool,
-        state: &NavState<'_>,
-    ) -> Result<(), TramexError> {
+    pub fn show_nav(&mut self, ctx: &egui::Context, open: &mut bool, state: &NavState<'_>) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .open(open)
             .resizable(true)
@@ -71,11 +66,7 @@ impl NavigationPanel {
             .show(ctx, |ui| {
                 // Everything in one horizontal row for maximum compactness
                 ui.horizontal(|ui| {
-                    let current_display = if state.event_count == 0 {
-                        0
-                    } else {
-                        state.current_index + 1
-                    };
+                    let current_display = if state.event_count == 0 { 0 } else { state.current_index + 1 };
                     let max_event = state.total_count.unwrap_or(state.event_count);
 
                     ui.label(egui::RichText::new("Event:").size(14.0));
@@ -96,7 +87,10 @@ impl NavigationPanel {
                         let committed = response.lost_focus();
                         if committed {
                             // Validate and trigger goto
-                            if let Some(n) = self.index_edit_buf.parse::<usize>().ok()
+                            if let Some(n) = self
+                                .index_edit_buf
+                                .parse::<usize>()
+                                .ok()
                                 .filter(|&n| n >= 1 && n <= max_event)
                             {
                                 self.should_goto_event = Some(n - 1);
@@ -110,9 +104,7 @@ impl NavigationPanel {
                             .strong()
                             .size(15.0)
                             .underline();
-                        let response = ui.add(
-                            egui::Label::new(label).sense(egui::Sense::click()),
-                        );
+                        let response = ui.add(egui::Label::new(label).sense(egui::Sense::click()));
                         if response.on_hover_text("Click to jump to event").clicked() {
                             self.editing_index = true;
                             self.just_entered_edit = true;
@@ -121,9 +113,11 @@ impl NavigationPanel {
                     }
 
                     if max_event > 0 {
-                        ui.label(egui::RichText::new(format!("/ {}", max_event))
-                            .color(egui::Color32::GRAY)
-                            .size(14.0));
+                        ui.label(
+                            egui::RichText::new(format!("/ {}", max_event))
+                                .color(egui::Color32::GRAY)
+                                .size(14.0),
+                        );
                     }
 
                     ui.add_space(10.0);
@@ -131,9 +125,11 @@ impl NavigationPanel {
                     ui.add_space(10.0);
 
                     ui.label(egui::RichText::new("Loaded:").size(14.0));
-                    ui.label(egui::RichText::new(format!("{}", state.event_count))
-                        .color(egui::Color32::from_rgb(255, 200, 100))
-                        .size(15.0));
+                    ui.label(
+                        egui::RichText::new(format!("{}", state.event_count))
+                            .color(egui::Color32::from_rgb(255, 200, 100))
+                            .size(15.0),
+                    );
 
                     if let Some(trace) = state.current_event {
                         ui.add_space(10.0);
@@ -141,20 +137,24 @@ impl NavigationPanel {
                         ui.add_space(10.0);
 
                         ui.label(egui::RichText::new("Time:").size(14.0));
-                        ui.label(egui::RichText::new(Self::format_timestamp(trace.timestamp))
-                            .color(egui::Color32::from_rgb(200, 150, 255))
-                            .monospace()
-                            .size(14.0));
+                        ui.label(
+                            egui::RichText::new(Self::format_timestamp(trace.timestamp))
+                                .color(egui::Color32::from_rgb(200, 150, 255))
+                                .monospace()
+                                .size(14.0),
+                        );
 
                         ui.add_space(10.0);
                         ui.separator();
                         ui.add_space(10.0);
 
                         ui.label(egui::RichText::new("Layer:").size(14.0));
-                        ui.label(egui::RichText::new(format!("{:?}", trace.layer))
-                            .color(egui::Color32::from_rgb(255, 150, 150))
-                            .strong()
-                            .size(14.0));
+                        ui.label(
+                            egui::RichText::new(format!("{:?}", trace.layer))
+                                .color(egui::Color32::from_rgb(255, 150, 150))
+                                .strong()
+                                .size(14.0),
+                        );
                     }
                 });
 
@@ -171,7 +171,7 @@ impl NavigationPanel {
                                 egui::RichText::new("◀ Previous")
                                     .color(egui::Color32::WHITE)
                                     .strong()
-                                    .size(15.0)
+                                    .size(15.0),
                             )
                             .fill(egui::Color32::from_rgb(150, 100, 50))
                             .corner_radius(8.0)
@@ -192,16 +192,15 @@ impl NavigationPanel {
                         };
 
                         // Only disable Next button if at end AND fully loaded
-                        let is_at_end = state.event_count > 0
-                            && state.current_index >= state.event_count - 1
-                            && state.is_fully_loaded;
+                        let is_at_end =
+                            state.event_count > 0 && state.current_index >= state.event_count - 1 && state.is_fully_loaded;
 
                         ui.add_enabled_ui(!is_at_end, |ui| {
                             let button = egui::Button::new(
                                 egui::RichText::new(button_text)
                                     .color(egui::Color32::WHITE)
                                     .strong()
-                                    .size(15.0)
+                                    .size(15.0),
                             )
                             .fill(button_color)
                             .corner_radius(8.0)
@@ -227,7 +226,7 @@ impl NavigationPanel {
                                     egui::RichText::new(button_text)
                                         .color(egui::Color32::WHITE)
                                         .strong()
-                                        .size(15.0)
+                                        .size(15.0),
                                 )
                                 .fill(button_color)
                                 .corner_radius(8.0)
@@ -245,11 +244,15 @@ impl NavigationPanel {
                         if is_ws_available {
                             ui.add_space(5.0);
                             if is_auto_loading {
-                                ui.label(egui::RichText::new("🔄 Auto-loading enabled")
-                                    .color(egui::Color32::from_rgb(100, 200, 100)));
+                                ui.label(
+                                    egui::RichText::new("🔄 Auto-loading enabled")
+                                        .color(egui::Color32::from_rgb(100, 200, 100)),
+                                );
                             } else {
-                                ui.label(egui::RichText::new("⏸ Auto-loading paused")
-                                    .color(egui::Color32::from_rgb(200, 150, 100)));
+                                ui.label(
+                                    egui::RichText::new("⏸ Auto-loading paused")
+                                        .color(egui::Color32::from_rgb(200, 150, 100)),
+                                );
                             }
                         }
                     }

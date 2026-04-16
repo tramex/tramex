@@ -1,8 +1,8 @@
 //! Mistral AI connector implementation
 
 use crate::ai::{AIConnector, AIRequest};
-use crate::data::{Trace, AdditionalInfos};
-use crate::errors::{TramexError, ErrorCode};
+use crate::data::{AdditionalInfos, Trace};
+use crate::errors::{ErrorCode, TramexError};
 
 /// System prompt for Mistral AI explaining Amarisoft traces
 const SYSTEM_PROMPT: &str = r#"You are a telecom protocol expert specializing in 4G LTE and 5G NR analysis. You are helping a user understand traces captured from an Amarisoft base station (eNB/gNB).
@@ -124,12 +124,8 @@ impl AIConnector for MistralConnector {
             "max_tokens": 1024
         });
 
-        let body_str = serde_json::to_string(&body).map_err(|e| {
-            TramexError::new(
-                format!("Failed to serialize request body: {e}"),
-                ErrorCode::RequestError,
-            )
-        })?;
+        let body_str = serde_json::to_string(&body)
+            .map_err(|e| TramexError::new(format!("Failed to serialize request body: {e}"), ErrorCode::RequestError))?;
 
         Ok(AIRequest {
             url: self.endpoint.clone(),
@@ -142,22 +138,13 @@ impl AIConnector for MistralConnector {
     }
 
     fn parse_response(&self, response_body: &str) -> Result<String, TramexError> {
-        let json: serde_json::Value = serde_json::from_str(response_body).map_err(|e| {
-            TramexError::new(
-                format!("Failed to parse AI response: {e}"),
-                ErrorCode::RequestError,
-            )
-        })?;
+        let json: serde_json::Value = serde_json::from_str(response_body)
+            .map_err(|e| TramexError::new(format!("Failed to parse AI response: {e}"), ErrorCode::RequestError))?;
 
         // Check for API error
         if let Some(error) = json.get("error") {
-            let msg = error.get("message")
-                .and_then(|m| m.as_str())
-                .unwrap_or("Unknown API error");
-            return Err(TramexError::new(
-                format!("Mistral API error: {msg}"),
-                ErrorCode::RequestError,
-            ));
+            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown API error");
+            return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
         }
 
         // Extract the assistant's message content

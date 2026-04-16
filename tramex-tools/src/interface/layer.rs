@@ -201,7 +201,7 @@ impl Layers {
     /// Create new Layers but in an optiniated way
     pub fn new_optiniated() -> Self {
         let mut layers = Layers::new();
-        // Add default visible layers here : 
+        // Add default visible layers here :
         layers.rrc = LayerLogLevel::Debug;
         layers.phy = LayerLogLevel::Debug;
         layers

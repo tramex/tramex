@@ -3,15 +3,15 @@
 use crate::data::{AdditionalInfos, Data, Trace};
 use crate::errors::ErrorCode;
 use crate::errors::TramexError;
-use crate::interface::parse_config::{FileMetadata, Technology};
 use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
+use crate::interface::parse_config::{FileMetadata, Technology};
 use crate::tramex_error;
 use std::path::PathBuf;
 //use std::collections::HashMap;
 
+use super::file_index::FileIndex;
 use super::utils_file::parse_one_block;
-use super::file_index::{FileIndex};
 
 /// The default number of log processed by batch
 const BATCH_SIZE: usize = 100;
@@ -36,13 +36,13 @@ pub struct File {
 
     /// Available
     pub available: bool,
-    
+
     /// File index for efficient navigation (Option 3)
     pub index: Option<FileIndex>,
-    
+
     /// Cache of parsed traces (index -> Trace)
     //_parsed_cache: HashMap<usize, Trace>,
-    
+
     /// Current logical index in the file index
     pub current_log_index: usize,
 }
@@ -68,11 +68,11 @@ impl InterfaceTrait for File {
         if self.full_read {
             return Ok(());
         }
-        
+
         // Parse metadata on first call and build index
         if self.index.is_none() && data.events.is_empty() {
             data.metadata = FileMetadata::parse_from_lines(&self.file_content);
-            
+
             // Build file index (Option 3)
             log::info!("Building file index...");
             match FileIndex::build_from_lines(&self.file_content) {
@@ -86,10 +86,10 @@ impl InterfaceTrait for File {
                 }
             }
         }
-        
+
         // Use old batch processing for now (will be optimized later)
         let (mut traces, err_processed) = self.process();
-        
+
         // Infer technology from RRC canal name if metadata is Unknown
         if data.metadata.technology == Technology::Unknown {
             for trace in &traces {
@@ -103,7 +103,7 @@ impl InterfaceTrait for File {
                 }
             }
         }
-        
+
         data.events.append(&mut traces);
         if !err_processed.is_empty() {
             let filtered: Vec<TramexError> = err_processed
@@ -123,15 +123,15 @@ impl InterfaceTrait for File {
     fn close(&mut self) -> Result<(), TramexError> {
         Ok(())
     }
-    
+
     fn supports_preloading(&self) -> bool {
         true
     }
-    
+
     fn get_total_event_count(&self) -> Option<usize> {
         self.index.as_ref().map(|idx| idx.total_count)
     }
-    
+
     fn is_fully_read(&self) -> bool {
         self.full_read
     }

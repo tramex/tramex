@@ -7,21 +7,21 @@
     clippy::missing_panics_doc,
     clippy::cargo
 )]
-#![warn(clippy::multiple_crate_versions)]
+#![allow(clippy::multiple_crate_versions)]
 
 mod app;
 pub use app::TramexApp;
 
+pub mod event_system;
 mod frontend;
 pub mod handlers;
 pub mod panels;
-pub mod event_system;
 
 mod utils;
 pub use utils::*;
 
 pub mod theme;
-pub use theme::{ThemeColors, ChannelColors, ArrowColors};
+pub use theme::{ArrowColors, ChannelColors, ThemeColors};
 
 #[cfg(feature = "ai")]
 pub mod ai_settings;

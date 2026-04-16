@@ -13,7 +13,7 @@ pub struct TraceMatcher;
 impl TraceMatcher {
     /// Find a relative trace using the rule's source and target layers
     /// This is the main public API - the rule defines what we're searching for
-    /// 
+    ///
     /// # Arguments
     /// * `source_index` - Index of the source trace in the events vector
     /// * `events` - Reference to all traces
@@ -38,32 +38,32 @@ impl TraceMatcher {
         }
 
         let direction = rule.preferred_direction(source);
-        
+
         // Search based on preferred direction
         match direction {
             SearchDirection::BackwardFirst => {
-                if let Some(idx) = Self::search_backward(source_index, events, source, rule, &target_layer) {
+                if let Some(idx) = Self::search_backward(source_index, events, source, rule, target_layer) {
                     return AssociationStatus::Found(vec![idx]);
                 }
-                if let Some(idx) = Self::search_forward(source_index, events, source, rule, &target_layer) {
+                if let Some(idx) = Self::search_forward(source_index, events, source, rule, target_layer) {
                     return AssociationStatus::Found(vec![idx]);
                 }
             }
             SearchDirection::ForwardFirst => {
-                if let Some(idx) = Self::search_forward(source_index, events, source, rule, &target_layer) {
+                if let Some(idx) = Self::search_forward(source_index, events, source, rule, target_layer) {
                     return AssociationStatus::Found(vec![idx]);
                 }
-                if let Some(idx) = Self::search_backward(source_index, events, source, rule, &target_layer) {
+                if let Some(idx) = Self::search_backward(source_index, events, source, rule, target_layer) {
                     return AssociationStatus::Found(vec![idx]);
                 }
             }
             SearchDirection::BackwardOnly => {
-                if let Some(idx) = Self::search_backward(source_index, events, source, rule, &target_layer) {
+                if let Some(idx) = Self::search_backward(source_index, events, source, rule, target_layer) {
                     return AssociationStatus::Found(vec![idx]);
                 }
             }
             SearchDirection::ForwardOnly => {
-                if let Some(idx) = Self::search_forward(source_index, events, source, rule, &target_layer) {
+                if let Some(idx) = Self::search_forward(source_index, events, source, rule, target_layer) {
                     return AssociationStatus::Found(vec![idx]);
                 }
             }
@@ -111,9 +111,7 @@ impl TraceMatcher {
     ) -> Option<usize> {
         let window_size = rule.window_size();
         let end = (index + window_size + 1).min(events.len());
-        for idx in (index + 1)..end {
-            let candidate = &events[idx];
-
+        for (idx, candidate) in events.iter().enumerate().take(end).skip(index + 1) {
             if &candidate.layer != target_layer {
                 continue;
             }
@@ -138,9 +136,6 @@ mod tests {
             SearchDirection::from_direction(&Direction::UL),
             SearchDirection::BackwardFirst
         );
-        assert_eq!(
-            SearchDirection::from_direction(&Direction::DL), 
-            SearchDirection::ForwardFirst
-        );
+        assert_eq!(SearchDirection::from_direction(&Direction::DL), SearchDirection::ForwardFirst);
     }
 }

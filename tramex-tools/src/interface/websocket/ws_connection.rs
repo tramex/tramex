@@ -8,7 +8,7 @@ use crate::interface::types::BaseMessage;
 use crate::tramex_error;
 use crate::{data::Data, errors::TramexError};
 
-use crate::interface::{layer::Layers, layer::Layer, log_get::LogGet, types::WebSocketLog};
+use crate::interface::{layer::Layer, layer::Layers, log_get::LogGet, types::WebSocketLog};
 /// WsConnection struct
 pub struct WsConnection {
     /// WebSocket sender
@@ -82,7 +82,7 @@ impl InterfaceTrait for WsConnection {
         if self.waiting_for_response {
             return Ok(());
         }
-        
+
         let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max);
         log::debug!("📤 Sending log_get request #{}", self.msg_id);
         match serde_json::to_string(&msg) {
@@ -107,17 +107,17 @@ impl InterfaceTrait for WsConnection {
     fn close(&mut self) -> Result<(), TramexError> {
         self.close_impl()
     }
-    
+
     fn supports_preloading(&self) -> bool {
-        false  // WebSocket cannot preload - server controls data
+        false // WebSocket cannot preload - server controls data
     }
-    
+
     fn get_total_event_count(&self) -> Option<usize> {
-        None  // Unknown for WebSocket
+        None // Unknown for WebSocket
     }
-    
+
     fn is_fully_read(&self) -> bool {
-        !self.available  // If connection is closed, we're done
+        !self.available // If connection is closed, we're done
     }
 }
 
@@ -128,7 +128,7 @@ impl WsConnection {
     pub fn should_request_more(&self) -> bool {
         self.auto_loading && !self.waiting_for_response
     }
-    
+
     /// Try to receive data
     /// # Errors
     /// Return an error if the data is not received correctly
@@ -147,14 +147,16 @@ impl WsConnection {
                             match decoded {
                                 Ok(decoded_data) => {
                                     log::debug!("✅ Received log_get response with {} logs", decoded_data.logs.len());
-                                    
+
                                     // Mark that we received the response - ready for next request
                                     self.waiting_for_response = false;
-                                    
+
                                     let mut errors = vec![];
                                     for one_log in decoded_data.logs {
                                         // Skip NR band combinations logs
-                                        if Layer::RRC == one_log.layer && one_log.data.iter().any(|line| line.contains("NR band combinations")) {
+                                        if Layer::RRC == one_log.layer
+                                            && one_log.data.iter().any(|line| line.contains("NR band combinations"))
+                                        {
                                             log::debug!("Skipping NR band combinations log");
                                             continue;
                                         }
@@ -178,8 +180,13 @@ impl WsConnection {
                                     match decoded_base {
                                         Ok(decoded_data) => {
                                             if decoded_data.message == "ready" {
-                                                log::debug!("✅ Received 'ready' message from server: {}", decoded_data.name);
-                                                log::debug!("💡 Server is ready. You need to click 'Load More' or enable auto-loading to request logs.");
+                                                log::debug!(
+                                                    "✅ Received 'ready' message from server: {}",
+                                                    decoded_data.name
+                                                );
+                                                log::debug!(
+                                                    "💡 Server is ready. You need to click 'Load More' or enable auto-loading to request logs."
+                                                );
                                             }
                                             log::debug!("📥 Received BaseMessage: {decoded_data:?}");
                                             self.name = decoded_data.name;

@@ -1,5 +1,5 @@
 //! AI connector module for trace explanation
-//! 
+//!
 //! Provides a trait-based abstraction for AI chatbot APIs.
 //! Enable with the `ai` feature flag.
 
@@ -20,9 +20,10 @@ pub struct AIRequest {
 }
 
 /// Status of an AI explanation request
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum AIExplainStatus {
     /// No request has been made
+    #[default]
     Idle,
     /// Request is in flight
     Loading,
@@ -32,14 +33,8 @@ pub enum AIExplainStatus {
     Error(String),
 }
 
-impl Default for AIExplainStatus {
-    fn default() -> Self {
-        Self::Idle
-    }
-}
-
 /// Trait abstracting an AI chatbot connector.
-/// 
+///
 /// Implementations build the HTTP request and parse the response.
 /// The actual HTTP call is handled by the UI layer (using ehttp).
 pub trait AIConnector: Send + Sync {
@@ -47,36 +42,31 @@ pub trait AIConnector: Send + Sync {
     fn name(&self) -> &'static str;
 
     /// Build the HTTP request for explaining a trace.
-    /// 
+    ///
     /// # Arguments
     /// * `trace` - The trace to explain
     /// * `api_key` - The API key for authentication
-    /// 
+    ///
     /// # Errors
     /// Returns an error if the request cannot be built
     fn build_request(&self, trace: &Trace, api_key: &str) -> Result<AIRequest, TramexError>;
 
     /// Parse the API response body into a human-readable explanation.
-    /// 
+    ///
     /// # Arguments
     /// * `response_body` - The raw JSON response from the API
-    /// 
+    ///
     /// # Errors
     /// Returns an error if the response cannot be parsed
     fn parse_response(&self, response_body: &str) -> Result<String, TramexError>;
 }
 
 /// Available AI provider types
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum AIProvider {
     /// Mistral AI
+    #[default]
     Mistral,
-}
-
-impl Default for AIProvider {
-    fn default() -> Self {
-        Self::Mistral
-    }
 }
 
 impl std::fmt::Display for AIProvider {

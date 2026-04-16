@@ -1,12 +1,12 @@
 //! Parser for file interface
 
-pub mod parser_rrc;
+pub mod hex_extractor;
 pub mod parser_basic;
+pub mod parser_gtpu;
 pub mod parser_nas;
 pub mod parser_ngap;
-pub mod parser_gtpu;
 pub mod parser_phy;
-pub mod hex_extractor;
+pub mod parser_rrc;
 
 use crate::data::AdditionalInfos;
 use crate::data::Trace;
@@ -73,13 +73,10 @@ pub fn parse_timestamp(first_line: &str) -> Result<i64, ParsingError> {
     if parts.is_empty() {
         return Err(ParsingError::new("Empty line, cannot parse timestamp".to_string(), 0));
     }
-    
+
     let date = chrono::NaiveTime::parse_from_str(parts[0], "%H:%M:%S%.3f")
-        .map_err(|_| ParsingError::new(
-            format!("Error parsing timestamp '{}' in line: {}", parts[0], first_line),
-            0,
-        ))?;
-    
+        .map_err(|_| ParsingError::new(format!("Error parsing timestamp '{}' in line: {}", parts[0], first_line), 0))?;
+
     Ok(time_to_milliseconds(&date))
 }
 

@@ -1,16 +1,13 @@
 //! Message panel
-use eframe::egui;
-use crate::event_system::{EventSubscriber, EventContext};
+use crate::event_system::{EventContext, EventSubscriber};
 use crate::panels::PanelView;
+use eframe::egui;
 
-use tramex_tools::{
-    data::Trace,
-    errors::TramexError,
-};
 #[cfg(feature = "ai")]
-use tramex_tools::ai::{AIProvider, AIExplainStatus, create_connector};
+use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 #[cfg(feature = "ai")]
-use egui_commonmark::{CommonMarkViewer, CommonMarkCache};
+use tramex_tools::ai::{AIExplainStatus, AIProvider, create_connector};
+use tramex_tools::{data::Trace, errors::TramexError};
 #[cfg(feature = "types_lte_3gpp")]
 use types_lte_3gpp::{
     export::asn1_codecs::{PerCodecData, uper::UperCodec},
@@ -169,7 +166,10 @@ impl MessageBox {
 
         ui.separator();
 
-        let can_request = self.ai_api_key.is_empty().then_some("No API key set (configure in Settings > AI)")
+        let can_request = self
+            .ai_api_key
+            .is_empty()
+            .then_some("No API key set (configure in Settings > AI)")
             .or_else(|| matches!(self.ai_status, AIExplainStatus::Loading).then_some("Request in progress…"));
 
         ui.horizontal(|ui| {
@@ -223,7 +223,6 @@ impl MessageBox {
     }
 }
 
-
 impl super::PanelView for MessageBox {
     fn ui(&mut self, ui: &mut egui::Ui) {
         if let Some(one_trace) = &self.current_trace {
@@ -248,7 +247,7 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
     // Show full message checkbox and copy button
     ui.horizontal(|ui| {
         ui.checkbox(show_full, "Show full message");
-        
+
         if *show_full {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if let Some(vec_text) = &curr_trace.text {
@@ -275,7 +274,7 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
                             egui::TextEdit::multiline(&mut text_copy)
                                 .desired_width(f32::INFINITY)
                                 // .font(egui::TextStyle::Monospace)
-                                .interactive(true)
+                                .interactive(true),
                         );
                     });
             }
@@ -317,20 +316,20 @@ impl EventSubscriber for MessageBox {
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {
         // MessageBox doesn't need to process metadata changes
     }
-    
+
     fn on_event_added(&mut self, _event: &Trace, _index: usize, _context: &EventContext) {
         // MessageBox doesn't need to process every event as it arrives
         // It only displays the currently focused event
         // So this can be a no-op
         self.events_len = _context.all_events.len();
     }
-    
+
     fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates to an event, update the displayed message
         self.current_index = index;
         self.current_trace = Some(event.clone());
         self.events_len = _context.all_events.len();
-        
+
         // Reset AI state when navigating to a different trace
         #[cfg(feature = "ai")]
         {
@@ -344,7 +343,7 @@ impl EventSubscriber for MessageBox {
             self.save_text = vec![];
         }
     }
-    
+
     fn on_events_cleared(&mut self) {
         log::debug!("MessageBox: Clearing all state");
         self.current_trace = None;
@@ -364,7 +363,7 @@ impl EventSubscriber for MessageBox {
         self.ai_provider = provider.clone();
         self.ai_model = model.to_string();
     }
-    
+
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         egui::Window::new("Messages")
             .resizable(true)

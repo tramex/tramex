@@ -2,18 +2,18 @@
 
 use std::str::FromStr;
 
-use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
-use crate::interface::parser::hex_extractor::extract_binary_from_lines;
 use crate::errors::TramexError;
+use crate::interface::association::TraceRelation;
 use crate::interface::functions::extract_hexe;
+use crate::interface::parser::hex_extractor::extract_binary_from_lines;
 
 use crate::interface::{layer::Layer, types::SourceLog};
 use crate::tramex_error;
 
-use super::parser::parser_rrc::RRCInfos;
-use super::parser::parser_nas::NASInfos;
 use super::parser::parser_basic::BasicParser;
+use super::parser::parser_nas::NASInfos;
+use super::parser::parser_rrc::RRCInfos;
 use super::types::Direction; // to use the FileParser trait and implementations
 
 #[derive(serde::Deserialize, Debug)]
@@ -124,7 +124,7 @@ impl OneLog {
                         ));
                     }
                 };
-                
+
                 // First line contains the message type
                 // Example: "5GMM: Service request" or just "Service request"
                 let message_type = if self.data.is_empty() {
@@ -138,7 +138,7 @@ impl OneLog {
                         first_line.trim().to_string()
                     }
                 };
-                
+
                 let nas = NASInfos {
                     direction: dir,
                     message_type,
@@ -159,10 +159,7 @@ impl OneLog {
             _ => {
                 // Use BasicParser for all other layers (PHY, RLC, MAC, PDCP, SDAP, etc.)
                 let mut trace = BasicParser::parse_with_layer(&self.data, self.layer.clone())
-                    .map_err(|e| tramex_error!(
-                        e.message,
-                        crate::errors::ErrorCode::ParsingLayerNotImplemented
-                    ))?;
+                    .map_err(|e| tramex_error!(e.message, crate::errors::ErrorCode::ParsingLayerNotImplemented))?;
                 // Set the timestamp from the WebSocket log
                 trace.timestamp = self.timestamp;
                 Ok(trace)

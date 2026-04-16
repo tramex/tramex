@@ -3,14 +3,14 @@ use super::functions_panels::ArrowColor;
 use super::functions_panels::ArrowDirection;
 use super::functions_panels::make_arrow;
 use super::functions_panels::make_label;
+use crate::event_system::{EventContext, EventSubscriber};
+use crate::panels::PanelView;
 use crate::theme::ChannelColors;
 use egui::Color32;
-use crate::event_system::{EventSubscriber, EventContext};
-use crate::panels::PanelView;
 use tramex_tools::data::{AdditionalInfos, Trace};
 use tramex_tools::errors::TramexError;
-use tramex_tools::interface::types::Direction;
 use tramex_tools::interface::parse_config::Technology;
+use tramex_tools::interface::types::Direction;
 
 /// Make a label with hover effect
 fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) {
@@ -79,20 +79,25 @@ impl RrcStateMachine {
             Technology::Unknown => Self::lte(), // Default to LTE for unknown
         }
     }
-    
+
     /// Check if a message is pertinent (affects RRC state)
     fn is_pertinent_message(&self, canal_msg: &str) -> bool {
         let msg_lower = canal_msg.to_lowercase();
-        
+
         // Check all state-changing messages
         msg_lower.contains(&self.connection_request_msg.to_lowercase())
             || msg_lower.contains(&self.idle_to_connected_msg.to_lowercase())
             || msg_lower.contains(&self.connected_to_idle_msg.to_lowercase())
-            || self.to_inactive_msg.map(|m| msg_lower.contains(&m.to_lowercase())).unwrap_or(false)
-            || self.inactive_to_connected_msg.map(|m| msg_lower.contains(&m.to_lowercase())).unwrap_or(false)
+            || self
+                .to_inactive_msg
+                .map(|m| msg_lower.contains(&m.to_lowercase()))
+                .unwrap_or(false)
+            || self
+                .inactive_to_connected_msg
+                .map(|m| msg_lower.contains(&m.to_lowercase()))
+                .unwrap_or(false)
             || msg_lower.contains("rrc setup")
             || msg_lower.contains("rrc connection setup")
-
     }
 }
 
@@ -131,7 +136,7 @@ pub struct RRCStatusPanel {
 
     /// Current technology
     technology: Technology,
-    
+
     /// History of state changes (for bidirectional navigation)
     state_history: Vec<StateChange>,
 }
@@ -157,18 +162,15 @@ impl RRCStatusPanel {
             state_history: Vec::new(),
         }
     }
-    
+
     /// Process an RRC event and update state
     fn process_rrc_event(&mut self, event: &Trace, index: usize, technology: Technology) {
         if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
             let state_machine = RrcStateMachine::for_technology(technology);
-            
+
             // Calculate new state based on message
-            self.update_connection_state_forward(
-                infos.canal_msg.as_str(),
-                &state_machine
-            );
-            
+            self.update_connection_state_forward(infos.canal_msg.as_str(), &state_machine);
+
             // Record state change in history
             self.state_history.push(StateChange {
                 index,
@@ -179,15 +181,11 @@ impl RRCStatusPanel {
             });
         }
     }
-    
+
     /// Navigate to a specific event by index
     fn navigate_to_index(&mut self, target_index: usize) {
         // Find the most recent state change at or before this index
-        if let Some(state_change) = self.state_history
-            .iter()
-            .filter(|sc| sc.index <= target_index)
-            .last()
-        {
+        if let Some(state_change) = self.state_history.iter().filter(|sc| sc.index <= target_index).last() {
             self.rrc_state = state_change.state;
             self.canal = state_change.canal.clone();
             self.canal_msg = state_change.canal_msg.clone();
@@ -203,7 +201,7 @@ impl RRCStatusPanel {
                 ui.add_space(5.0);
                 ui.label(egui::RichText::new("BASE STATION").size(12.0).strong());
                 ui.add_space(10.0);
-                
+
                 // Arrows
                 ui.horizontal(|ui| {
                     ui.add_space(10.0);
@@ -214,9 +212,9 @@ impl RRCStatusPanel {
                         ArrowColor::Black
                     };
                     make_arrow(ui, ArrowDirection::Down, dl_color, &self.arrow_font_id);
-                    
+
                     ui.add_space(15.0);
-                    
+
                     // Up arrow (UL: UE -> Base Station)
                     let ul_color = if matches!(self.direction, Some(Direction::UL)) {
                         ArrowColor::Green
@@ -225,27 +223,27 @@ impl RRCStatusPanel {
                     };
                     make_arrow(ui, ArrowDirection::Up, ul_color, &self.arrow_font_id);
                 });
-                
+
                 ui.add_space(10.0);
                 ui.label(egui::RichText::new("USER EQUIPMENT").size(12.0).strong());
             });
-            
+
             ui.separator();
-            
+
             // Right column: RRC states
             ui.vertical(|ui| {
                 ui.add_space(5.0);
-                
+
                 // CONNECTED state
                 let connected_active = self.rrc_state == RrcState::Connected;
                 make_label_hover(ui, "CONNECTED", connected_active, ChannelColors::GREEN);
-                
+
                 ui.add_space(8.0);
-                
+
                 // IDLE state
                 let idle_active = self.rrc_state == RrcState::Idle;
                 make_label_hover(ui, "IDLE", idle_active, ChannelColors::RED);
-                
+
                 // INACTIVE state (only for NR)
                 if self.technology == Technology::NR {
                     ui.add_space(8.0);
@@ -273,16 +271,16 @@ impl EventSubscriber for RRCStatusPanel {
     fn on_event_added(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         self.process_rrc_event(event, index, self.technology);
     }
-    
+
     fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates, restore state at that point in time
         self.current_index = index;
         self.navigate_to_index(index);
-        
+
         // Check if the focused event is a pertinent RRC message
         if let AdditionalInfos::RRCInfos(infos) = &event.additional_infos {
             let state_machine = RrcStateMachine::for_technology(self.technology);
-            
+
             // Only show direction arrow if this is a pertinent message (affects RRC state)
             if state_machine.is_pertinent_message(&infos.canal_msg) {
                 self.direction = Some(infos.direction.clone());
@@ -295,7 +293,7 @@ impl EventSubscriber for RRCStatusPanel {
             self.direction = None;
         }
     }
-    
+
     fn on_events_cleared(&mut self) {
         log::debug!("RRC Status: Clearing all state history");
         self.canal = None;
@@ -306,7 +304,7 @@ impl EventSubscriber for RRCStatusPanel {
         self.technology = Technology::Unknown;
         self.state_history.clear();
     }
-    
+
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         egui::Window::new("RRC Status")
             .resizable(true)
@@ -320,7 +318,6 @@ impl EventSubscriber for RRCStatusPanel {
     }
 }
 
-
 impl RRCStatusPanel {
     /// Update connection state based on RRC message
     fn update_connection_state_forward(&mut self, canal_msg: &str, state_machine: &RrcStateMachine) {
@@ -329,19 +326,19 @@ impl RRCStatusPanel {
             self.rrc_state = RrcState::Idle;
             return;
         }
-        
+
         // Check for IDLE -> CONNECTED
         if self.rrc_state == RrcState::Idle && canal_msg == state_machine.idle_to_connected_msg {
             self.rrc_state = RrcState::Connected;
             return;
         }
-        
+
         // Check for CONNECTED -> IDLE
         if self.rrc_state == RrcState::Connected && canal_msg == state_machine.connected_to_idle_msg {
             self.rrc_state = RrcState::Idle;
             return;
         }
-        
+
         // NR-specific transitions
         if self.technology == Technology::NR {
             // CONNECTED -> INACTIVE (suspend)
@@ -351,7 +348,7 @@ impl RRCStatusPanel {
                     return;
                 }
             }
-            
+
             // INACTIVE -> CONNECTED (resume)
             if let Some(resume_msg) = state_machine.inactive_to_connected_msg {
                 if self.rrc_state == RrcState::Inactive && canal_msg == resume_msg {
@@ -361,7 +358,6 @@ impl RRCStatusPanel {
             }
         }
     }
-
 }
 
 impl super::PanelView for RRCStatusPanel {

@@ -1,10 +1,10 @@
 //! RRC Field Viewer Panel
-//! 
+//!
 //! Displays parsed ASN.1 fields from RRC messages based on configurable field mappings.
 
-use crate::event_system::{EventSubscriber, EventContext};
-use egui::{self, RichText};
+use crate::event_system::{EventContext, EventSubscriber};
 use crate::theme::ThemeColors;
+use egui::{self, RichText};
 use serde_json::Value;
 use tramex_tools::{
     data::{AdditionalInfos, Trace},
@@ -47,31 +47,31 @@ pub struct BstConfig {
     /// Current index
     #[serde(skip)]
     current_index: usize,
-    
+
     /// Cached metadata for UI rendering
     #[serde(skip)]
     metadata: FileMetadata,
-    
+
     /// Parsed fields from SIB1
     #[serde(skip)]
     sib1_fields: Vec<(String, String)>,
-    
+
     /// Parsed fields from SIB2
     #[serde(skip)]
     sib2_fields: Vec<(String, String)>,
-    
+
     /// Parsed fields from SIB3
     #[serde(skip)]
     sib3_fields: Vec<(String, String)>,
-    
+
     /// Message configurations (not serialized, will be initialized)
     #[serde(skip)]
     message_configs: Vec<MessageConfig>,
-    
+
     /// Allowed NSSAI list (from NAS Registration accept)
     #[serde(skip)]
     allowed_nssai: Vec<Nssai>,
-    
+
     /// Configured NSSAI list (from NAS Registration accept)
     #[serde(skip)]
     configured_nssai: Vec<Nssai>,
@@ -99,7 +99,7 @@ impl BstConfig {
         instance.init_default_configs();
         instance
     }
-    
+
     /// Convert hex string (0x01) to decimal
     fn hex_to_decimal(hex_str: &str) -> Option<u32> {
         let hex_str = hex_str.trim();
@@ -109,41 +109,42 @@ impl BstConfig {
             hex_str.parse().ok()
         }
     }
-    
+
     /// Get SST description
     fn sst_description(sst: u32) -> &'static str {
         match sst {
             1 => "eMBB",
-            2 => "URLLC", 
+            2 => "URLLC",
             3 => "mMTC",
             4 => "V2X",
             _ => "Unknown",
         }
     }
-    
+
     /// Parse NAS message for NSSAI information
     fn parse_nas_nssai(&mut self, text: &[String]) {
         // Check if this is a Registration accept message
-        let is_registration_accept = text.iter()
+        let is_registration_accept = text
+            .iter()
             .any(|line| line.contains("Message type") && line.contains("Registration accept"));
-        
+
         if !is_registration_accept {
             return;
         }
-        
+
         let mut in_allowed_nssai = false;
         let mut in_configured_nssai = false;
         let mut in_snssai = false;
         let mut current_nssai = Nssai::default();
         let mut current_section_is_allowed = false;
-        
+
         // Clear previous values
         self.allowed_nssai.clear();
         self.configured_nssai.clear();
-        
+
         for line in text {
             let trimmed = line.trim();
-            
+
             // Section detection - save previous NSSAI before switching sections
             if trimmed.starts_with("Allowed NSSAI:") {
                 // Save any pending NSSAI from previous section
@@ -175,15 +176,16 @@ impl BstConfig {
                 current_nssai = Nssai::default();
                 continue;
             }
-            
+
             // Reset when hitting other top-level sections (not indented, has colon, not NSSAI related)
-            if !trimmed.is_empty() 
+            if !trimmed.is_empty()
                 && !line.starts_with("        ") // Check original line indentation
-                && trimmed.contains(':') 
+                && trimmed.contains(':')
                 && !trimmed.starts_with("S-NSSAI")
                 && !trimmed.contains("SST")
                 && !trimmed.contains("SD")
-                && !trimmed.contains("Length") {
+                && !trimmed.contains("Length")
+            {
                 // Save any pending NSSAI before leaving section
                 if in_snssai && current_nssai.sst.is_some() {
                     if current_section_is_allowed {
@@ -197,7 +199,7 @@ impl BstConfig {
                 in_snssai = false;
                 current_nssai = Nssai::default();
             }
-            
+
             // Parse S-NSSAI entries
             if in_allowed_nssai || in_configured_nssai {
                 if trimmed.starts_with("S-NSSAI") && !trimmed.contains("=") {
@@ -213,7 +215,7 @@ impl BstConfig {
                     in_snssai = true;
                     continue;
                 }
-                
+
                 if in_snssai {
                     if let Some(pos) = trimmed.find("SST =") {
                         let value = trimmed[pos + 5..].trim();
@@ -236,7 +238,7 @@ impl BstConfig {
                 }
             }
         }
-        
+
         // Save last NSSAI if exists
         if in_snssai && current_nssai.sst.is_some() {
             if current_section_is_allowed {
@@ -246,7 +248,7 @@ impl BstConfig {
             }
         }
     }
-    
+
     /// Initialize default field configurations
     fn init_default_configs(&mut self) {
         // SIB1 Configuration
@@ -274,7 +276,6 @@ impl BstConfig {
                     json_path: "message.c1.systemInformationBlockType1.cellAccessRelatedInfo.trackingAreaCode".to_string(),
                     unit: None,
                 },
-                
                 // 5G
                 FieldMapping {
                     display_name: "q-RxLevMin".to_string(),
@@ -333,7 +334,7 @@ impl BstConfig {
                 },
             ],
         });
-        
+
         // SIB2 Configuration (5G NR)
         self.message_configs.push(MessageConfig {
             canal_msg: "SIB2".to_string(),
@@ -361,7 +362,7 @@ impl BstConfig {
                 },
             ],
         });
-        
+
         // SIB3 Configuration (5G NR)
         self.message_configs.push(MessageConfig {
             canal_msg: "SIB3".to_string(),
@@ -373,13 +374,12 @@ impl BstConfig {
                 },
             ],
         });
-        
+
         // SIB Configuration (4G LTE - combined SIB2 & SIB3 in same message)
         self.message_configs.push(MessageConfig {
             canal_msg: "SIB".to_string(),
             fields: vec![
                 // SIB2 fields (4G)
-                
                 // SIB3 fields (4G)
                 FieldMapping {
                     display_name: "q-Hyst".to_string(),
@@ -409,12 +409,12 @@ impl BstConfig {
             ],
         });
     }
-    
+
     /// Add a new message configuration
     pub fn add_message_config(&mut self, config: MessageConfig) {
         self.message_configs.push(config);
     }
-    
+
     /// Update displayed fields based on current trace
     /// Only updates when a matching message type is found (persists previous values otherwise)
     fn update_fields(&mut self, trace: &Trace) {
@@ -422,19 +422,21 @@ impl BstConfig {
         if !matches!(trace.layer, Layer::RRC) {
             return;
         }
-        
+
         // Get canal_msg from additional_infos
         let canal_msg = match &trace.additional_infos {
             AdditionalInfos::RRCInfos(infos) => &infos.canal_msg,
             _ => return,
         };
-        
+
         log::debug!("BstConfig: Processing RRC message: {}", canal_msg);
-        
+
         // Find matching configuration
-        let config = self.message_configs.iter()
+        let config = self
+            .message_configs
+            .iter()
             .find(|c| c.canal_msg.eq_ignore_ascii_case(canal_msg));
-        
+
         // Only update if we found a matching configuration
         if let Some(config) = config {
             log::debug!("BstConfig: Found config for {}", canal_msg);
@@ -442,7 +444,7 @@ impl BstConfig {
             if let Some(json) = trace.parse_asn1_to_json() {
                 // log::debug!("BstConfig: JSON structure: {}", serde_json::to_string_pretty(&json).unwrap_or_default());
                 let mut fields = Vec::new();
-                
+
                 // Extract each configured field
                 for field_mapping in &config.fields {
                     if let Some(value) = self.extract_field(&json, &field_mapping.json_path) {
@@ -451,15 +453,16 @@ impl BstConfig {
                         } else {
                             value
                         };
-                        fields.push((
-                            field_mapping.display_name.clone(),
-                            display_value,
-                        ));
+                        fields.push((field_mapping.display_name.clone(), display_value));
                     } else {
-                        log::debug!("BstConfig: Field not found: {} at path {}", field_mapping.display_name, field_mapping.json_path);
+                        log::debug!(
+                            "BstConfig: Field not found: {} at path {}",
+                            field_mapping.display_name,
+                            field_mapping.json_path
+                        );
                     }
                 }
-                
+
                 // Store in the appropriate section based on message type
                 match canal_msg.to_uppercase().as_str() {
                     "SIB1" => {
@@ -491,22 +494,22 @@ impl BstConfig {
         }
         // If no matching config found, keep the previous fields displayed
     }
-    
+
     /// Extract a field from JSON using a dot-separated path
     /// Supports array indexing with [N] syntax in the path
     fn extract_field(&self, json: &Value, path: &str) -> Option<String> {
         let parts: Vec<&str> = path.split('.').collect();
         let mut current = json;
-        
+
         for part in parts {
             // Check if this part has array indexing like "field[0]"
             if let Some(bracket_pos) = part.find('[') {
                 let field_name = &part[..bracket_pos];
-                let index_str = &part[bracket_pos+1..part.len()-1];
-                
+                let index_str = &part[bracket_pos + 1..part.len() - 1];
+
                 // Get the field
                 current = current.get(field_name)?;
-                
+
                 // Index into the array
                 if let Value::Array(arr) = current {
                     let index: usize = index_str.parse().ok()?;
@@ -518,7 +521,7 @@ impl BstConfig {
                 current = current.get(part)?;
             }
         }
-        
+
         // Convert value to string
         Some(match current {
             Value::String(s) => {
@@ -529,7 +532,7 @@ impl BstConfig {
                 } else {
                     s.clone()
                 }
-            },
+            }
             Value::Number(n) => n.to_string(),
             Value::Bool(b) => b.to_string(),
             Value::Object(obj) => {
@@ -547,7 +550,8 @@ impl BstConfig {
                 let is_simple_array = arr.iter().all(|v| v.is_number() || v.is_string());
                 if is_simple_array && arr.len() <= 10 {
                     // Compact format: [0, 0, 1]
-                    let values: Vec<String> = arr.iter()
+                    let values: Vec<String> = arr
+                        .iter()
                         .map(|v| match v {
                             Value::Number(n) => n.to_string(),
                             Value::String(s) => s.clone(),
@@ -563,171 +567,130 @@ impl BstConfig {
             Value::Null => "null".to_string(),
         })
     }
-    
+
     /// UI for the panel with metadata
     fn ui_with_metadata(&mut self, ui: &mut egui::Ui, metadata: &FileMetadata) {
         let theme = ThemeColors::get(ui);
-        egui::ScrollArea::vertical()
-            .auto_shrink([false, false])
-            .show(ui, |ui| {
-                // === GENERAL SECTION ===
-                ui.heading("General");
-                ui.separator();
-                
-                egui::Grid::new("bst_general_grid")
-                    .spacing([20.0, 8.0])
-                    .show(ui, |ui| {
-                        // Technology
-                        ui.label(RichText::new("Technology")
-                            .color(theme.text_strong)
-                            .strong());
-                        ui.label(RichText::new(format!("{}", metadata.technology))
-                            .color(theme.text));
-                        ui.end_row();
-                        
-                        // PCI
-                        if let Some(pci) = metadata.pci {
-                            ui.label(RichText::new("PCI")
-                                .color(theme.text_strong)
-                                .strong());
-                            ui.label(RichText::new(format!("{}", pci))
-                                .color(theme.text));
-                            ui.end_row();
-                        }
-                        
-                        // Mode
-                        if let Some(ref mode) = metadata.mode {
-                            ui.label(RichText::new("Mode")
-                                .color(theme.text_strong)
-                                .strong());
-                            ui.label(RichText::new(mode)
-                                .color(theme.text));
-                            ui.end_row();
-                        }
-                        
-                        // ARFCN
-                        if let Some(arfcn) = metadata.arfcn {
-                            ui.label(RichText::new("ARFCN")
-                                .color(theme.text_strong)
-                                .strong());
-                            ui.label(RichText::new(format!("{}", arfcn))
-                                .color(theme.text));
-                            ui.end_row();
-                        }
-                        
-                        // IO Mode (MIMO/SISO)
-                        if let Some(ref io_mode) = metadata.io_mode {
-                            ui.label(RichText::new("I/O Mode")
-                                .color(theme.text_strong)
-                                .strong());
-                            ui.label(RichText::new(io_mode)
-                                .color(theme.text));
-                            ui.end_row();
-                        }
-                    });
-                
-                // === SIB1 SECTION ===
-                if !self.sib1_fields.is_empty() {
-                    ui.add_space(15.0);
-                    ui.heading("SIB1");
-                    ui.separator();
-                    
-                    egui::Grid::new("bst_sib1_grid")
-                        .spacing([20.0, 8.0])
-                        .show(ui, |ui| {
-                            for (name, value) in &self.sib1_fields {
-                                ui.label(RichText::new(name)
-                                    .color(theme.text_strong)
-                                    .strong());
-                                ui.label(RichText::new(value)
-                                    .color(theme.text));
-                                ui.end_row();
-                            }
-                        });
+        egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+            // === GENERAL SECTION ===
+            ui.heading("General");
+            ui.separator();
+
+            egui::Grid::new("bst_general_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                // Technology
+                ui.label(RichText::new("Technology").color(theme.text_strong).strong());
+                ui.label(RichText::new(format!("{}", metadata.technology)).color(theme.text));
+                ui.end_row();
+
+                // PCI
+                if let Some(pci) = metadata.pci {
+                    ui.label(RichText::new("PCI").color(theme.text_strong).strong());
+                    ui.label(RichText::new(format!("{}", pci)).color(theme.text));
+                    ui.end_row();
                 }
-                
-                // === SIB2 SECTION ===
-                if !self.sib2_fields.is_empty() {
-                    ui.add_space(15.0);
-                    ui.heading("SIB2");
-                    ui.separator();
-                    
-                    egui::Grid::new("bst_sib2_grid")
-                        .spacing([20.0, 8.0])
-                        .show(ui, |ui| {
-                            for (name, value) in &self.sib2_fields {
-                                ui.label(RichText::new(name)
-                                    .color(theme.text_strong)
-                                    .strong());
-                                ui.label(RichText::new(value)
-                                    .color(theme.text));
-                                ui.end_row();
-                            }
-                        });
+
+                // Mode
+                if let Some(ref mode) = metadata.mode {
+                    ui.label(RichText::new("Mode").color(theme.text_strong).strong());
+                    ui.label(RichText::new(mode).color(theme.text));
+                    ui.end_row();
                 }
-                
-                // === SIB3 SECTION ===
-                if !self.sib3_fields.is_empty() {
-                    ui.add_space(15.0);
-                    ui.heading("SIB3");
-                    ui.separator();
-                    
-                    // Use vertical layout for fields that may contain multi-line values
-                    for (name, value) in &self.sib3_fields {
-                        ui.add_space(8.0);
-                        ui.label(RichText::new(name)
-                            .color(theme.text_strong)
-                            .strong());
-                        
-                        // Check if value contains newlines (multi-line structure)
-                        if value.contains('\n') {
-                            // Use monospace font for structured data
-                            ui.label(RichText::new(value)
-                                .color(theme.text)
-                                .family(egui::FontFamily::Monospace));
-                        } else {
-                            ui.label(RichText::new(value)
-                                .color(theme.text));
-                        }
-                    }
+
+                // ARFCN
+                if let Some(arfcn) = metadata.arfcn {
+                    ui.label(RichText::new("ARFCN").color(theme.text_strong).strong());
+                    ui.label(RichText::new(format!("{}", arfcn)).color(theme.text));
+                    ui.end_row();
                 }
-                
-                // === NSSAI SECTION ===
-                if !self.configured_nssai.is_empty() {
-                    ui.add_space(15.0);
-                    ui.heading("NSSAI");
-                    ui.separator();
-                    
-                    // Build set of allowed SST values for quick lookup
-                    let allowed_ssts: std::collections::HashSet<_> = self.allowed_nssai.iter()
-                        .filter_map(|n| n.sst.as_ref())
-                        .collect();
-                    
-                    egui::Grid::new("nssai_grid")
-                        .spacing([20.0, 4.0])
-                        .show(ui, |ui| {
-                            for nssai in &self.configured_nssai {
-                                let sst = nssai.sst.as_deref().unwrap_or("N/A");
-                                let sd = nssai.sd.as_deref().unwrap_or("-");
-                                
-                                // Check if this SST is in allowed list
-                                let is_allowed = nssai.sst.as_ref()
-                                    .map(|s| allowed_ssts.contains(s))
-                                    .unwrap_or(false);
-                                
-                                let label = if is_allowed {
-                                    RichText::new(format!("SST={}, SD={} (allowed)", sst, sd))
-                                        .color(theme.text_strong)
-                                } else {
-                                    RichText::new(format!("SST={}, SD={}", sst, sd))
-                                        .color(theme.text)
-                                };
-                                ui.label(label);
-                                ui.end_row();
-                            }
-                        });
+
+                // IO Mode (MIMO/SISO)
+                if let Some(ref io_mode) = metadata.io_mode {
+                    ui.label(RichText::new("I/O Mode").color(theme.text_strong).strong());
+                    ui.label(RichText::new(io_mode).color(theme.text));
+                    ui.end_row();
                 }
             });
+
+            // === SIB1 SECTION ===
+            if !self.sib1_fields.is_empty() {
+                ui.add_space(15.0);
+                ui.heading("SIB1");
+                ui.separator();
+
+                egui::Grid::new("bst_sib1_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                    for (name, value) in &self.sib1_fields {
+                        ui.label(RichText::new(name).color(theme.text_strong).strong());
+                        ui.label(RichText::new(value).color(theme.text));
+                        ui.end_row();
+                    }
+                });
+            }
+
+            // === SIB2 SECTION ===
+            if !self.sib2_fields.is_empty() {
+                ui.add_space(15.0);
+                ui.heading("SIB2");
+                ui.separator();
+
+                egui::Grid::new("bst_sib2_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                    for (name, value) in &self.sib2_fields {
+                        ui.label(RichText::new(name).color(theme.text_strong).strong());
+                        ui.label(RichText::new(value).color(theme.text));
+                        ui.end_row();
+                    }
+                });
+            }
+
+            // === SIB3 SECTION ===
+            if !self.sib3_fields.is_empty() {
+                ui.add_space(15.0);
+                ui.heading("SIB3");
+                ui.separator();
+
+                // Use vertical layout for fields that may contain multi-line values
+                for (name, value) in &self.sib3_fields {
+                    ui.add_space(8.0);
+                    ui.label(RichText::new(name).color(theme.text_strong).strong());
+
+                    // Check if value contains newlines (multi-line structure)
+                    if value.contains('\n') {
+                        // Use monospace font for structured data
+                        ui.label(RichText::new(value).color(theme.text).family(egui::FontFamily::Monospace));
+                    } else {
+                        ui.label(RichText::new(value).color(theme.text));
+                    }
+                }
+            }
+
+            // === NSSAI SECTION ===
+            if !self.configured_nssai.is_empty() {
+                ui.add_space(15.0);
+                ui.heading("NSSAI");
+                ui.separator();
+
+                // Build set of allowed SST values for quick lookup
+                let allowed_ssts: std::collections::HashSet<_> =
+                    self.allowed_nssai.iter().filter_map(|n| n.sst.as_ref()).collect();
+
+                egui::Grid::new("nssai_grid").spacing([20.0, 4.0]).show(ui, |ui| {
+                    for nssai in &self.configured_nssai {
+                        let sst = nssai.sst.as_deref().unwrap_or("N/A");
+                        let sd = nssai.sd.as_deref().unwrap_or("-");
+
+                        // Check if this SST is in allowed list
+                        let is_allowed = nssai.sst.as_ref().map(|s| allowed_ssts.contains(s)).unwrap_or(false);
+
+                        let label = if is_allowed {
+                            RichText::new(format!("SST={}, SD={} (allowed)", sst, sd)).color(theme.text_strong)
+                        } else {
+                            RichText::new(format!("SST={}, SD={}", sst, sd)).color(theme.text)
+                        };
+                        ui.label(label);
+                        ui.end_row();
+                    }
+                });
+            }
+        });
     }
 }
 
@@ -745,7 +708,7 @@ impl EventSubscriber for BstConfig {
             }
         }
     }
-    
+
     fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
         // When user navigates to an event, extract fields from it
         self.current_index = index;
@@ -757,7 +720,7 @@ impl EventSubscriber for BstConfig {
             }
         }
     }
-    
+
     fn on_events_cleared(&mut self) {
         log::debug!("BST Config: Clearing all fields");
         self.current_index = 0;
@@ -771,11 +734,11 @@ impl EventSubscriber for BstConfig {
     fn on_metadata_changed(&mut self, metadata: &FileMetadata) {
         self.metadata = metadata.clone();
     }
-    
+
     fn name(&self) -> &'static str {
         "RAN Config"
     }
-    
+
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
         // Clone metadata to avoid borrow checker issues
         let metadata = self.metadata.clone();
@@ -790,7 +753,6 @@ impl EventSubscriber for BstConfig {
         Ok(())
     }
 }
-
 
 // PanelView implementation for rendering UI
 impl super::PanelView for BstConfig {

@@ -1,8 +1,8 @@
 //! Parser for GTPU traces
 use super::ParsingError;
 use super::hex_extractor::extract_binary_from_lines;
-use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
+use crate::interface::association::TraceRelation;
 use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
@@ -17,7 +17,7 @@ pub struct GTPUInfos {
 
     /// Message type (e.g., "G-PDU", "Echo Request")
     pub message_type: String,
-    
+
     /// Connection info (e.g., "127.0.1.100:2152")
     pub connection_info: Option<String>,
 }
@@ -36,13 +36,16 @@ impl FileParser for GTPUParser {
     fn parse_additional_infos(lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
         let line = &lines[0];
         let parts: Vec<&str> = line.split_whitespace().collect();
-        
+
         // Example: "13:20:45.574 [GTPU] TO 127.0.1.100:2152 G-PDU TEID=0x5315caa3 QFI=1 SDU_len=1452: IP/TCP ..."
         // Parts: ["13:20:45.574", "[GTPU]", "TO", "127.0.1.100:2152", "G-PDU", ...]
         if parts.len() < 5 {
-            return Err(ParsingError::new("Could not find enough (5) parameters for GTPU".to_string(), 1));
+            return Err(ParsingError::new(
+                "Could not find enough (5) parameters for GTPU".to_string(),
+                1,
+            ));
         }
-        
+
         let direction_result = Direction::from_str(parts[2]);
         let direction = match direction_result {
             Ok(d) => d,
@@ -53,17 +56,17 @@ impl FileParser for GTPUParser {
                 ));
             }
         };
-        
+
         // Connection info is typically at parts[3] (IP:port)
         let connection_info = if parts.len() > 3 && parts[3].contains(':') {
             Some(parts[3].to_string())
         } else {
             None
         };
-        
+
         // Message type is at parts[4] (e.g., "G-PDU")
         let message_type = parts.get(4).unwrap_or(&"Unknown").to_string();
-        
+
         Ok(AdditionalInfos::GTPUInfos(GTPUInfos {
             direction,
             message_type,
@@ -78,14 +81,14 @@ impl FileParser for GTPUParser {
                 return Err(e);
             }
         };
-        
+
         let text = match Self::parse_lines(lines) {
             Ok(t) => t,
             Err(e) => {
                 return Err(e);
             }
         };
-        
+
         let binary = extract_binary_from_lines(lines);
 
         // Parse timestamp from first line

@@ -11,13 +11,8 @@ use crate::{
     interface::{
         layer::Layer,
         parser::{
-            eof_error,
-            parser_basic::BasicParser,
-            parser_rrc::RRCParser,
-            parser_nas::NASParser,
-            parser_ngap::NGAPParser,
-            parser_gtpu::GTPUParser,
-            parser_phy::PHYParser,
+            eof_error, parser_basic::BasicParser, parser_gtpu::GTPUParser, parser_nas::NASParser, parser_ngap::NGAPParser,
+            parser_phy::PHYParser, parser_rrc::RRCParser,
         },
     },
 };
@@ -30,12 +25,16 @@ use crate::{
 /// * `Result<Trace, TramexError>` - The parsed trace or an error
 /// # Note
 /// Should receive only one block instead of the full remaining text ?
+///
+/// # Errors
+///
+/// Fails on parsing failure
 pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, TramexError> {
     // no more lines to read
     if lines.is_empty() {
         return Err(eof_error(*ix as u64));
     }
-    
+
     // 1. Block Boundary Detection
     let mut start_line = 0;
     let mut end_line = 0;
@@ -43,7 +42,7 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
     for one_line in lines.iter() {
         end_line += 1;
         if one_line.starts_with('#') {
-        start_line += 1;
+            start_line += 1;
             continue; // Skip comments
         } else if one_line.starts_with(' ') || one_line.starts_with('\t') || one_line.trim().is_empty() {
             continue; // Keep continuation lines
@@ -59,7 +58,7 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
     if end_line == 1 && (lines[0].starts_with(' ') || lines[0].starts_with('\t') || lines[0].trim().is_empty()) {
         return Err(eof_error(*ix as u64));
     }
-    
+
     // 2. Extract lines to parse
     let lines_to_parse = &lines[start_line..end_line];
     let copy_ix = *ix + start_line;
@@ -75,10 +74,10 @@ pub fn parse_one_block(lines: &[String], ix: &mut usize) -> Result<Trace, Tramex
                     ErrorCode::FileParsing
                 ));
             }
-            
+
             // Determine layer from [LAYER] tag
             let res_layer = Layer::from_str(parts[1].trim_start_matches('[').trim_end_matches(']'));
-            
+
             // 4. Parse the trace
             match res_layer {
                 Ok(Layer::RRC) => RRCParser::parse(lines_to_parse),

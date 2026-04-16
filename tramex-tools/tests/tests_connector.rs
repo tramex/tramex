@@ -206,7 +206,7 @@ mod tests {
         let file = File::new_file_content(filename.into(), content);
         let mut f = DataHandler::new(file);
         let mut errors: Vec<TramexError> = vec![];
-        
+
         let read_full = false;
         f.file.change_nb_read(100);
         let max_batches = 10;
@@ -230,7 +230,7 @@ mod tests {
         eprintln!("data: {:?}", f.data.events.len());
         eprintln!("errors: {:?}", errors.len());
         eprintln!("last error: {:?}", errors.last());
-        
+
         // Test metadata parsing
         use tramex_tools::interface::parse_config::Technology;
         assert_eq!(f.data.metadata.technology, Technology::NR);
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn test_asn1_parser() {
         use tramex_tools::asn1_parser::parse_asn1_to_json;
-        
+
         // Example RRC message (MIB)
         let asn1_text = r#"{
             message mib: {
@@ -262,10 +262,10 @@ mod tests {
 
         let result = parse_asn1_to_json(asn1_text);
         assert!(result.is_ok(), "Failed to parse ASN.1: {:?}", result.err());
-        
+
         let json = result.unwrap();
         eprintln!("Parsed JSON:\n{}", serde_json::to_string_pretty(&json).unwrap());
-        
+
         // Verify structure
         assert!(json.is_object());
         assert!(json["message"].is_object());
@@ -278,7 +278,7 @@ mod tests {
     #[test]
     fn test_asn1_parser_nested() {
         use tramex_tools::asn1_parser::parse_asn1_to_json;
-        
+
         // Test nested sequences
         let asn1_text = r#"{
             cellSelectionInfo {
@@ -293,7 +293,7 @@ mod tests {
 
         let result = parse_asn1_to_json(asn1_text);
         assert!(result.is_ok());
-        
+
         let json = result.unwrap();
         assert!(json["cellSelectionInfo"].is_object());
         assert_eq!(json["cellSelectionInfo"]["q-RxLevMin"], -70);
@@ -303,7 +303,7 @@ mod tests {
     #[test]
     fn test_asn1_parser_array() {
         use tramex_tools::asn1_parser::parse_asn1_to_json;
-        
+
         // Test array parsing
         let asn1_text = r#"{
             mcc {
@@ -318,10 +318,10 @@ mod tests {
             eprintln!("Parse error: {}", e);
         }
         assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
-        
+
         let json = result.unwrap();
         eprintln!("Parsed JSON: {}", serde_json::to_string_pretty(&json).unwrap());
-        
+
         // The mcc field contains an array
         assert!(json["mcc"].is_array(), "mcc is not an array: {:?}", json["mcc"]);
         assert_eq!(json["mcc"][0], 0);
@@ -329,4 +329,3 @@ mod tests {
         assert_eq!(json["mcc"][2], 1);
     }
 }
-

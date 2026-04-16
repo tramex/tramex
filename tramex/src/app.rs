@@ -65,10 +65,10 @@ impl TramexApp {
                 }
             }
         });
-        
+
         // Windows menu button
         self.frontend.menu_bar(ui);
-        
+
         #[cfg(feature = "ai")]
         ui.menu_button("Settings", |ui| {
             if ui.button("AI Configuration").clicked() {
@@ -221,7 +221,8 @@ impl eframe::App for TramexApp {
         #[cfg(feature = "ai")]
         {
             self.ai_settings.try_load_env_key();
-            self.frontend.set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider, &self.ai_settings.model);
+            self.frontend
+                .set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider, &self.ai_settings.model);
             if self.show_settings_window {
                 self.ui_settings_window(ui.ctx());
             }
@@ -234,7 +235,8 @@ fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
     ui.colored_label(egui::Color32::RED, &error_item.message)
         .on_hover_text_at_pointer(&error_item.debug);
     if ui.button("Copy error").clicked() {
-        ui.ctx().copy_text(format!("{}\n{}", &error_item.get_msg(), &error_item.message));
+        ui.ctx()
+            .copy_text(format!("{}\n{}", &error_item.get_msg(), &error_item.message));
     };
     if ui.button("Close this error").clicked() {
         return true;

@@ -28,17 +28,17 @@ pub trait InterfaceTrait {
     /// # Errors
     /// Return an error if its fail
     fn close(&mut self) -> Result<(), TramexError>;
-    
+
     /// Check if this interface supports preloading (e.g., file can preload, websocket cannot)
     fn supports_preloading(&self) -> bool {
         false
     }
-    
+
     /// Get total event count if known (Some for files, None for websockets)
     fn get_total_event_count(&self) -> Option<usize> {
         None
     }
-    
+
     /// Check if all data has been read
     fn is_fully_read(&self) -> bool;
 }

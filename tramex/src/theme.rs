@@ -40,11 +40,7 @@ pub struct ThemeColors {
 impl ThemeColors {
     /// Get theme colors based on current UI theme (light/dark mode)
     pub fn get(ui: &Ui) -> Self {
-        if ui.visuals().dark_mode {
-            Self::dark()
-        } else {
-            Self::light()
-        }
+        if ui.visuals().dark_mode { Self::dark() } else { Self::light() }
     }
 
     /// Light mode color palette

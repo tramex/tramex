@@ -2,8 +2,8 @@
 
 use super::ParsingError;
 use super::hex_extractor::extract_binary_from_lines;
-use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
+use crate::interface::association::TraceRelation;
 use crate::interface::{layer::Layer, types::Direction};
 
 use super::FileParser;
@@ -94,14 +94,14 @@ pub struct PHYInfos {
     /// Channel-specific parsed data
     pub channel_data: PHYChannelData,
 }
-    
+
 /// PHY layer parser
 pub struct PHYParser;
 
 impl PHYParser {
     /// Parse PHY layer traces
-    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
-        Ok(lines.to_vec())
+    fn parse_lines(lines: &[String]) -> Vec<String> {
+        lines.to_vec()
     }
 }
 
@@ -110,9 +110,9 @@ impl FileParser for PHYParser {
         if lines.is_empty() {
             return Ok(AdditionalInfos::None);
         }
-        
+
         let first_line = &lines[0];
-        
+
         // Determine direction from the line
         let direction = if first_line.contains(" DL ") {
             Direction::DL
@@ -121,15 +121,19 @@ impl FileParser for PHYParser {
         } else {
             Direction::DL // Default to DL
         };
-        
+
         // Try to parse PHY info (pass all lines for multi-line PDCCH parsing)
         match parse_phy_lines(lines, direction) {
             Some(phy_infos) => {
                 // Store info for PDCCH/PDSCH/PUSCH/PUCCH/PRACH channels
-                if matches!(phy_infos.channel_type,
-                    PHYChannelType::PDCCH | PHYChannelType::PDSCH |
-                    PHYChannelType::PUSCH | PHYChannelType::PUCCH |
-                    PHYChannelType::PRACH) {
+                if matches!(
+                    phy_infos.channel_type,
+                    PHYChannelType::PDCCH
+                        | PHYChannelType::PDSCH
+                        | PHYChannelType::PUSCH
+                        | PHYChannelType::PUCCH
+                        | PHYChannelType::PRACH
+                ) {
                     Ok(AdditionalInfos::PHYInfos(phy_infos))
                 } else {
                     Ok(AdditionalInfos::None)
@@ -146,23 +150,18 @@ impl FileParser for PHYParser {
                 return Err(e);
             }
         };
-        
-        let text = match Self::parse_lines(lines) {
-            Ok(t) => t,
-            Err(e) => {
-                return Err(e);
-            }
-        };
-        
+
+        let text = Self::parse_lines(lines);
+
         let binary = extract_binary_from_lines(lines);
-        
+
         // Parse timestamp from first line
         let timestamp = if let Some(first_line) = lines.first() {
             super::parse_timestamp(first_line)?
         } else {
             0
         };
-        
+
         let trace = Trace {
             timestamp,
             layer: Layer::PHY,
@@ -257,26 +256,26 @@ pub fn parse_phy_line(line: &str, direction: Direction) -> Option<PHYInfos> {
 }
 
 /// Parse the frame.slot field from the trace line
-/// 
+///
 /// The frame.slot appears after the UE ID fields, e.g.:
 /// `[PHY] DL 0001 01 003d   421.0 PDSCH:`
 ///                                 ^^^^^
 fn parse_frame_slot(line: &str) -> Option<(u16, u8)> {
     // Look for a pattern like "  421.0 " or "  431.16 "
     // The frame.slot is typically after the layer/direction/UE fields
-    
+
     // Split by whitespace and look for a decimal number that looks like frame.slot
     let parts: Vec<&str> = line.split_whitespace().collect();
-    
+
     for part in &parts {
         // Check if part contains a dot and both parts are numeric
         if let Some(dot_pos) = part.find('.') {
             let frame_part = &part[..dot_pos];
             let slot_part = &part[dot_pos + 1..];
-            
+
             // Make sure there's no trailing punctuation on slot_part
             let slot_part: String = slot_part.chars().take_while(|c| c.is_ascii_digit()).collect();
-            
+
             if let (Ok(frame), Ok(slot)) = (frame_part.parse::<u16>(), slot_part.parse::<u8>()) {
                 // Sanity check: frame < 1024 (0-1023), slot < 20
                 if slot < 20 {
@@ -285,12 +284,12 @@ fn parse_frame_slot(line: &str) -> Option<(u16, u8)> {
             }
         }
     }
-    
+
     None
 }
 
 /// Parse the harq field from the trace line
-/// 
+///
 /// Format: "harq=2" -> (Some(2), false), "harq=si" -> (None, true)
 /// Returns (None, false) if the harq field is not present
 fn parse_harq(line: &str) -> (Option<u8>, bool) {
@@ -299,36 +298,30 @@ fn parse_harq(line: &str) -> (Option<u8>, bool) {
         None => return (None, false),
     };
     let harq_value_start = harq_start_idx + 5; // Skip "harq="
-    
+
     let value_part: String = line[harq_value_start..]
         .chars()
         .take_while(|c| c.is_ascii_alphanumeric())
         .collect();
-    
+
     if value_part == "si" {
         return (None, true);
     }
-    
+
     (value_part.parse::<u8>().ok(), false)
 }
 
 /// Extract a u8 value from a "key=value" field in a line
 fn extract_field_u8(line: &str, prefix: &str) -> Option<u8> {
     let start = line.find(prefix)? + prefix.len();
-    let value: String = line[start..]
-        .chars()
-        .take_while(|c| c.is_ascii_digit())
-        .collect();
+    let value: String = line[start..].chars().take_while(|c| c.is_ascii_digit()).collect();
     value.parse::<u8>().ok()
 }
 
 /// Extract a string value from a "key=value" field in a line (until whitespace)
 fn extract_field_str(line: &str, prefix: &str) -> Option<String> {
     let start = line.find(prefix)? + prefix.len();
-    let value: String = line[start..]
-        .chars()
-        .take_while(|c| !c.is_whitespace())
-        .collect();
+    let value: String = line[start..].chars().take_while(|c| !c.is_whitespace()).collect();
     if value.is_empty() { None } else { Some(value) }
 }
 
@@ -340,42 +333,42 @@ fn parse_pdcch_data(lines: &[String]) -> PHYChannelData {
     let first_line = &lines[0];
     let dci = extract_field_str(first_line, "dci=").unwrap_or_default();
     let is_dci_1_1 = dci == "1_1";
-    
+
     let mut harq_process = None;
     let mut ndi = None;
     let mut rv_idx = None;
     let mut harq_feedback_timing = None;
-    
+
     for line in lines.iter().skip(1) {
         let trimmed = line.trim();
-        if trimmed.starts_with("harq_process=") {
-            harq_process = trimmed[13..].split_whitespace().next()
-                .and_then(|v| v.parse::<u8>().ok());
+        if let Some(trimmed_prefix) = trimmed.strip_prefix("harq_process=") {
+            harq_process = trimmed_prefix.split_whitespace().next().and_then(|v| v.parse::<u8>().ok());
         } else if is_dci_1_1 {
             // DCI 1_1 (DL grant): ndi1, rv_idx1, harq_feedback_timing
-            if trimmed.starts_with("ndi1=") {
-                ndi = trimmed[5..].split_whitespace().next()
-                    .and_then(|v| v.parse::<u8>().ok());
-            } else if trimmed.starts_with("rv_idx1=") {
-                rv_idx = trimmed[8..].split_whitespace().next()
-                    .and_then(|v| v.parse::<u8>().ok());
-            } else if trimmed.starts_with("harq_feedback_timing=") {
-                harq_feedback_timing = trimmed[21..].split_whitespace().next()
-                    .and_then(|v| v.parse::<u8>().ok());
+            if let Some(trimmed_prefix) = trimmed.strip_prefix("ndi1=") {
+                ndi = trimmed_prefix.split_whitespace().next().and_then(|v| v.parse::<u8>().ok());
+            } else if let Some(trimmed_prefix) = trimmed.strip_prefix("rv_idx1=") {
+                rv_idx = trimmed_prefix.split_whitespace().next().and_then(|v| v.parse::<u8>().ok());
+            } else if let Some(trimmed_prefix) = trimmed.strip_prefix("harq_feedback_timing=") {
+                harq_feedback_timing = trimmed_prefix.split_whitespace().next().and_then(|v| v.parse::<u8>().ok());
             }
         } else {
             // DCI 0_1 (UL grant): ndi, rv_idx
-            if trimmed.starts_with("ndi=") {
-                ndi = trimmed[4..].split_whitespace().next()
-                    .and_then(|v| v.parse::<u8>().ok());
-            } else if trimmed.starts_with("rv_idx=") {
-                rv_idx = trimmed[7..].split_whitespace().next()
-                    .and_then(|v| v.parse::<u8>().ok());
+            if let Some(trimmed_prefix) = trimmed.strip_prefix("ndi=") {
+                ndi = trimmed_prefix.split_whitespace().next().and_then(|v| v.parse::<u8>().ok());
+            } else if let Some(trimmed_prefix) = trimmed.strip_prefix("rv_idx=") {
+                rv_idx = trimmed_prefix.split_whitespace().next().and_then(|v| v.parse::<u8>().ok());
             }
         }
     }
-    
-    PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, harq_feedback_timing }
+
+    PHYChannelData::Pdcch {
+        dci,
+        harq_process,
+        ndi,
+        rv_idx,
+        harq_feedback_timing,
+    }
 }
 
 /// Parse PDSCH channel-specific data from the first line
@@ -405,7 +398,7 @@ fn parse_pucch_data(line: &str) -> PHYChannelData {
 }
 
 /// Parse the prb field from the trace line
-/// 
+///
 /// Formats:
 /// - "prb=50" → (50, 1)
 /// - "prb=23:2" → (23, 2)
@@ -414,15 +407,15 @@ fn parse_prb(line: &str) -> Option<(u16, u16)> {
     // Find "prb=" in the line
     let prb_start_idx = line.find("prb=")?;
     let prb_value_start = prb_start_idx + 4; // Skip "prb="
-    
+
     // Extract the value part
     let value_part: String = line[prb_value_start..]
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == ':' || *c == ' ')
         .collect();
-    
+
     let value_trimmed = value_part.trim();
-    
+
     if let Some(colon_pos) = value_trimmed.find(':') {
         // Format: start:length
         let start = value_trimmed[..colon_pos].parse::<u16>().ok()?;
@@ -436,26 +429,26 @@ fn parse_prb(line: &str) -> Option<(u16, u16)> {
 }
 
 /// Parse the symb field from the trace line
-/// 
+///
 /// Formats:
 /// - "symb=0:13" → (0, 13)
 /// - "symb=1:13" → (1, 13)
 /// - "symb=0:14" → (0, 14)
-/// 
+///
 /// Returns None if the symb field is not present
 fn parse_symb(line: &str) -> Option<(u8, u8)> {
     // Find "symb=" in the line
     let symb_start_idx = line.find("symb=")?;
     let symb_value_start = symb_start_idx + 5; // Skip "symb="
-    
+
     // Extract the value part
     let value_part: String = line[symb_value_start..]
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == ':' || *c == ' ')
         .collect();
-    
+
     let value_trimmed = value_part.trim();
-    
+
     if let Some(colon_pos) = value_trimmed.find(':') {
         // Format: start:length
         let start = value_trimmed[..colon_pos].parse::<u8>().ok()?;
@@ -468,7 +461,6 @@ fn parse_symb(line: &str) -> Option<(u8, u8)> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -477,7 +469,7 @@ mod tests {
     fn test_parse_5g_pdsch() {
         let line = "10:32:34.715 [PHY] DL 0001 01 4601  431.16 PDSCH: harq=0 prb=50 symb=1:13 k1=12 CW0: tb_len=133 mod=8 rv_idx=0 cr=0.94 retx=0";
         let info = parse_phy_line(line, Direction::DL).unwrap();
-        
+
         assert_eq!(info.frame, 431);
         assert_eq!(info.slot, 16);
         assert_eq!(info.prb_start, 50);
@@ -487,14 +479,20 @@ mod tests {
         assert!(matches!(info.channel_type, PHYChannelType::PDSCH));
         assert_eq!(info.harq, Some(0));
         assert!(!info.harq_si);
-        assert!(matches!(info.channel_data, PHYChannelData::Pdsch { retx: Some(0), rv_idx: Some(0) }));
+        assert!(matches!(
+            info.channel_data,
+            PHYChannelData::Pdsch {
+                retx: Some(0),
+                rv_idx: Some(0)
+            }
+        ));
     }
 
     #[test]
     fn test_parse_4g_pdsch_no_symb() {
         let line = "10:37:50.654 [PHY] DL 0001 01 003d   421.0 PDSCH: harq=0 k1=4 prb=23:2 tx=port0 CW0: tb_len=185 mod=6 rv_idx=0 retx=0";
         let info = parse_phy_line(line, Direction::DL).unwrap();
-        
+
         assert_eq!(info.frame, 421);
         assert_eq!(info.slot, 0);
         assert_eq!(info.prb_start, 23);
@@ -509,7 +507,7 @@ mod tests {
     fn test_parse_pusch() {
         let line = "10:37:38.884 [PHY] UL 0001 01 003d   267.5 PUSCH: harq=3 prb=2:4 symb=0:13 CW0: tb_len=11 mod=2 rv_idx=0 retx=0 crc=OK snr=26.2 epre=-35.6 ta=0.1";
         let info = parse_phy_line(line, Direction::UL).unwrap();
-        
+
         assert_eq!(info.frame, 267);
         assert_eq!(info.slot, 5);
         assert_eq!(info.prb_start, 2);
@@ -518,7 +516,14 @@ mod tests {
         assert_eq!(info.symb_length, 13);
         assert!(matches!(info.channel_type, PHYChannelType::PUSCH));
         assert_eq!(info.harq, Some(3));
-        assert!(matches!(info.channel_data, PHYChannelData::Pusch { retx: Some(0), rv_idx: Some(0), crc: Some(true) }));
+        assert!(matches!(
+            info.channel_data,
+            PHYChannelData::Pusch {
+                retx: Some(0),
+                rv_idx: Some(0),
+                crc: Some(true)
+            }
+        ));
     }
 
     #[test]
@@ -559,7 +564,13 @@ mod tests {
         assert_eq!(info.slot, 15);
         assert_eq!(info.prb_start, 0); // PDCCH has no prb on first line
         match &info.channel_data {
-            PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, harq_feedback_timing } => {
+            PHYChannelData::Pdcch {
+                dci,
+                harq_process,
+                ndi,
+                rv_idx,
+                harq_feedback_timing,
+            } => {
                 assert_eq!(dci, "0_1");
                 assert_eq!(*harq_process, Some(0));
                 assert_eq!(*ndi, Some(1));
@@ -583,7 +594,13 @@ mod tests {
         ];
         let info = parse_phy_lines(&lines, Direction::DL).unwrap();
         match &info.channel_data {
-            PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, harq_feedback_timing } => {
+            PHYChannelData::Pdcch {
+                dci,
+                harq_process,
+                ndi,
+                rv_idx,
+                harq_feedback_timing,
+            } => {
                 assert_eq!(dci, "1_1");
                 assert_eq!(*harq_process, Some(0));
                 assert_eq!(*ndi, Some(0));

@@ -1,8 +1,8 @@
 //! Parser for NAS traces
 use super::ParsingError;
 use super::hex_extractor::extract_binary_from_lines;
-use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
+use crate::interface::association::TraceRelation;
 use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
@@ -23,8 +23,9 @@ pub struct NASInfos {
 pub struct NASParser;
 
 impl NASParser {
-    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
-        Ok(lines.to_vec())
+    /// Parse lines
+    fn parse_lines(lines: &[String]) -> Vec<String> {
+        lines.to_vec()
     }
 }
 
@@ -32,13 +33,16 @@ impl FileParser for NASParser {
     fn parse_additional_infos(lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
         let line = &lines[0];
         let parts: Vec<&str> = line.split_whitespace().collect();
-        
+
         // Example: "13:20:58.310 [NAS] UL 0048 5GMM: Service request"
         // Parts: ["13:20:58.310", "[NAS]", "UL", "0048", "5GMM:", "Service", "request"]
         if parts.len() < 5 {
-            return Err(ParsingError::new("Could not find enough (5) parameters for NAS".to_string(), 1));
+            return Err(ParsingError::new(
+                "Could not find enough (5) parameters for NAS".to_string(),
+                1,
+            ));
         }
-        
+
         let direction_result = Direction::from_str(parts[2]);
         let direction = match direction_result {
             Ok(d) => d,
@@ -49,18 +53,15 @@ impl FileParser for NASParser {
                 ));
             }
         };
-        
+
         // Message type is everything after the protocol identifier (5GMM:, etc.)
         let message_type = if parts.len() > 5 {
             parts[5..].join(" ")
         } else {
             parts.get(4).unwrap_or(&"Unknown").trim_end_matches(':').to_string()
         };
-        
-        Ok(AdditionalInfos::NASInfos(NASInfos {
-            direction,
-            message_type,
-        }))
+
+        Ok(AdditionalInfos::NASInfos(NASInfos { direction, message_type }))
     }
 
     fn parse(lines: &[String]) -> Result<Trace, ParsingError> {
@@ -70,17 +71,12 @@ impl FileParser for NASParser {
                 return Err(e);
             }
         };
-        
-        let text = match Self::parse_lines(lines) {
-            Ok(t) => t,
-            Err(e) => {
-                return Err(e);
-            }
-        };
-        
+
+        let text = Self::parse_lines(lines);
+
         let binary = extract_binary_from_lines(lines);
 
-                // Parse timestamp from first line
+        // Parse timestamp from first line
         let timestamp = if let Some(first_line) = lines.first() {
             super::parse_timestamp(first_line)?
         } else {

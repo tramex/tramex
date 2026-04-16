@@ -1,5 +1,5 @@
 //! AI settings shared state
-//! 
+//!
 //! Stores API key and provider selection, shared between Settings UI and panels.
 
 #[cfg(feature = "ai")]
@@ -99,7 +99,8 @@ impl AISettings {
 
         // Model selector
         let models = self.provider.available_models();
-        let current_display = models.iter()
+        let current_display = models
+            .iter()
             .find(|(_, id)| *id == self.model)
             .map(|(name, _)| *name)
             .unwrap_or("Unknown");

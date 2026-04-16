@@ -1,9 +1,10 @@
 //! Error handling for Tramex Tools
 
-#[derive(serde::Deserialize, Debug, Clone)]
+#[derive(Default, serde::Deserialize, Debug, Clone)]
 /// Error codes for Tramex Tools
 pub enum ErrorCode {
     /// Not set
+    #[default]
     NotSet = 0,
 
     /// WebSocket: Failed to connect
@@ -56,12 +57,6 @@ pub enum ErrorCode {
 
     /// ParsingLayerNotImplemented
     ParsingLayerNotImplemented,
-}
-
-impl Default for ErrorCode {
-    fn default() -> Self {
-        Self::NotSet
-    }
 }
 
 impl std::fmt::Display for ErrorCode {

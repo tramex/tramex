@@ -1,8 +1,8 @@
 //! Parser for RRC traces
 use super::ParsingError;
 use super::hex_extractor::extract_binary_from_lines;
-use crate::interface::association::TraceRelation;
 use crate::data::{AdditionalInfos, Trace};
+use crate::interface::association::TraceRelation;
 use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
@@ -26,8 +26,9 @@ pub struct RRCInfos {
 pub struct RRCParser;
 
 impl RRCParser {
-    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
-        Ok(lines.to_vec())
+    /// Parse the lines
+    fn parse_lines(lines: &[String]) -> Vec<String> {
+        lines.to_vec()
     }
 }
 
@@ -70,21 +71,16 @@ impl FileParser for RRCParser {
                 return Err(e);
             }
         };
-        let text = match Self::parse_lines(lines) {
-            Ok(t) => t,
-            Err(e) => {
-                return Err(e);
-            }
-        };
+        let text = Self::parse_lines(lines);
         let binary = extract_binary_from_lines(lines);
-        
+
         // Parse timestamp from first line
         let timestamp = if let Some(first_line) = lines.first() {
             super::parse_timestamp(first_line)?
         } else {
             0
         };
-        
+
         let trace = Trace {
             timestamp,
             layer: Layer::RRC,

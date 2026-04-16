@@ -31,13 +31,11 @@ fn get_channel_type(color: Color32) -> &'static str {
 
 /// Upgraded version of make_label function with explanation of the channel color when hovering on it
 pub fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) {
-    make_label(ui, label, show, color).on_hover_text_at_pointer(
-        if show {
-            get_channel_type(color)
-        } else {
-            get_channel_type(Color32::WHITE)
-        }
-    );
+    make_label(ui, label, show, color).on_hover_text_at_pointer(if show {
+        get_channel_type(color)
+    } else {
+        get_channel_type(Color32::WHITE)
+    });
 }
 
 /// Logical Channels data
@@ -263,7 +261,7 @@ impl super::PanelView for LogicalChannels {
 
 // EventSubscriber implementation for new event system
 impl EventSubscriber for LogicalChannels {
-        fn name(&self) -> &'static str {
+    fn name(&self) -> &'static str {
         "Logical Channels"
     }
 

@@ -3,36 +3,36 @@
 //! Displays a chronograph-like timeline of PHY events (PDCCH, PDSCH, PUSCH, PUCCH),
 //! colored by HARQ process number. The focused event arrow is highlighted.
 
-use crate::event_system::{EventSubscriber, EventContext};
-use egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
+use crate::event_system::{EventContext, EventSubscriber};
 use crate::theme::ThemeColors;
+use egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
 use tramex_tools::{
     data::{AdditionalInfos, Trace},
     errors::TramexError,
+    interface::parser::parser_phy::{PHYChannelData, PHYChannelType},
     interface::types::Direction,
-    interface::parser::parser_phy::{PHYChannelType, PHYChannelData},
 };
 
 const MAX_ARROWS: usize = 200;
 
 /// HARQ process color palette (16 colors for HARQ 0-15)
 const HARQ_COLORS: [Color32; 16] = [
-    Color32::from_rgb(230, 25, 75),    // 0  Red
-    Color32::from_rgb(60, 180, 75),    // 1  Green
-    Color32::from_rgb(0, 130, 200),    // 2  Blue
-    Color32::from_rgb(255, 178, 29),   // 3  Orange
-    Color32::from_rgb(145, 30, 180),   // 4  Purple
-    Color32::from_rgb(70, 240, 240),   // 5  Cyan
-    Color32::from_rgb(240, 50, 230),   // 6  Magenta
-    Color32::from_rgb(210, 245, 60),   // 7  Lime
-    Color32::from_rgb(250, 190, 212),  // 8  Pink
-    Color32::from_rgb(0, 128, 128),    // 9  Teal
-    Color32::from_rgb(220, 190, 255),  // 10 Lavender
-    Color32::from_rgb(170, 110, 40),   // 11 Brown
-    Color32::from_rgb(128, 0, 0),      // 12 Maroon
-    Color32::from_rgb(170, 255, 195),  // 13 Mint
-    Color32::from_rgb(128, 128, 0),    // 14 Olive
-    Color32::from_rgb(255, 215, 180),  // 15 Apricot
+    Color32::from_rgb(230, 25, 75),   // 0  Red
+    Color32::from_rgb(60, 180, 75),   // 1  Green
+    Color32::from_rgb(0, 130, 200),   // 2  Blue
+    Color32::from_rgb(255, 178, 29),  // 3  Orange
+    Color32::from_rgb(145, 30, 180),  // 4  Purple
+    Color32::from_rgb(70, 240, 240),  // 5  Cyan
+    Color32::from_rgb(240, 50, 230),  // 6  Magenta
+    Color32::from_rgb(210, 245, 60),  // 7  Lime
+    Color32::from_rgb(250, 190, 212), // 8  Pink
+    Color32::from_rgb(0, 128, 128),   // 9  Teal
+    Color32::from_rgb(220, 190, 255), // 10 Lavender
+    Color32::from_rgb(170, 110, 40),  // 11 Brown
+    Color32::from_rgb(128, 0, 0),     // 12 Maroon
+    Color32::from_rgb(170, 255, 195), // 13 Mint
+    Color32::from_rgb(128, 128, 0),   // 14 Olive
+    Color32::from_rgb(255, 215, 180), // 15 Apricot
 ];
 
 /// Get the color for a HARQ process number
@@ -83,31 +83,55 @@ impl HarqArrow {
         }
 
         // Only keep PDCCH, PDSCH, PUSCH, PUCCH
-        if !matches!(phy.channel_type,
-            PHYChannelType::PDCCH | PHYChannelType::PDSCH |
-            PHYChannelType::PUSCH | PHYChannelType::PUCCH) {
+        if !matches!(
+            phy.channel_type,
+            PHYChannelType::PDCCH | PHYChannelType::PDSCH | PHYChannelType::PUSCH | PHYChannelType::PUCCH
+        ) {
             return None;
         }
 
         let (harq, label) = match &phy.channel_data {
-            PHYChannelData::Pdcch { dci, harq_process, ndi, rv_idx, .. } => {
+            PHYChannelData::Pdcch {
+                dci,
+                harq_process,
+                ndi,
+                rv_idx,
+                ..
+            } => {
                 // Skip PDCCH without harq_process (e.g. DCI 1_0 for SIB)
                 if harq_process.is_none() {
                     return None;
                 }
-                let label = format!("{}:{} PDCCH dci={} ndi={} rv_idx={}",
-                    phy.frame, phy.slot, dci, fmt_opt(*ndi), fmt_opt(*rv_idx));
+                let label = format!(
+                    "{}:{} PDCCH dci={} ndi={} rv_idx={}",
+                    phy.frame,
+                    phy.slot,
+                    dci,
+                    fmt_opt(*ndi),
+                    fmt_opt(*rv_idx)
+                );
                 (*harq_process, label)
             }
             PHYChannelData::Pdsch { retx, rv_idx } => {
-                let label = format!("{}:{} PDSCH retx={} rv_idx={}",
-                    phy.frame, phy.slot, fmt_opt(*retx), fmt_opt(*rv_idx));
+                let label = format!(
+                    "{}:{} PDSCH retx={} rv_idx={}",
+                    phy.frame,
+                    phy.slot,
+                    fmt_opt(*retx),
+                    fmt_opt(*rv_idx)
+                );
                 (phy.harq, label)
             }
             PHYChannelData::Pusch { retx, rv_idx, crc } => {
                 let crc_str = crc.map_or("-", |v| if v { "OK" } else { "KO" });
-                let label = format!("{}:{} PUSCH retx={} rv_idx={} crc={}",
-                    phy.frame, phy.slot, fmt_opt(*retx), fmt_opt(*rv_idx), crc_str);
+                let label = format!(
+                    "{}:{} PUSCH retx={} rv_idx={} crc={}",
+                    phy.frame,
+                    phy.slot,
+                    fmt_opt(*retx),
+                    fmt_opt(*rv_idx),
+                    crc_str
+                );
                 (phy.harq, label)
             }
             PHYChannelData::Pucch { format, ack } => {
@@ -116,8 +140,7 @@ impl HarqArrow {
                     return None;
                 }
                 let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
-                let label = format!("{}:{} PUCCH format={} {}",
-                    phy.frame, phy.slot, fmt_opt(*format), ack_str);
+                let label = format!("{}:{} PUCCH format={} {}", phy.frame, phy.slot, fmt_opt(*format), ack_str);
                 (None, label) // No HARQ process on PUCCH
             }
             PHYChannelData::None => return None,
@@ -215,7 +238,7 @@ impl HarqPanel {
     fn draw_harq(&mut self, ui: &mut egui::Ui) {
         // ── Fixed legend ──
         self.draw_legend(ui);
-        
+
         let available_width = ui.available_width();
         let arrow_height = 40.0_f32;
         let theme = ThemeColors::get(ui);
@@ -247,8 +270,7 @@ impl HarqPanel {
 
         // ── Scrollable arrow area ──
         let scroll_height = ui.available_height();
-        let mut scroll_area = egui::ScrollArea::vertical()
-            .auto_shrink([false, false]);
+        let mut scroll_area = egui::ScrollArea::vertical().auto_shrink([false, false]);
 
         if self.should_scroll {
             if let Some(pos) = self.arrows.iter().position(|a| a.trace_index == self.current_index) {
@@ -260,10 +282,7 @@ impl HarqPanel {
 
         scroll_area.show(ui, |ui| {
             let total_height = (self.arrows.len() as f32 * arrow_height).max(100.0);
-            let (rect, _) = ui.allocate_exact_size(
-                Vec2::new(available_width - 20.0, total_height),
-                egui::Sense::hover(),
-            );
+            let (rect, _) = ui.allocate_exact_size(Vec2::new(available_width - 20.0, total_height), egui::Sense::hover());
 
             let painter = ui.painter();
 
@@ -273,14 +292,8 @@ impl HarqPanel {
 
             // Vertical lifelines
             let line_stroke = Stroke::new(2.0, theme.text_weak);
-            painter.line_segment(
-                [Pos2::new(ue_x, rect.top()), Pos2::new(ue_x, rect.bottom())],
-                line_stroke,
-            );
-            painter.line_segment(
-                [Pos2::new(bst_x, rect.top()), Pos2::new(bst_x, rect.bottom())],
-                line_stroke,
-            );
+            painter.line_segment([Pos2::new(ue_x, rect.top()), Pos2::new(ue_x, rect.bottom())], line_stroke);
+            painter.line_segment([Pos2::new(bst_x, rect.top()), Pos2::new(bst_x, rect.bottom())], line_stroke);
 
             // Draw arrows
             for (i, arrow) in self.arrows.iter().enumerate() {
@@ -294,8 +307,7 @@ impl HarqPanel {
                 };
 
                 // Color by HARQ process
-                let base_color = arrow.harq.map(harq_color)
-                    .unwrap_or(theme.text_weak); // PUCCH: neutral color
+                let base_color = arrow.harq.map(harq_color).unwrap_or(theme.text_weak); // PUCCH: neutral color
                 let is_dark = ui.visuals().dark_mode;
 
                 // Focused: highlight bar + contrasting arrow/text
@@ -397,7 +409,9 @@ impl EventSubscriber for HarqPanel {
 
             // Insert sorted by (hfn, frame, slot)
             let key: SfnKey = (arrow.hfn, arrow.frame, arrow.slot);
-            let insert_pos = self.arrows.iter()
+            let insert_pos = self
+                .arrows
+                .iter()
                 .position(|a| (a.hfn, a.frame, a.slot) > key)
                 .unwrap_or(self.arrows.len());
 

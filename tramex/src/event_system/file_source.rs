@@ -1,15 +1,15 @@
 //! File data source implementation
 
 use super::data_source::{DataSource, DataSourceType};
-use tramex_tools::data::Trace;
+use std::any::Any;
+use std::path::PathBuf;
 use tramex_tools::data::Data;
-use tramex_tools::interface::layer::Layers;
-use tramex_tools::interface::parse_config::FileMetadata;
+use tramex_tools::data::Trace;
+use tramex_tools::errors::TramexError;
 use tramex_tools::interface::interface_file::file_handler::File;
 use tramex_tools::interface::interface_types::InterfaceTrait;
-use tramex_tools::errors::TramexError;
-use std::path::PathBuf;
-use std::any::Any;
+use tramex_tools::interface::layer::Layers;
+use tramex_tools::interface::parse_config::FileMetadata;
 
 /// File data source — wraps a loaded `File` and produces `Trace` batches
 pub struct FileSource {
@@ -72,7 +72,11 @@ impl DataSource for FileSource {
             return Ok(());
         }
 
-        log::debug!("FileSource: request_more - before: loaded_count={}, pending={}", self.loaded_count, self.pending_events.len());
+        log::debug!(
+            "FileSource: request_more - before: loaded_count={}, pending={}",
+            self.loaded_count,
+            self.pending_events.len()
+        );
         self.temp_data.events.clear();
         self.handler.get_more_data(Layers::default(), &mut self.temp_data)?;
 
@@ -90,7 +94,12 @@ impl DataSource for FileSource {
         let batch_size = self.temp_data.events.len();
         self.loaded_count += batch_size;
         self.pending_events.extend(self.temp_data.events.drain(..));
-        log::debug!("FileSource: request_more - loaded batch of {} events, total loaded: {}, pending: {}", batch_size, self.loaded_count, self.pending_events.len());
+        log::debug!(
+            "FileSource: request_more - loaded batch of {} events, total loaded: {}, pending: {}",
+            batch_size,
+            self.loaded_count,
+            self.pending_events.len()
+        );
 
         if self.handler.full_read {
             self.fully_loaded = true;

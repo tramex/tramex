@@ -31,8 +31,6 @@ impl SearchDirection {
     }
 }
 
-
-
 /// Trait for defining association rules between trace types
 pub trait AssociationRule: Send + Sync {
     /// The layer this rule applies to (source layer when searching)
@@ -41,19 +39,20 @@ pub trait AssociationRule: Send + Sync {
     /// The layer we're searching for (target layer)
     fn target_layer(&self) -> Layer;
 
-    /// Check if two traces are related according to this rule. 
-    /// 
+    /// Check if two traces are related according to this rule.
+    ///
     /// # Arguments
     /// * `trace` - The source trace
     /// * `candidate` - A potential related trace to check
-    /// 
+    ///
     /// # Returns
     /// * `true` if the traces are related
     fn matches(&self, trace: &Trace, candidate: &Trace) -> bool;
 
     /// Get the preferred search direction based on the source trace
     fn preferred_direction(&self, source: &Trace) -> SearchDirection {
-        source.additional_infos
+        source
+            .additional_infos
             .get_direction()
             .map(|d| SearchDirection::from_direction(&d))
             .unwrap_or_default()
@@ -84,9 +83,9 @@ pub trait AssociationRule: Send + Sync {
     }
 }
 
-
 /// Collection of all available association rules
 pub struct AssociationRules {
+    /// Rules
     rules: Vec<Box<dyn AssociationRule>>,
 }
 
@@ -99,9 +98,7 @@ impl Default for AssociationRules {
 impl AssociationRules {
     /// Create a new rule set with default rules
     pub fn new() -> Self {
-        let mut rules: Vec<Box<dyn AssociationRule>> = Vec::new();
-        rules.push(Box::new(NasToRrcRule::new()));
-        rules.push(Box::new(NgapToNasRule::new()));
+        let rules: Vec<Box<dyn AssociationRule>> = vec![Box::new(NasToRrcRule::new()), Box::new(NgapToNasRule::new())];
         Self { rules }
     }
 
@@ -140,11 +137,7 @@ impl NasToRrcRule {
                 "rrc setup complete",
                 "rrc reconfiguration",
             ], // All RRC messages that can carry NAS
-            valid_nas_messages: &[
-                "service request",
-                "registration accept",
-                "deregistration request",
-            ], // All NAS messages that can be carried by RRC
+            valid_nas_messages: &["service request", "registration accept", "deregistration request"], // All NAS messages that can be carried by RRC
         }
     }
 
@@ -152,21 +145,21 @@ impl NasToRrcRule {
     /// Looks for dedicatedNAS-Message field in ASN.1 structure and extracts the hex value
     fn extract_rrc_dedicated_nas_binary(&self, trace: &Trace) -> Option<Vec<u8>> {
         let text = trace.text.as_ref()?;
-        
+
         for line in text.iter() {
             let trimmed = line.trim();
-            
+
             // Look for dedicatedNAS-Message field in ASN.1 structure
             // The hex value is typically on the same line: "dedicatedNAS-Message '7E026ECD92EF637E0043'H"
             if trimmed.contains("dedicatedNAS-Message") || trimmed.contains("nas-MessageContainer") {
                 // Extract hex value from the same line
                 // Format: "'7E026ECD92EF637E0043'H" or similar
-                if let Some(hex_start) = trimmed.find('\'') {
-                    if let Some(hex_end) = trimmed[hex_start + 1..].find('\'') {
-                        let hex_str = &trimmed[hex_start + 1..hex_start + 1 + hex_end];
-                        // Convert hex string to bytes
-                        return Self::hex_string_to_bytes(hex_str);
-                    }
+                if let Some(hex_start) = trimmed.find('\'')
+                    && let Some(hex_end) = trimmed[hex_start + 1..].find('\'')
+                {
+                    let hex_str = &trimmed[hex_start + 1..hex_start + 1 + hex_end];
+                    // Convert hex string to bytes
+                    return Self::hex_string_to_bytes(hex_str);
                 }
             }
         }
@@ -175,23 +168,20 @@ impl NasToRrcRule {
 
     /// Convert hex string to bytes
     fn hex_string_to_bytes(hex_str: &str) -> Option<Vec<u8>> {
-        let hex_clean: String = hex_str.chars()
-            .filter(|c| c.is_ascii_hexdigit())
-            .collect();
-        
-        if hex_clean.len() % 2 != 0 {
+        let hex_clean: String = hex_str.chars().filter(|c| c.is_ascii_hexdigit()).collect();
+        if !hex_clean.len().is_multiple_of(2) {
             return None;
         }
-        
+
         let mut bytes = Vec::new();
         for i in (0..hex_clean.len()).step_by(2) {
-            if let Ok(byte) = u8::from_str_radix(&hex_clean[i..i+2], 16) {
+            if let Ok(byte) = u8::from_str_radix(&hex_clean[i..i + 2], 16) {
                 bytes.push(byte);
             } else {
                 return None;
             }
         }
-        
+
         Some(bytes)
     }
 }
@@ -212,7 +202,7 @@ impl AssociationRule for NasToRrcRule {
     fn valid_target_messages(&self) -> &[&str] {
         self.valid_rrc_messages
     }
-    
+
     fn matches(&self, trace: &Trace, candidate: &Trace) -> bool {
         // Determine which trace is NAS and which is RRC (bidirectional matching)
         let (nas_trace, rrc_trace) = if trace.layer == Layer::NAS && candidate.layer == Layer::RRC {
@@ -224,10 +214,13 @@ impl AssociationRule for NasToRrcRule {
         };
 
         // Check if RRC message type is a valid candidate for carrying NAS
-        let rrc_msg_name = rrc_trace.additional_infos.get_message_name().unwrap_or_default().to_lowercase();
-        
-        let is_valid_candidate = self.valid_rrc_messages.iter()
-            .any(|&msg| rrc_msg_name == msg);
+        let rrc_msg_name = rrc_trace
+            .additional_infos
+            .get_message_name()
+            .unwrap_or_default()
+            .to_lowercase();
+
+        let is_valid_candidate = self.valid_rrc_messages.iter().any(|&msg| rrc_msg_name == msg);
 
         if !is_valid_candidate {
             return false;
@@ -258,9 +251,6 @@ impl AssociationRule for NasToRrcRule {
     }
 }
 
-
-
-
 /// Rule for associating NGAP messages with their child NAS messages
 #[derive(Debug, Default)]
 pub struct NgapToNasRule {
@@ -282,7 +272,7 @@ impl NgapToNasRule {
                 "initial ue message",
                 "downlink nas transport",
                 "uplink nas transport",
-                "initial context setup request"
+                "initial context setup request",
             ], // NGAP messages that can carry NAS
             valid_nas_messages: &[
                 "service request",
@@ -296,7 +286,7 @@ impl NgapToNasRule {
 
     /// Extract NAS message binary from NGAP trace text
     /// Looks for id-NAS-PDU field in ASN.1 structure and extracts the hex value from the following value line
-    /// 
+    ///
     /// Format example:
     /// ```text
     /// {
@@ -307,31 +297,31 @@ impl NgapToNasRule {
     /// ```
     fn extract_ngap_nas_binary(&self, trace: &Trace) -> Option<Vec<u8>> {
         let text = trace.text.as_ref()?;
-        
+
         let mut found_nas_pdu = false;
-        
+
         for line in text.iter() {
             let trimmed = line.trim();
-            
+
             // Look for id-NAS-PDU line
             if trimmed.contains("id-NAS-PDU") {
                 found_nas_pdu = true;
                 continue;
             }
-            
+
             // After finding id-NAS-PDU, look for the value line with hex string
             if found_nas_pdu && trimmed.starts_with("value ") {
                 // Extract hex value: value '7E017E...'H
-                if let Some(hex_start) = trimmed.find('\'') {
-                    if let Some(hex_end) = trimmed[hex_start + 1..].find('\'') {
-                        let hex_str = &trimmed[hex_start + 1..hex_start + 1 + hex_end];
-                        return Self::hex_string_to_bytes(hex_str);
-                    }
+                if let Some(hex_start) = trimmed.find('\'')
+                    && let Some(hex_end) = trimmed[hex_start + 1..].find('\'')
+                {
+                    let hex_str = &trimmed[hex_start + 1..hex_start + 1 + hex_end];
+                    return Self::hex_string_to_bytes(hex_str);
                 }
                 // Reset if value line didn't have hex (it's a different value field)
                 found_nas_pdu = false;
             }
-            
+
             // Reset if we hit a closing brace without finding the value
             if found_nas_pdu && trimmed.starts_with('}') {
                 found_nas_pdu = false;
@@ -342,23 +332,21 @@ impl NgapToNasRule {
 
     /// Convert hex string to bytes
     fn hex_string_to_bytes(hex_str: &str) -> Option<Vec<u8>> {
-        let hex_clean: String = hex_str.chars()
-            .filter(|c| c.is_ascii_hexdigit())
-            .collect();
-        
-        if hex_clean.len() % 2 != 0 {
+        let hex_clean: String = hex_str.chars().filter(|c| c.is_ascii_hexdigit()).collect();
+
+        if !hex_clean.len().is_multiple_of(2) {
             return None;
         }
-        
+
         let mut bytes = Vec::new();
         for i in (0..hex_clean.len()).step_by(2) {
-            if let Ok(byte) = u8::from_str_radix(&hex_clean[i..i+2], 16) {
+            if let Ok(byte) = u8::from_str_radix(&hex_clean[i..i + 2], 16) {
                 bytes.push(byte);
             } else {
                 return None;
             }
         }
-        
+
         Some(bytes)
     }
 }
@@ -385,8 +373,9 @@ impl AssociationRule for NgapToNasRule {
     }
 
     fn preferred_direction(&self, source: &Trace) -> SearchDirection {
-        if source.additional_infos.get_direction().unwrap() == Direction::UL 
-        || source.additional_infos.get_direction().unwrap() == Direction::TO {
+        if source.additional_infos.get_direction().unwrap() == Direction::UL
+            || source.additional_infos.get_direction().unwrap() == Direction::TO
+        {
             SearchDirection::BackwardFirst
         } else {
             SearchDirection::ForwardFirst
@@ -399,7 +388,6 @@ impl AssociationRule for NgapToNasRule {
             return false;
         }
         let (ngap_trace, nas_trace) = (trace, candidate);
-        
 
         // Get NAS binary data
         let nas_binary = match &nas_trace.binary {
@@ -425,12 +413,3 @@ impl AssociationRule for NgapToNasRule {
         nas_binary[..match_len] == ngap_nas_binary[..match_len]
     }
 }
-
-
-
-
-
-
-
-
-

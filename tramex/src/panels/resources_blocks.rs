@@ -7,7 +7,7 @@
 
 use crate::event_system::{EventContext, EventSubscriber};
 use crate::theme::ThemeColors;
-use egui::{Color32, Pos2, PopupAnchor, Rect, Stroke, StrokeKind, Vec2};
+use egui::{Color32, PopupAnchor, Pos2, Rect, Stroke, StrokeKind, Vec2};
 use tramex_tools::interface::parser::parser_phy::PHYInfos;
 use tramex_tools::{data::AdditionalInfos, data::Trace, errors::TramexError};
 
@@ -64,18 +64,20 @@ impl ResourceType {
     pub fn color(&self, is_dark: bool) -> Color32 {
         match self {
             // Empty uses theme background in dark mode, white in light mode
-            ResourceType::Empty => if is_dark {
-                Color32::from_gray(40)  // Dark gray for dark mode
-            } else {
-                Color32::WHITE
-            },
-            ResourceType::Pdcch => Color32::from_rgb(0, 100, 0),     // Dark green
-            ResourceType::Pucch => Color32::from_rgb(0,200,0),   // Light green
-            ResourceType::Pdsch => Color32::from_rgb(0, 100, 200),   // Blue
-            ResourceType::Pusch => Color32::from_rgb(0, 180, 180),   // Cyan/Teal
-            ResourceType::Prach => Color32::from_rgb(255, 220, 0),   // Yellow
-            ResourceType::Ssb => Color32::from_rgb(200, 0, 200),     // Magenta
-            ResourceType::Dmrs => Color32::from_rgb(200, 0, 0),      // Red
+            ResourceType::Empty => {
+                if is_dark {
+                    Color32::from_gray(40) // Dark gray for dark mode
+                } else {
+                    Color32::WHITE
+                }
+            }
+            ResourceType::Pdcch => Color32::from_rgb(0, 100, 0), // Dark green
+            ResourceType::Pucch => Color32::from_rgb(0, 200, 0), // Light green
+            ResourceType::Pdsch => Color32::from_rgb(0, 100, 200), // Blue
+            ResourceType::Pusch => Color32::from_rgb(0, 180, 180), // Cyan/Teal
+            ResourceType::Prach => Color32::from_rgb(255, 220, 0), // Yellow
+            ResourceType::Ssb => Color32::from_rgb(200, 0, 200), // Magenta
+            ResourceType::Dmrs => Color32::from_rgb(200, 0, 0),  // Red
             ResourceType::Guard => Color32::from_rgb(100, 100, 100), // Dark gray
         }
     }
@@ -764,7 +766,7 @@ impl ResourceBlocks {
                                                 cell_rect,
                                                 0.0,
                                                 Stroke::new(1.5, theme.text_strong),
-                                        STROKE_KIND_STYLE,
+                                                STROKE_KIND_STYLE,
                                             );
                                         }
                                     }
@@ -800,7 +802,14 @@ impl ResourceBlocks {
                             // Left edge of this slot
                             painter.line_segment(
                                 [Pos2::new(slot_x, grid_origin_y), Pos2::new(slot_x, grid_bottom)],
-                                Stroke::new(border_width, if is_subframe_boundary { theme.line_strong } else { theme.line_medium }),
+                                Stroke::new(
+                                    border_width,
+                                    if is_subframe_boundary {
+                                        theme.line_strong
+                                    } else {
+                                        theme.line_medium
+                                    },
+                                ),
                             );
 
                             // Draw symbol separators (thin vertical lines within slot)
@@ -826,11 +835,7 @@ impl ResourceBlocks {
                         let slot_rel_x = get_slot_rel_x(slot_idx);
                         let slot_x = content_rect.left() + label_width + slot_rel_x;
                         // Compute once per slot, not per PRB
-                        let within_limits = self.is_slot_within_limits(
-                            slot.hfn,
-                            slot.frame_number,
-                            slot.slot_number,
-                        );
+                        let within_limits = self.is_slot_within_limits(slot.hfn, slot.frame_number, slot.slot_number);
 
                         for prb in vis_start_prb..vis_end_prb {
                             let y = grid_origin_y + (prb as f32 * cell_size);
@@ -847,7 +852,8 @@ impl ResourceBlocks {
                                     best_priority = priority;
                                     best_type = rt;
                                     // Early exit if we hit the max possible priority
-                                    if priority >= 100 { // Adjust if you have higher priorities
+                                    if priority >= 100 {
+                                        // Adjust if you have higher priorities
                                         break;
                                     }
                                 }
@@ -914,7 +920,14 @@ impl ResourceBlocks {
 
                         painter.line_segment(
                             [Pos2::new(slot_x, grid_origin_y), Pos2::new(slot_x, grid_bottom)],
-                            Stroke::new(border_width, if is_frame_boundary { theme.line_strong } else { theme.line_medium }),
+                            Stroke::new(
+                                border_width,
+                                if is_frame_boundary {
+                                    theme.line_strong
+                                } else {
+                                    theme.line_medium
+                                },
+                            ),
                         );
                     }
                 }
@@ -925,49 +938,61 @@ impl ResourceBlocks {
                 if let Some(event) = self.phy_events.iter().find(|e| e.trace_index == event_idx) {
                     let phy = &event.phy_info;
                     // Use egui's show_tooltip_at_pointer directly without pre-building string
-                    egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR).at_pointer().show(|ui| {
-                        let channel_name = match phy.channel_type {
-                            tramex_tools::interface::parser::parser_phy::PHYChannelType::PDSCH => "PDSCH (DL Data)",
-                            tramex_tools::interface::parser::parser_phy::PHYChannelType::PUSCH => "PUSCH (UL Data)",
-                            tramex_tools::interface::parser::parser_phy::PHYChannelType::PUCCH => "PUCCH (UL Control)",
-                            tramex_tools::interface::parser::parser_phy::PHYChannelType::PRACH => "PRACH (Random Access)",
-                            _ => "Unknown",
-                        };
+                    egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR)
+                        .at_pointer()
+                        .show(|ui| {
+                            let channel_name = match phy.channel_type {
+                                tramex_tools::interface::parser::parser_phy::PHYChannelType::PDSCH => "PDSCH (DL Data)",
+                                tramex_tools::interface::parser::parser_phy::PHYChannelType::PUSCH => "PUSCH (UL Data)",
+                                tramex_tools::interface::parser::parser_phy::PHYChannelType::PUCCH => "PUCCH (UL Control)",
+                                tramex_tools::interface::parser::parser_phy::PHYChannelType::PRACH => {
+                                    "PRACH (Random Access)"
+                                }
+                                _ => "Unknown",
+                            };
 
-                        if self.view_mode == ViewMode::Symbol {
-                            ui.label(format!(
-                                "{}\nFrame {} | SubFrame {} | Slot {}\nPRB: {}-{} \nSymbols: {}-{}",
-                                channel_name,
-                                phy.frame,
-                                phy.slot / self.slots_per_subframe as u8,
-                                phy.slot % self.slots_per_subframe as u8,
-                                phy.prb_start,
-                                phy.prb_start + phy.prb_length - 1,
-                                phy.symb_start,
-                                phy.symb_start + phy.symb_length - 1,
-                            ));
-                        } else {
-                            // Slot view: show symbol range summary
-                            let slot_idx = hovered_slot_idx.unwrap_or(0);
-                            let prb = hovered_prb.unwrap_or(0);
-                            let summary = self.get_slot_resource_summary(slot_idx, prb);
-                            ui.label(format!("{} (Slot view)\nFrame {} | PRB {}", channel_name, phy.frame, prb));
-                            for (rt, start, end) in summary {
-                                // Map PHY channel type to resource type for comparison
-                                let expected_rt = match phy.channel_type {
-                                    tramex_tools::interface::parser::parser_phy::PHYChannelType::PDSCH => ResourceType::Pdsch,
-                                    tramex_tools::interface::parser::parser_phy::PHYChannelType::PUSCH => ResourceType::Pusch,
-                                    tramex_tools::interface::parser::parser_phy::PHYChannelType::PUCCH => ResourceType::Pucch,
-                                    tramex_tools::interface::parser::parser_phy::PHYChannelType::PRACH => ResourceType::Prach,
-                                    _ => ResourceType::Empty,
-                                };
-                                if rt == expected_rt {
-                                    ui.label(format!("Symbols: {}-{}", start, end));
-                                    break;
+                            if self.view_mode == ViewMode::Symbol {
+                                ui.label(format!(
+                                    "{}\nFrame {} | SubFrame {} | Slot {}\nPRB: {}-{} \nSymbols: {}-{}",
+                                    channel_name,
+                                    phy.frame,
+                                    phy.slot / self.slots_per_subframe as u8,
+                                    phy.slot % self.slots_per_subframe as u8,
+                                    phy.prb_start,
+                                    phy.prb_start + phy.prb_length - 1,
+                                    phy.symb_start,
+                                    phy.symb_start + phy.symb_length - 1,
+                                ));
+                            } else {
+                                // Slot view: show symbol range summary
+                                let slot_idx = hovered_slot_idx.unwrap_or(0);
+                                let prb = hovered_prb.unwrap_or(0);
+                                let summary = self.get_slot_resource_summary(slot_idx, prb);
+                                ui.label(format!("{} (Slot view)\nFrame {} | PRB {}", channel_name, phy.frame, prb));
+                                for (rt, start, end) in summary {
+                                    // Map PHY channel type to resource type for comparison
+                                    let expected_rt = match phy.channel_type {
+                                        tramex_tools::interface::parser::parser_phy::PHYChannelType::PDSCH => {
+                                            ResourceType::Pdsch
+                                        }
+                                        tramex_tools::interface::parser::parser_phy::PHYChannelType::PUSCH => {
+                                            ResourceType::Pusch
+                                        }
+                                        tramex_tools::interface::parser::parser_phy::PHYChannelType::PUCCH => {
+                                            ResourceType::Pucch
+                                        }
+                                        tramex_tools::interface::parser::parser_phy::PHYChannelType::PRACH => {
+                                            ResourceType::Prach
+                                        }
+                                        _ => ResourceType::Empty,
+                                    };
+                                    if rt == expected_rt {
+                                        ui.label(format!("Symbols: {}-{}", start, end));
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
                 }
             } else if let Some(ssb_id) = hovered_ssb_id {
                 let ssb_cfg = self
@@ -976,43 +1001,53 @@ impl ResourceBlocks {
                     .find(|cfg| cfg.id == ssb_id)
                     .unwrap_or_else(|| self.ssb_configs.first().unwrap());
 
-                egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR).at_pointer().show(|ui| {
-                    if self.view_mode == ViewMode::Symbol {
-                        ui.label(format!(
-                            "SSB {} (Synchronization Signal Block)\nPeriod: {}ms\nPRB: {}-{} \nSymbols: {}-{}",
-                            ssb_cfg.id,
-                            ssb_cfg.period_ms,
-                            ssb_cfg.prb_start,
-                            ssb_cfg.prb_start + ssb_cfg.prb_length - 1,
-                            ssb_cfg.symbol_start,
-                            ssb_cfg.symbol_start + ssb_cfg.symbol_length - 1,
-                        ));
-                    } else {
-                        // Slot view: show SSB presence in slot
-                        let slot_idx = hovered_slot_idx.unwrap_or(0);
-                        let prb = hovered_prb.unwrap_or(0);
-                        let summary = self.get_slot_resource_summary(slot_idx, prb);
-                        ui.label(format!("SSB {} (Slot view)\nPeriod: {}ms | PRB: {}-{}",
-                            ssb_cfg.id,
-                            ssb_cfg.period_ms,
-                            ssb_cfg.prb_start,
-                            ssb_cfg.prb_start + ssb_cfg.prb_length - 1
-                        ));
-                        for (rt, start, end) in summary {
-                            if rt == ResourceType::Ssb {
-                                ui.label(format!("Symbols: {}-{}", start, end));
-                                break;
+                egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR)
+                    .at_pointer()
+                    .show(|ui| {
+                        if self.view_mode == ViewMode::Symbol {
+                            ui.label(format!(
+                                "SSB {} (Synchronization Signal Block)\nPeriod: {}ms\nPRB: {}-{} \nSymbols: {}-{}",
+                                ssb_cfg.id,
+                                ssb_cfg.period_ms,
+                                ssb_cfg.prb_start,
+                                ssb_cfg.prb_start + ssb_cfg.prb_length - 1,
+                                ssb_cfg.symbol_start,
+                                ssb_cfg.symbol_start + ssb_cfg.symbol_length - 1,
+                            ));
+                        } else {
+                            // Slot view: show SSB presence in slot
+                            let slot_idx = hovered_slot_idx.unwrap_or(0);
+                            let prb = hovered_prb.unwrap_or(0);
+                            let summary = self.get_slot_resource_summary(slot_idx, prb);
+                            ui.label(format!(
+                                "SSB {} (Slot view)\nPeriod: {}ms | PRB: {}-{}",
+                                ssb_cfg.id,
+                                ssb_cfg.period_ms,
+                                ssb_cfg.prb_start,
+                                ssb_cfg.prb_start + ssb_cfg.prb_length - 1
+                            ));
+                            for (rt, start, end) in summary {
+                                if rt == ResourceType::Ssb {
+                                    ui.label(format!("Symbols: {}-{}", start, end));
+                                    break;
+                                }
                             }
                         }
-                    }
-                });
+                    });
             } else if let (Some(slot_idx), Some(prb)) = (hovered_slot_idx, hovered_prb) {
                 // Slot view: show summary of all resources in this PRB
                 if self.view_mode == ViewMode::Slot {
                     let summary = self.get_slot_resource_summary(slot_idx, prb);
                     if !summary.is_empty() {
                         let slot = &self.slots[slot_idx];
-                        egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR).at_pointer().show(|ui| {
+                        egui::Tooltip::always_open(
+                            ui.ctx().clone(),
+                            ui.layer_id(),
+                            egui::Id::new("rb_tooltip"),
+                            TOOLTIP_ANCHOR,
+                        )
+                        .at_pointer()
+                        .show(|ui| {
                             ui.label(format!("PRB {} in Slot {}", prb, slot.slot_number));
                             ui.label(format!(
                                 "Frame {}.{} | {} symbols active",
