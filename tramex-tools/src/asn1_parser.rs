@@ -41,7 +41,7 @@ pub fn parse_asn1_to_json(input: &str) -> Result<Value, String> {
     let pairs = ASN1Parser::parse(Rule::asn1_value, input).map_err(|e| format!("ASN.1 parse error: {}", e))?;
 
     for pair in pairs {
-        for inner_pair in pair.into_inner() {
+        if let Some(inner_pair) = pair.into_inner().next() {
             return parse_value(inner_pair);
         }
     }
@@ -94,40 +94,34 @@ fn parse_sequence(pair: pest::iterators::Pair<Rule>) -> Result<Value, String> {
     let mut has_bare_values = false;
 
     for inner in pair.into_inner() {
-        match inner.as_rule() {
-            Rule::element_list => {
-                for element_pair in inner.into_inner() {
-                    match element_pair.as_rule() {
-                        Rule::element => {
-                            // Check what's inside the element
-                            let mut element_parts = element_pair.into_inner();
-                            if let Some(first) = element_parts.next() {
-                                match first.as_rule() {
-                                    Rule::named_field => {
-                                        // This is a named field
-                                        has_named_fields = true;
-                                        let mut field_parts = first.into_inner();
-                                        if let (Some(key_pair), Some(value_pair)) = (field_parts.next(), field_parts.next())
-                                        {
-                                            let key = key_pair.as_str().to_string();
-                                            let value = parse_value(value_pair)?;
-                                            map.insert(key, value);
-                                        }
-                                    }
-                                    _ => {
-                                        // This is a bare value (array element)
-                                        has_bare_values = true;
-                                        let value = parse_value(first)?;
-                                        array_items.push(value);
-                                    }
+        if inner.as_rule() == Rule::element_list {
+            for element_pair in inner.into_inner() {
+                if element_pair.as_rule() == Rule::element {
+                    // Check what's inside the element
+                    let mut element_parts = element_pair.into_inner();
+                    if let Some(first) = element_parts.next() {
+                        match first.as_rule() {
+                            Rule::named_field => {
+                                // This is a named field
+                                has_named_fields = true;
+                                let mut field_parts = first.into_inner();
+                                if let (Some(key_pair), Some(value_pair)) = (field_parts.next(), field_parts.next())
+                                {
+                                    let key = key_pair.as_str().to_string();
+                                    let value = parse_value(value_pair)?;
+                                    map.insert(key, value);
                                 }
                             }
+                            _ => {
+                                // This is a bare value (array element)
+                                has_bare_values = true;
+                                let value = parse_value(first)?;
+                                array_items.push(value);
+                            }
                         }
-                        _ => {}
                     }
                 }
             }
-            _ => {}
         }
     }
 

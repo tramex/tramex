@@ -27,8 +27,8 @@ pub struct GTPUParser;
 
 impl GTPUParser {
     /// Function that parses the remaining lines of a log
-    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
-        Ok(lines.to_vec())
+    fn parse_lines(lines: &[String]) -> Vec<String> {
+        lines.to_vec()
     }
 }
 
@@ -82,12 +82,7 @@ impl FileParser for GTPUParser {
             }
         };
 
-        let text = match Self::parse_lines(lines) {
-            Ok(t) => t,
-            Err(e) => {
-                return Err(e);
-            }
-        };
+        let text = Self::parse_lines(lines);
 
         let binary = extract_binary_from_lines(lines);
 
