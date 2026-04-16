@@ -182,7 +182,7 @@ impl RRCStatusPanel {
     /// Navigate to a specific event by index
     fn navigate_to_index(&mut self, target_index: usize) {
         // Find the most recent state change at or before this index
-        if let Some(state_change) = self.state_history.iter().filter(|sc| sc.index <= target_index).next_back() {
+        if let Some(state_change) = self.state_history.iter().rfind(|sc| sc.index <= target_index) {
             self.rrc_state = state_change.state;
             self.canal = state_change.canal.clone();
             self.canal_msg = state_change.canal_msg.clone();
