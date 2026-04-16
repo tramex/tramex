@@ -8,11 +8,7 @@ use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 #[cfg(feature = "ai")]
 use tramex_tools::ai::{AIExplainStatus, AIProvider, create_connector};
 use tramex_tools::{data::Trace, errors::TramexError};
-#[cfg(feature = "types_lte_3gpp")]
-use types_lte_3gpp::{
-    export::asn1_codecs::{PerCodecData, uper::UperCodec},
-    uper::spec_rrc,
-};
+
 /// Message box
 pub struct MessageBox {
     /// current trace
@@ -301,6 +297,10 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
 #[cfg(feature = "types_lte_3gpp")]
 #[allow(dead_code)]
 pub fn hexe_decoding(_curr_trace: &Trace) -> String {
+    use types_lte_3gpp::{
+        export::asn1_codecs::{PerCodecData, uper::UperCodec},
+        uper::spec_rrc,
+    };
     // Hexa field no longer exists in Trace
     "Hexe decoding not available".to_string()
 }
