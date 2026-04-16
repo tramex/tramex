@@ -297,6 +297,7 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
 #[cfg(feature = "types_lte_3gpp")]
 #[allow(dead_code)]
 pub fn hexe_decoding(_curr_trace: &Trace) -> String {
+    #[allow(unused_imports)]
     use types_lte_3gpp::{
         export::asn1_codecs::{PerCodecData, uper::UperCodec},
         uper::spec_rrc,

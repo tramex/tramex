@@ -17,7 +17,7 @@ const NB_EVENTS: usize = 20;
 #[test]
 fn test_nas_rrc_associations() {
     // Read and parse the log file like other tests
-    let filename = &get_path("gnb_associations.log");
+    let filename = &get_path("gnb_assocations.log");
     let content = std::fs::read_to_string(filename).unwrap();
     let mut file = File::new_file_content(filename.into(), content);
     let mut data: Data = Default::default();
