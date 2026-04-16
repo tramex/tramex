@@ -13,7 +13,7 @@ pub fn create_application_with_panels() -> Application {
     app.subscribe(Box::new(crate::panels::logical_channels::LogicalChannels::new()));
     app.subscribe(Box::new(crate::panels::panel_message::MessageBox::new()));
     app.subscribe(Box::new(crate::panels::identity::Identity::new()));
-    app.subscribe(Box::new(crate::panels::ressources_blocks::ResourceBlocks::new()));
+    app.subscribe(Box::new(crate::panels::resources_blocks::ResourceBlocks::new()));
     app.subscribe(Box::new(crate::panels::harq_panel::HarqPanel::new()));
     
     log::info!("Application created with {} subscribers", app.subscriber_count());

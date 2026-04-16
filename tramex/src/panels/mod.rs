@@ -8,7 +8,7 @@ pub mod bst_config;
 pub mod chronograph;
 pub mod trame_manager;
 pub mod identity;
-pub mod ressources_blocks;
+pub mod resources_blocks;
 pub mod harq_panel;
 
 pub mod functions_panels;

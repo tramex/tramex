@@ -1029,9 +1029,9 @@ The X axis is the time axis.
 - There is 14 **Symbol** per Slot in 5G. This is the smallest allocation duration.
 
 ### 8.1.3. PHY layer
-The Traces from Amarisoft provide enough information through the PHY layer to build most part of the resource grid. (Unfortunalty his does apply for PDSCH, where positions are more difficult to find)
+The Traces from Amarisoft provide enough information through the PHY layer to build most part of the resource grid. (Unfortunately his does apply for PDSCH, where positions are more difficult to find)
 
-Exemple of a PHY event : 
+Example of a PHY event : 
 
 ```10:32:35.169 [PHY] UL 0001 01 4601  476.19 PUSCH: harq=0 prb=15:34 symb=0:14 ...```
 
@@ -1124,7 +1124,7 @@ impl EventSubscriber for ResourceBlocks {
 For performance issues, it is not reasonable to think of building the whole grid : \
 1s = 100 Frames = 1k SubFrames = 2k Slots = 28k Symbols \
 One symbol column is one state ID of 8 bits x 51 PRBs = 51 octets \
-So 1s = 1.39 Mo, 1 hour of trace is over 5Go, and this is without counting for indexing cost and other additionnal data per symbol.
+So 1s = 1.39 Mo, 1 hour of trace is over 5Go, and this is without counting for indexing cost and other additional data per symbol.
 
 Therefore, we need to build the grid on demand, only for the visible part of the trace.
 We render N=10 frames before and after the focused event. With the possibility to navigate 1 Frame or 1 SubFrame. This also allows us to reduce the hell of scrolling headlessly on an infinite time axis.

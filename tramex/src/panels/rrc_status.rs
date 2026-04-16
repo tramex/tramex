@@ -66,7 +66,7 @@ impl RrcStateMachine {
             connection_request_msg: "RRC setup request",
             idle_to_connected_msg: "RRC setup complete",
             connected_to_idle_msg: "RRC release",
-            to_inactive_msg: Some("RRC suspendConfig"), // TODO: this message sould be in the AdditionnalInfos
+            to_inactive_msg: Some("RRC suspendConfig"), // TODO: this message should be in the AdditionalInfos
             inactive_to_connected_msg: Some("RRC resume complete"),
         }
     }

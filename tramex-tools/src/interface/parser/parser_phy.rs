@@ -175,7 +175,7 @@ impl FileParser for PHYParser {
     }
 }
 
-/// Parse a PHY layer trace line and extract RB & HARQ informations
+/// Parse a PHY layer trace line and extract RB & HARQ information
 /// Accepts all lines of a PHY trace (first line + optional indented continuation
 /// lines for PDCCH). Extracts frame/slot, PRB, symbol, HARQ, and channel-specific data.
 ///
