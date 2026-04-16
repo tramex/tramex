@@ -86,8 +86,9 @@ mod tests {
         let file = File::new_file_content(filename.into(), content);
         let mut f = DataHandler::new(file);
         match f.get_more_data(Layers::all_debug()) {
-            Ok(_) => {
-                assert!(false);
+            Ok(data) => {
+                eprintln!("{:?}", data);
+                assert_eq!(data, ());
             }
             Err(e) => {
                 eprintln!("{e:?}");
@@ -123,7 +124,7 @@ mod tests {
             }
             Err(e) => {
                 eprintln!("{e:?}");
-                assert!(e.first().unwrap().message.contains("Error while parsing date"));
+                assert!(e.first().unwrap().message.contains("Error parsing timestamp"));
             }
         }
     }
@@ -158,7 +159,8 @@ mod tests {
         eprintln!("errors: {:?}", errors.len());
         assert!(f.data.events.is_empty());
         assert!(errors.len() == 1);
-        assert!(errors[0].message.contains("Error while parsing date"));
+        eprintln!("{:?}", errors);
+        assert!(errors[0].message.contains("Error parsing timestamp"));
     }
 
     #[test]
@@ -194,6 +196,7 @@ mod tests {
         eprintln!("errors: {:?}", errors.len());
         eprintln!("count_errors: {count_errors:?}");
         eprintln!("{:?}", errors.last());
+        eprintln!("{} == {}", f.data.events.len(), count_events);
         assert!(f.data.events.len() == count_events);
         assert!(errors.len() == count_errors);
         assert!(errors.last().unwrap().message.contains("Unknown message type"));
@@ -201,7 +204,7 @@ mod tests {
 
     #[test]
     fn test_gnb_file() {
-        let filename = &get_path("gnb-64-truncated.log");
+        let filename = &get_path("gnb-64-cutted.log");
         let content = std::fs::read_to_string(filename).unwrap();
         let file = File::new_file_content(filename.into(), content);
         let mut f = DataHandler::new(file);
