@@ -357,22 +357,23 @@ impl FileHandler {
         if self.picked_path.is_none() {
             let mut error = None;
             if let Some(result) = &self.file_upload
-                && let Some(ready) = result.ready() {
-                    match &ready {
-                        Ok(file) => {
-                            let path_filename = file
-                                .file_path
-                                .file_name()
-                                .and_then(|f| f.to_str())
-                                .map(|f| f.to_string())
-                                .unwrap_or_default();
-                            self.picked_path = Some(path_filename);
-                        }
-                        Err(e) => {
-                            error = Some(e.to_owned());
-                        }
+                && let Some(ready) = result.ready()
+            {
+                match &ready {
+                    Ok(file) => {
+                        let path_filename = file
+                            .file_path
+                            .file_name()
+                            .and_then(|f| f.to_str())
+                            .map(|f| f.to_string())
+                            .unwrap_or_default();
+                        self.picked_path = Some(path_filename);
+                    }
+                    Err(e) => {
+                        error = Some(e.to_owned());
                     }
                 }
+            }
             if let Some(e) = error {
                 self.clear();
                 return Err(e);
@@ -396,6 +397,9 @@ impl FileHandler {
 
     /// Show file selection UI.
     /// Returns Ok(true) if close was requested, Ok(false) otherwise.
+    /// # Errors
+    ///
+    /// Error if the internal ui error
     pub fn show_ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
         self.internal_ui(ui)?;
         if self.picked_path.is_some() && self.file.is_none() && self.file_upload.is_some() {

@@ -39,6 +39,10 @@ impl WebSocketSource {
     }
 
     /// Connect to WebSocket server
+    ///
+    /// # Errors
+    ///
+    /// Fails on connect failure
     pub fn connect(url: String, wakeup: impl Fn() + Send + Sync + 'static) -> Result<Self, Vec<TramexError>> {
         match WsConnection::connect(&url, wakeup) {
             Ok((ws_sender, ws_receiver)) => {

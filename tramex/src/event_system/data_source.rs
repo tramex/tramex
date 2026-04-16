@@ -58,6 +58,10 @@ pub trait DataSource: Send {
     ///
     /// # Returns
     /// Vector of new events or errors
+    ///
+    /// # Errors
+    ///
+    /// Can produce error
     fn poll(&mut self) -> Result<Vec<Trace>, Vec<TramexError>>;
 
     /// Request more data
@@ -66,7 +70,11 @@ pub trait DataSource: Send {
     /// - File: loads next batch
     ///
     /// # Returns
+    ///
     /// Result indicating success or errors
+    ///
+    /// # Errors
+    ///
     fn request_more(&mut self, layers: &Layers) -> Result<(), Vec<TramexError>>;
 
     /// Check if source is in auto-loading mode

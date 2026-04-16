@@ -25,8 +25,11 @@ pub enum Choice {
 }
 
 /// Connector state — holds the UI-only handler for the active mode
+#[allow(clippy::large_enum_variant)]
 enum Connector {
+    /// File handler
     File(FileHandler),
+    /// WebSocker handler
     #[cfg(feature = "websocket")]
     WebSocket(WsHandler),
 }
@@ -93,6 +96,7 @@ impl FrontEnd {
         }
     }
 
+    /// Show the menu bar
     pub fn menu_bar(&mut self, ui: &mut Ui) {
         if self.source_set {
             ui.menu_button("Windows", |ui| {
@@ -165,23 +169,25 @@ impl FrontEnd {
                                         }
                                         Ok(false) => {
                                             // Check if file became available and source not yet set
-                                            if !self.source_set && file_handler.is_available()
-                                                && let Some(file) = file_handler.take_file() {
-                                                    log::info!("File loaded — creating FileSource");
-                                                    let source = FileSource::from_file(file);
-                                                    self.application.set_data_source(Box::new(source));
-                                                    self.source_set = true;
+                                            if !self.source_set
+                                                && file_handler.is_available()
+                                                && let Some(file) = file_handler.take_file()
+                                            {
+                                                log::info!("File loaded — creating FileSource");
+                                                let source = FileSource::from_file(file);
+                                                self.application.set_data_source(Box::new(source));
+                                                self.source_set = true;
 
-                                                    // Load first batch
-                                                    if let Err(err) = self.application.request_more_data() {
-                                                        Self::collect_errors(&mut errors, err);
-                                                    }
-                                                    // Process the loaded events
-                                                    if let Err(err) = self.application.update() {
-                                                        Self::collect_errors(&mut errors, err);
-                                                    }
-                                                    // Metadata sync happens inside Application.update()
+                                                // Load first batch
+                                                if let Err(err) = self.application.request_more_data() {
+                                                    Self::collect_errors(&mut errors, err);
                                                 }
+                                                // Process the loaded events
+                                                if let Err(err) = self.application.update() {
+                                                    Self::collect_errors(&mut errors, err);
+                                                }
+                                                // Metadata sync happens inside Application.update()
+                                            }
                                         }
                                         Err(err) => {
                                             errors.push(err);
@@ -199,14 +205,16 @@ impl FrontEnd {
                                         }
                                         Ok(false) => {
                                             // Check if WS connected and source not yet set
-                                            if !self.source_set && ws_handler.is_available()
-                                                && let Some(connection) = ws_handler.take_connection() {
-                                                    log::info!("WebSocket connected — creating WebSocketSource");
-                                                    let url = ws_handler.url.clone();
-                                                    let source = WebSocketSource::new(url, connection);
-                                                    self.application.set_data_source(Box::new(source));
-                                                    self.source_set = true;
-                                                }
+                                            if !self.source_set
+                                                && ws_handler.is_available()
+                                                && let Some(connection) = ws_handler.take_connection()
+                                            {
+                                                log::info!("WebSocket connected — creating WebSocketSource");
+                                                let url = ws_handler.url.clone();
+                                                let source = WebSocketSource::new(url, connection);
+                                                self.application.set_data_source(Box::new(source));
+                                                self.source_set = true;
+                                            }
                                         }
                                         Err(err) => {
                                             errors.push(err);
@@ -219,9 +227,10 @@ impl FrontEnd {
 
                         // Show file options only in File mode
                         if matches!(self.radio_choice, Choice::File)
-                            && let Some(Connector::File(file_handler)) = &mut self.connector {
-                                file_handler.ui_options(ui);
-                            }
+                            && let Some(Connector::File(file_handler)) = &mut self.connector
+                        {
+                            file_handler.ui_options(ui);
+                        }
                     });
                     ui.separator();
 
@@ -400,9 +409,10 @@ impl FrontEnd {
         // Check if the connector is a WebSocket and source is set
         #[cfg(feature = "websocket")]
         if self.source_set
-            && let Some(Connector::WebSocket(_)) = &self.connector {
-                return Some((true, self.application.is_auto_loading()));
-            }
+            && let Some(Connector::WebSocket(_)) = &self.connector
+        {
+            return Some((true, self.application.is_auto_loading()));
+        }
         None
     }
 

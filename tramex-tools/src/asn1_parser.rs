@@ -105,8 +105,7 @@ fn parse_sequence(pair: pest::iterators::Pair<Rule>) -> Result<Value, String> {
                                 // This is a named field
                                 has_named_fields = true;
                                 let mut field_parts = first.into_inner();
-                                if let (Some(key_pair), Some(value_pair)) = (field_parts.next(), field_parts.next())
-                                {
+                                if let (Some(key_pair), Some(value_pair)) = (field_parts.next(), field_parts.next()) {
                                     let key = key_pair.as_str().to_string();
                                     let value = parse_value(value_pair)?;
                                     map.insert(key, value);

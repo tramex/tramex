@@ -18,8 +18,7 @@ fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) 
 }
 
 /// RRC connection states
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 enum RrcState {
     /// UE is in IDLE state
     #[default]
@@ -29,7 +28,6 @@ enum RrcState {
     /// UE is in CONNECTED state
     Connected,
 }
-
 
 /// RRC connection state machine configuration for different technologies
 struct RrcStateMachine {
@@ -101,10 +99,15 @@ impl RrcStateMachine {
 /// State change record for history
 #[derive(Debug, Clone)]
 struct StateChange {
+    /// Index
     index: usize,
+    /// State
     state: RrcState,
+    /// Canal
     canal: Option<String>,
+    /// Canal message
     canal_msg: Option<String>,
+    /// Direction
     direction: Option<Direction>,
 }
 
@@ -125,6 +128,7 @@ pub struct RRCStatusPanel {
     /// Font id for arrows
     arrow_font_id: egui::FontId,
 
+    /// Font Id
     #[allow(dead_code)]
     label_font_id: egui::FontId,
 
@@ -340,16 +344,20 @@ impl RRCStatusPanel {
         if self.technology == Technology::NR {
             // CONNECTED -> INACTIVE (suspend)
             if let Some(suspend_msg) = state_machine.to_inactive_msg
-                && self.rrc_state == RrcState::Connected && canal_msg == suspend_msg {
-                    self.rrc_state = RrcState::Inactive;
-                    return;
-                }
+                && self.rrc_state == RrcState::Connected
+                && canal_msg == suspend_msg
+            {
+                self.rrc_state = RrcState::Inactive;
+                return;
+            }
 
             // INACTIVE -> CONNECTED (resume)
             if let Some(resume_msg) = state_machine.inactive_to_connected_msg
-                && self.rrc_state == RrcState::Inactive && canal_msg == resume_msg {
-                    self.rrc_state = RrcState::Connected;
-                }
+                && self.rrc_state == RrcState::Inactive
+                && canal_msg == resume_msg
+            {
+                self.rrc_state = RrcState::Connected;
+            }
         }
     }
 }

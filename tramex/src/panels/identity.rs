@@ -383,10 +383,9 @@ impl Identity {
             }
 
             // Parse TAI list
-            if in_tai
-                && let Some(value) = Self::extract_field(trimmed, "Data =") {
-                    self.nr_tai_info = Self::decode_tai_list(&value);
-                }
+            if in_tai && let Some(value) = Self::extract_field(trimmed, "Data =") {
+                self.nr_tai_info = Self::decode_tai_list(&value);
+            }
         }
     }
 
@@ -457,25 +456,27 @@ impl Identity {
             }
 
             // Reset section flags for other top-level sections
-            if !trimmed.is_empty() && !trimmed.starts_with(' ') && trimmed.contains(':')
+            if !trimmed.is_empty()
+                && !trimmed.starts_with(' ')
+                && trimmed.contains(':')
                 && !trimmed.starts_with("PDU address:")
-                    && !trimmed.starts_with("Authorized QoS rules:")
-                    && !trimmed.starts_with("Authorized QoS flow descriptions:")
-                    && !trimmed.starts_with("Session AMBR:")
-                    && !trimmed.starts_with("Extended protocol configuration options:")
-                    && !trimmed.starts_with("QoS rule")
-                    && !trimmed.starts_with("QoS flow")
-                {
-                    in_pdu_address = false;
-                    in_qos_rules = false;
-                    in_qos_flow = false;
-                    in_session_ambr = false;
-                    in_epco = false;
-                    // Save any pending QoS rule
-                    if let Some(rule) = current_qos_rule.take() {
-                        self.nr_qos_rules.push(rule);
-                    }
+                && !trimmed.starts_with("Authorized QoS rules:")
+                && !trimmed.starts_with("Authorized QoS flow descriptions:")
+                && !trimmed.starts_with("Session AMBR:")
+                && !trimmed.starts_with("Extended protocol configuration options:")
+                && !trimmed.starts_with("QoS rule")
+                && !trimmed.starts_with("QoS flow")
+            {
+                in_pdu_address = false;
+                in_qos_rules = false;
+                in_qos_flow = false;
+                in_session_ambr = false;
+                in_epco = false;
+                // Save any pending QoS rule
+                if let Some(rule) = current_qos_rule.take() {
+                    self.nr_qos_rules.push(rule);
                 }
+            }
 
             // Parse PDU address fields
             if in_pdu_address {
@@ -513,10 +514,9 @@ impl Identity {
             }
 
             // Parse QoS flow descriptions for 5QI
-            if in_qos_flow
-                && let Some(value) = Self::extract_field(trimmed, "5QI =") {
-                    self.nr_fiveqi = Some(value);
-                }
+            if in_qos_flow && let Some(value) = Self::extract_field(trimmed, "5QI =") {
+                self.nr_fiveqi = Some(value);
+            }
 
             // Parse Session AMBR
             if in_session_ambr {
@@ -650,10 +650,9 @@ impl Identity {
             }
 
             // Parse TAI list
-            if in_tai
-                && let Some(value) = Self::extract_field(trimmed, "Data =") {
-                    self.lte_tai_info = Self::decode_tai_list(&value);
-                }
+            if in_tai && let Some(value) = Self::extract_field(trimmed, "Data =") {
+                self.lte_tai_info = Self::decode_tai_list(&value);
+            }
 
             // Parse PDN address
             if in_pdn_address {
@@ -684,18 +683,21 @@ impl Identity {
                 // Check if previous line was DNS IPv4 and this is the data
                 if saw_dns_ipv4_protocol && trimmed.starts_with("Data =") {
                     if let Some(value) = Self::extract_field(trimmed, "Data =")
-                        && !value.is_empty() {
-                            self.lte_dns_ipv4 = Some(value);
-                            saw_dns_ipv4_protocol = false;
-                        }
+                        && !value.is_empty()
+                    {
+                        self.lte_dns_ipv4 = Some(value);
+                        saw_dns_ipv4_protocol = false;
+                    }
                 }
                 // Check if previous line was DNS IPv6 and this is the data
-                else if saw_dns_ipv6_protocol && trimmed.starts_with("Data =")
+                else if saw_dns_ipv6_protocol
+                    && trimmed.starts_with("Data =")
                     && let Some(value) = Self::extract_field(trimmed, "Data =")
-                        && !value.is_empty() {
-                            self.lte_dns_ipv6 = Some(value);
-                            saw_dns_ipv6_protocol = false;
-                        }
+                    && !value.is_empty()
+                {
+                    self.lte_dns_ipv6 = Some(value);
+                    saw_dns_ipv6_protocol = false;
+                }
 
                 // Reset flags if we see a new Protocol ID that's not DNS
                 if trimmed.starts_with("Protocol ID =") && !trimmed.contains("DNS") {
@@ -742,9 +744,10 @@ impl EventSubscriber for Identity {
     fn on_event_added(&mut self, event: &Trace, _index: usize, _context: &EventContext) {
         // Parse NAS messages for identity information
         if event.layer == Layer::NAS
-            && let Some(text) = &event.text {
-                self.parse_nas_identity(text);
-            }
+            && let Some(text) = &event.text
+        {
+            self.parse_nas_identity(text);
+        }
     }
 
     fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
@@ -753,9 +756,10 @@ impl EventSubscriber for Identity {
         // Parse the focused NAS message to update state
         // Values are preserved when navigating to other layers (RRC, etc.)
         if event.layer == Layer::NAS
-            && let Some(text) = &event.text {
-                self.parse_nas_identity(text);
-            }
+            && let Some(text) = &event.text
+        {
+            self.parse_nas_identity(text);
+        }
         // Note: We don't clear fields when navigating away from NAS messages
         // The values persist as state until a new NAS message updates them
     }

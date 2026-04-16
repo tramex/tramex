@@ -140,17 +140,16 @@ impl MessageBox {
             false
         };
 
-        if done
-            && let Some(promise) = self.ai_promise.take() {
-                match promise.block_and_take() {
-                    Ok(explanation) => {
-                        self.ai_status = AIExplainStatus::Done(explanation);
-                    }
-                    Err(err) => {
-                        self.ai_status = AIExplainStatus::Error(err);
-                    }
+        if done && let Some(promise) = self.ai_promise.take() {
+            match promise.block_and_take() {
+                Ok(explanation) => {
+                    self.ai_status = AIExplainStatus::Done(explanation);
+                }
+                Err(err) => {
+                    self.ai_status = AIExplainStatus::Error(err);
                 }
             }
+        }
     }
 
     #[cfg(feature = "ai")]

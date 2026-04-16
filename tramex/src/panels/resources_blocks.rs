@@ -541,21 +541,22 @@ impl ResourceBlocks {
     /// Returns the resource type with highest priority found in any symbol of that PRB
     fn _get_slot_resource_type(&self, slot_idx: usize, prb: usize) -> ResourceType {
         if let Some(slot) = self.slots.get(slot_idx)
-            && prb < slot.grid.len() {
-                let mut best_type = ResourceType::Empty;
-                let mut best_priority = 0u8;
+            && prb < slot.grid.len()
+        {
+            let mut best_type = ResourceType::Empty;
+            let mut best_priority = 0u8;
 
-                for symbol in 0..SYMBOLS_PER_SLOT {
-                    let rt = slot.grid[prb][symbol];
-                    let priority = rt.priority();
-                    if priority > best_priority {
-                        best_priority = priority;
-                        best_type = rt;
-                    }
+            for symbol in 0..SYMBOLS_PER_SLOT {
+                let rt = slot.grid[prb][symbol];
+                let priority = rt.priority();
+                if priority > best_priority {
+                    best_priority = priority;
+                    best_type = rt;
                 }
-
-                return best_type;
             }
+
+            return best_type;
+        }
         ResourceType::Empty
     }
 
@@ -593,6 +594,10 @@ impl ResourceBlocks {
     }
 
     /// Draw the resource grid
+    ///
+    /// # Panics
+    ///
+    /// Should not panic since the config should be here
     fn draw_grid(&mut self, ui: &mut egui::Ui) {
         let theme = ThemeColors::get(ui);
 
@@ -760,14 +765,15 @@ impl ResourceBlocks {
 
                                     // Highlight focused event cells
                                     if let Some(focused_idx) = self.focused_trace_index
-                                        && slot.event_indices[prb][symbol] == Some(focused_idx) {
-                                            painter.rect_stroke(
-                                                cell_rect,
-                                                0.0,
-                                                Stroke::new(1.5, theme.text_strong),
-                                                STROKE_KIND_STYLE,
-                                            );
-                                        }
+                                        && slot.event_indices[prb][symbol] == Some(focused_idx)
+                                    {
+                                        painter.rect_stroke(
+                                            cell_rect,
+                                            0.0,
+                                            Stroke::new(1.5, theme.text_strong),
+                                            STROKE_KIND_STYLE,
+                                        );
+                                    }
 
                                     if resource_type == ResourceType::Dmrs {
                                         painter.circle_filled(
@@ -779,12 +785,13 @@ impl ResourceBlocks {
 
                                     // Check hover
                                     if let Some(pos) = pointer_pos
-                                        && cell_rect.contains(pos) {
-                                            hovered_event_idx = slot.event_indices[prb][symbol];
-                                            hovered_ssb_id = slot.ssb_ids[prb][symbol];
-                                            hovered_slot_idx = Some(slot_idx);
-                                            hovered_prb = Some(prb);
-                                        }
+                                        && cell_rect.contains(pos)
+                                    {
+                                        hovered_event_idx = slot.event_indices[prb][symbol];
+                                        hovered_ssb_id = slot.ssb_ids[prb][symbol];
+                                        hovered_slot_idx = Some(slot_idx);
+                                        hovered_prb = Some(prb);
+                                    }
                                 }
                             }
 
@@ -866,43 +873,45 @@ impl ResourceBlocks {
 
                             // Highlight focused event cells - single pass through symbols
                             if let Some(focused_idx) = self.focused_trace_index
-                                && prb < slot.grid.len() {
-                                    let mut has_focused = false;
-                                    for symbol in 0..SYMBOLS_PER_SLOT {
-                                        if slot.event_indices[prb][symbol] == Some(focused_idx) {
-                                            has_focused = true;
-                                            break;
-                                        }
-                                    }
-                                    if has_focused {
-                                        painter.rect_stroke(
-                                            cell_rect,
-                                            0.0,
-                                            Stroke::new(1.5, theme.text_strong),
-                                            STROKE_KIND_STYLE,
-                                        );
+                                && prb < slot.grid.len()
+                            {
+                                let mut has_focused = false;
+                                for symbol in 0..SYMBOLS_PER_SLOT {
+                                    if slot.event_indices[prb][symbol] == Some(focused_idx) {
+                                        has_focused = true;
+                                        break;
                                     }
                                 }
+                                if has_focused {
+                                    painter.rect_stroke(
+                                        cell_rect,
+                                        0.0,
+                                        Stroke::new(1.5, theme.text_strong),
+                                        STROKE_KIND_STYLE,
+                                    );
+                                }
+                            }
 
                             // Check hover - single pass for both SSB and events
                             if let Some(pos) = pointer_pos
-                                && cell_rect.contains(pos) {
-                                    hovered_slot_idx = Some(slot_idx);
-                                    hovered_prb = Some(prb);
-                                    if prb < slot.grid.len() {
-                                        // Check SSB first, then events - single pass
-                                        for symbol in 0..SYMBOLS_PER_SLOT {
-                                            if slot.grid[prb][symbol] == ResourceType::Ssb {
-                                                hovered_ssb_id = slot.ssb_ids[prb][symbol];
-                                                break;
-                                            }
-                                            if let Some(idx) = slot.event_indices[prb][symbol] {
-                                                hovered_event_idx = Some(idx);
-                                                // Continue checking for SSB which has higher priority
-                                            }
+                                && cell_rect.contains(pos)
+                            {
+                                hovered_slot_idx = Some(slot_idx);
+                                hovered_prb = Some(prb);
+                                if prb < slot.grid.len() {
+                                    // Check SSB first, then events - single pass
+                                    for symbol in 0..SYMBOLS_PER_SLOT {
+                                        if slot.grid[prb][symbol] == ResourceType::Ssb {
+                                            hovered_ssb_id = slot.ssb_ids[prb][symbol];
+                                            break;
+                                        }
+                                        if let Some(idx) = slot.event_indices[prb][symbol] {
+                                            hovered_event_idx = Some(idx);
+                                            // Continue checking for SSB which has higher priority
                                         }
                                     }
                                 }
+                            }
                         }
 
                         // Draw vertical line at LEFT edge of slot

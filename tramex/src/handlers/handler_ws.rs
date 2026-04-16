@@ -57,6 +57,10 @@ impl WsHandler {
     }
 
     /// Close the websocket
+    ///
+    /// # Errors
+    ///
+    /// Fails when WS fails to close
     fn close_ws(&mut self) -> Result<(), TramexError> {
         if let Some(interface_ws) = &mut self.inner {
             return interface_ws.close_impl();
@@ -66,6 +70,9 @@ impl WsHandler {
 
     /// Show WebSocket UI.
     /// Returns Ok(true) if close was requested, Ok(false) otherwise.
+    ///
+    /// # Errors
+    ///
     pub fn show_ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
         if self.inner.is_some() {
             self.display_url(ui, false);

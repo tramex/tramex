@@ -13,10 +13,14 @@ use tramex_tools::{
 
 /// Hardware element in the chronograph
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(clippy::upper_case_acronyms)]
 enum Hardware {
-    UE,  // User Equipment
-    BST, // Base Station
-    CN,  // Core Network
+    /// User Equipment
+    UE,
+    /// Base Station
+    BST,
+    /// Core Network
+    CN,
 }
 
 /// Arrow representation for a message exchange

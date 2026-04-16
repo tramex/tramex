@@ -89,6 +89,9 @@ impl Application {
     }
 
     /// Update - poll data source and process new events
+    ///
+    /// # Errors
+    ///
     /// Should be called every frame
     pub fn update(&mut self) -> Result<(), Vec<TramexError>> {
         let mut errors = Vec::new();
@@ -129,19 +132,23 @@ impl Application {
 
         // 4. For auto-loading sources, request more data
         if let Some(source) = &mut self.data_source
-            && source.is_auto_loading() && source.has_more()
-                && let Err(e) = source.request_more(&self.layers) {
-                    for error in e {
-                        if !matches!(error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
-                            errors.push(error);
-                        }
-                    }
+            && source.is_auto_loading()
+            && source.has_more()
+            && let Err(e) = source.request_more(&self.layers)
+        {
+            for error in e {
+                if !matches!(error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
+                    errors.push(error);
                 }
+            }
+        }
 
         if errors.is_empty() { Ok(()) } else { Err(errors) }
     }
 
     /// Process a batch of new events
+    ///
+    /// # Errors
     fn process_new_events(&mut self, new_events: Vec<tramex_tools::data::Trace>) -> Result<(), Vec<TramexError>> {
         if new_events.is_empty() {
             return Ok(());
@@ -174,9 +181,10 @@ impl Application {
         // For auto-loading sources, automatically navigate to the last event
         if let Some(source) = &self.data_source
             && source.is_auto_loading()
-                && let Some(last_index) = self.event_store.len().checked_sub(1) {
-                    self.navigate_to(last_index);
-                }
+            && let Some(last_index) = self.event_store.len().checked_sub(1)
+        {
+            self.navigate_to(last_index);
+        }
 
         Ok(())
     }
@@ -274,6 +282,10 @@ impl Application {
     }
 
     /// Navigate to specific index
+    ///
+    /// # Panics
+    ///
+    /// Panic should not happen since we checked
     pub fn navigate_to(&mut self, index: usize) -> bool {
         if self.event_store.set_current(index).is_some() {
             log::debug!("Application: Navigate to index {}", index);
@@ -354,6 +366,9 @@ impl Application {
     }
 
     /// Request more data from source (for on-demand loading)
+    ///
+    /// # Errors
+    ///
     pub fn request_more_data(&mut self) -> Result<(), Vec<TramexError>> {
         if let Some(source) = &mut self.data_source {
             log::debug!("Application: Requesting more data from source");

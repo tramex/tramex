@@ -58,6 +58,9 @@ impl NavigationPanel {
     }
 
     /// Show the navigation panel
+    ///
+    /// # Errors
+    ///
     pub fn show_nav(&mut self, ctx: &egui::Context, open: &mut bool, state: &NavState<'_>) -> Result<(), TramexError> {
         egui::Window::new(self.window_title())
             .open(open)
@@ -213,47 +216,47 @@ impl NavigationPanel {
 
                         // WebSocket Resume/Pause button
                         if let Some((is_ws_available, is_auto_loading)) = state.ws_info
-                            && is_ws_available {
-                                ui.add_space(10.0);
+                            && is_ws_available
+                        {
+                            ui.add_space(10.0);
 
-                                let (button_text, button_color) = if is_auto_loading {
-                                    ("⏸ Pause", egui::Color32::from_rgb(120, 120, 120))
-                                } else {
-                                    ("▶ Resume", egui::Color32::from_rgb(50, 180, 50))
-                                };
+                            let (button_text, button_color) = if is_auto_loading {
+                                ("⏸ Pause", egui::Color32::from_rgb(120, 120, 120))
+                            } else {
+                                ("▶ Resume", egui::Color32::from_rgb(50, 180, 50))
+                            };
 
-                                let button = egui::Button::new(
-                                    egui::RichText::new(button_text)
-                                        .color(egui::Color32::WHITE)
-                                        .strong()
-                                        .size(15.0),
-                                )
-                                .fill(button_color)
-                                .corner_radius(8.0)
-                                .min_size(egui::vec2(150.0, 40.0));
+                            let button = egui::Button::new(
+                                egui::RichText::new(button_text)
+                                    .color(egui::Color32::WHITE)
+                                    .strong()
+                                    .size(15.0),
+                            )
+                            .fill(button_color)
+                            .corner_radius(8.0)
+                            .min_size(egui::vec2(150.0, 40.0));
 
-                                if ui.add(button).clicked() {
-                                    self.should_toggle_auto_loading = true;
-                                }
+                            if ui.add(button).clicked() {
+                                self.should_toggle_auto_loading = true;
                             }
+                        }
                     });
 
                     // Status indicator
                     if let Some((is_ws_available, is_auto_loading)) = state.ws_info
-                        && is_ws_available {
-                            ui.add_space(5.0);
-                            if is_auto_loading {
-                                ui.label(
-                                    egui::RichText::new("🔄 Auto-loading enabled")
-                                        .color(egui::Color32::from_rgb(100, 200, 100)),
-                                );
-                            } else {
-                                ui.label(
-                                    egui::RichText::new("⏸ Auto-loading paused")
-                                        .color(egui::Color32::from_rgb(200, 150, 100)),
-                                );
-                            }
+                        && is_ws_available
+                    {
+                        ui.add_space(5.0);
+                        if is_auto_loading {
+                            ui.label(
+                                egui::RichText::new("🔄 Auto-loading enabled").color(egui::Color32::from_rgb(100, 200, 100)),
+                            );
+                        } else {
+                            ui.label(
+                                egui::RichText::new("⏸ Auto-loading paused").color(egui::Color32::from_rgb(200, 150, 100)),
+                            );
                         }
+                    }
                 });
             });
 

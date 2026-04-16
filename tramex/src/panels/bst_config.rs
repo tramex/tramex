@@ -164,10 +164,9 @@ impl BstConfig {
             }
             if trimmed.starts_with("Configured NSSAI:") {
                 // Save any pending NSSAI from previous section
-                if in_snssai && current_nssai.sst.is_some()
-                    && current_section_is_allowed {
-                        self.allowed_nssai.push(current_nssai.clone());
-                    }
+                if in_snssai && current_nssai.sst.is_some() && current_section_is_allowed {
+                    self.allowed_nssai.push(current_nssai.clone());
+                }
                 in_configured_nssai = true;
                 in_allowed_nssai = false;
                 in_snssai = false;
@@ -702,9 +701,10 @@ impl EventSubscriber for BstConfig {
         self.update_fields(event);
         // Parse NAS messages for NSSAI
         if event.layer == Layer::NAS
-            && let Some(text) = &event.text {
-                self.parse_nas_nssai(text);
-            }
+            && let Some(text) = &event.text
+        {
+            self.parse_nas_nssai(text);
+        }
     }
 
     fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
@@ -713,9 +713,10 @@ impl EventSubscriber for BstConfig {
         self.update_fields(event);
         // Parse NAS messages for NSSAI
         if event.layer == Layer::NAS
-            && let Some(text) = &event.text {
-                self.parse_nas_nssai(text);
-            }
+            && let Some(text) = &event.text
+        {
+            self.parse_nas_nssai(text);
+        }
     }
 
     fn on_events_cleared(&mut self) {

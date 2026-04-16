@@ -38,6 +38,9 @@ pub trait EventSubscriber: Send {
 
     /// Show window for this subscriber/panel
     /// Returns Result indicating if there was an error showing the window
+    ///
+    /// # Errors
+    ///
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), tramex_tools::errors::TramexError>;
 
     #[cfg(feature = "ai")]
@@ -47,6 +50,7 @@ pub trait EventSubscriber: Send {
 
 /// Central event dispatcher
 pub struct EventBus {
+    /// Subscribers list
     subscribers: Vec<Box<dyn EventSubscriber>>,
 }
 
