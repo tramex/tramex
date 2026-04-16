@@ -165,8 +165,8 @@ impl FrontEnd {
                                         }
                                         Ok(false) => {
                                             // Check if file became available and source not yet set
-                                            if !self.source_set && file_handler.is_available() {
-                                                if let Some(file) = file_handler.take_file() {
+                                            if !self.source_set && file_handler.is_available()
+                                                && let Some(file) = file_handler.take_file() {
                                                     log::info!("File loaded — creating FileSource");
                                                     let source = FileSource::from_file(file);
                                                     self.application.set_data_source(Box::new(source));
@@ -182,7 +182,6 @@ impl FrontEnd {
                                                     }
                                                     // Metadata sync happens inside Application.update()
                                                 }
-                                            }
                                         }
                                         Err(err) => {
                                             errors.push(err);
@@ -200,15 +199,14 @@ impl FrontEnd {
                                         }
                                         Ok(false) => {
                                             // Check if WS connected and source not yet set
-                                            if !self.source_set && ws_handler.is_available() {
-                                                if let Some(connection) = ws_handler.take_connection() {
+                                            if !self.source_set && ws_handler.is_available()
+                                                && let Some(connection) = ws_handler.take_connection() {
                                                     log::info!("WebSocket connected — creating WebSocketSource");
                                                     let url = ws_handler.url.clone();
                                                     let source = WebSocketSource::new(url, connection);
                                                     self.application.set_data_source(Box::new(source));
                                                     self.source_set = true;
                                                 }
-                                            }
                                         }
                                         Err(err) => {
                                             errors.push(err);
@@ -220,11 +218,10 @@ impl FrontEnd {
                         });
 
                         // Show file options only in File mode
-                        if matches!(self.radio_choice, Choice::File) {
-                            if let Some(Connector::File(file_handler)) = &mut self.connector {
+                        if matches!(self.radio_choice, Choice::File)
+                            && let Some(Connector::File(file_handler)) = &mut self.connector {
                                 file_handler.ui_options(ui);
                             }
-                        }
                     });
                     ui.separator();
 
@@ -402,11 +399,10 @@ impl FrontEnd {
     fn get_ws_info(&self) -> Option<(bool, bool)> {
         // Check if the connector is a WebSocket and source is set
         #[cfg(feature = "websocket")]
-        if self.source_set {
-            if let Some(Connector::WebSocket(_)) = &self.connector {
+        if self.source_set
+            && let Some(Connector::WebSocket(_)) = &self.connector {
                 return Some((true, self.application.is_auto_loading()));
             }
-        }
         None
     }
 

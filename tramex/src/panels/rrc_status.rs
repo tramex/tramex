@@ -19,8 +19,10 @@ fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) 
 
 /// RRC connection states
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default)]
 enum RrcState {
     /// UE is in IDLE state
+    #[default]
     Idle,
     /// UE is in INACTIVE state (NR only)
     Inactive,
@@ -28,11 +30,6 @@ enum RrcState {
     Connected,
 }
 
-impl Default for RrcState {
-    fn default() -> Self {
-        RrcState::Idle
-    }
-}
 
 /// RRC connection state machine configuration for different technologies
 struct RrcStateMachine {
@@ -185,7 +182,7 @@ impl RRCStatusPanel {
     /// Navigate to a specific event by index
     fn navigate_to_index(&mut self, target_index: usize) {
         // Find the most recent state change at or before this index
-        if let Some(state_change) = self.state_history.iter().filter(|sc| sc.index <= target_index).last() {
+        if let Some(state_change) = self.state_history.iter().filter(|sc| sc.index <= target_index).next_back() {
             self.rrc_state = state_change.state;
             self.canal = state_change.canal.clone();
             self.canal_msg = state_change.canal_msg.clone();
@@ -342,20 +339,17 @@ impl RRCStatusPanel {
         // NR-specific transitions
         if self.technology == Technology::NR {
             // CONNECTED -> INACTIVE (suspend)
-            if let Some(suspend_msg) = state_machine.to_inactive_msg {
-                if self.rrc_state == RrcState::Connected && canal_msg == suspend_msg {
+            if let Some(suspend_msg) = state_machine.to_inactive_msg
+                && self.rrc_state == RrcState::Connected && canal_msg == suspend_msg {
                     self.rrc_state = RrcState::Inactive;
                     return;
                 }
-            }
 
             // INACTIVE -> CONNECTED (resume)
-            if let Some(resume_msg) = state_machine.inactive_to_connected_msg {
-                if self.rrc_state == RrcState::Inactive && canal_msg == resume_msg {
+            if let Some(resume_msg) = state_machine.inactive_to_connected_msg
+                && self.rrc_state == RrcState::Inactive && canal_msg == resume_msg {
                     self.rrc_state = RrcState::Connected;
-                    return;
                 }
-            }
         }
     }
 }

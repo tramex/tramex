@@ -88,12 +88,12 @@ impl DataSource for FileSource {
 
         // Update technology inference from metadata (File.get_more_data may update it)
         if self.temp_data.metadata.technology != self.metadata.technology {
-            self.metadata.technology = self.temp_data.metadata.technology.clone();
+            self.metadata.technology = self.temp_data.metadata.technology;
         }
 
         let batch_size = self.temp_data.events.len();
         self.loaded_count += batch_size;
-        self.pending_events.extend(self.temp_data.events.drain(..));
+        self.pending_events.append(&mut self.temp_data.events);
         log::debug!(
             "FileSource: request_more - loaded batch of {} events, total loaded: {}, pending: {}",
             batch_size,

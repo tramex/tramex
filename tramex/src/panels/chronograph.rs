@@ -258,8 +258,8 @@ impl Chronograph {
             for (i, arrow) in self.arrows.iter().enumerate() {
                 let y = start_y + (i as f32 * arrow_height);
                 let is_current: bool = arrow.trace_index == self.current_index;
-                let is_related_parent = self.related_parent.as_ref().map_or(false, |v| v.contains(&arrow.trace_index));
-                let is_related_child = self.related_child.as_ref().map_or(false, |v| v.contains(&arrow.trace_index));
+                let is_related_parent = self.related_parent.as_ref().is_some_and(|v| v.contains(&arrow.trace_index));
+                let is_related_child = self.related_child.as_ref().is_some_and(|v| v.contains(&arrow.trace_index));
 
                 // Determine arrow color and thickness
                 // Current: bright blue, Related (parent/child): lighter blue, Others: theme-aware

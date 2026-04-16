@@ -128,17 +128,15 @@ impl Application {
         }
 
         // 4. For auto-loading sources, request more data
-        if let Some(source) = &mut self.data_source {
-            if source.is_auto_loading() && source.has_more() {
-                if let Err(e) = source.request_more(&self.layers) {
+        if let Some(source) = &mut self.data_source
+            && source.is_auto_loading() && source.has_more()
+                && let Err(e) = source.request_more(&self.layers) {
                     for error in e {
                         if !matches!(error.get_code(), ErrorCode::ParsingLayerNotImplemented) {
                             errors.push(error);
                         }
                     }
                 }
-            }
-        }
 
         if errors.is_empty() { Ok(()) } else { Err(errors) }
     }
@@ -174,13 +172,11 @@ impl Application {
         }
 
         // For auto-loading sources, automatically navigate to the last event
-        if let Some(source) = &self.data_source {
-            if source.is_auto_loading() {
-                if let Some(last_index) = self.event_store.len().checked_sub(1) {
+        if let Some(source) = &self.data_source
+            && source.is_auto_loading()
+                && let Some(last_index) = self.event_store.len().checked_sub(1) {
                     self.navigate_to(last_index);
                 }
-            }
-        }
 
         Ok(())
     }

@@ -212,8 +212,8 @@ impl NavigationPanel {
                         });
 
                         // WebSocket Resume/Pause button
-                        if let Some((is_ws_available, is_auto_loading)) = state.ws_info {
-                            if is_ws_available {
+                        if let Some((is_ws_available, is_auto_loading)) = state.ws_info
+                            && is_ws_available {
                                 ui.add_space(10.0);
 
                                 let (button_text, button_color) = if is_auto_loading {
@@ -236,12 +236,11 @@ impl NavigationPanel {
                                     self.should_toggle_auto_loading = true;
                                 }
                             }
-                        }
                     });
 
                     // Status indicator
-                    if let Some((is_ws_available, is_auto_loading)) = state.ws_info {
-                        if is_ws_available {
+                    if let Some((is_ws_available, is_auto_loading)) = state.ws_info
+                        && is_ws_available {
                             ui.add_space(5.0);
                             if is_auto_loading {
                                 ui.label(
@@ -255,7 +254,6 @@ impl NavigationPanel {
                                 );
                             }
                         }
-                    }
                 });
             });
 

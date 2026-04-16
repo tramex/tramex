@@ -58,12 +58,11 @@ impl AISettings {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            if let Ok(key) = std::env::var(&self.env_var_name) {
-                if !key.is_empty() {
+            if let Ok(key) = std::env::var(&self.env_var_name)
+                && !key.is_empty() {
                     log::info!("Loaded AI API key from env var {}", self.env_var_name);
                     self.api_key = key;
                 }
-            }
         }
     }
 

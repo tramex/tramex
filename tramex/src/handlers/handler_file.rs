@@ -356,8 +356,8 @@ impl FileHandler {
     pub fn check_file_load(&mut self) -> Result<(), TramexError> {
         if self.picked_path.is_none() {
             let mut error = None;
-            if let Some(result) = &self.file_upload {
-                if let Some(ready) = result.ready() {
+            if let Some(result) = &self.file_upload
+                && let Some(ready) = result.ready() {
                     match &ready {
                         Ok(file) => {
                             let path_filename = file
@@ -373,7 +373,6 @@ impl FileHandler {
                         }
                     }
                 }
-            }
             if let Some(e) = error {
                 self.clear();
                 return Err(e);
@@ -433,7 +432,7 @@ impl FileHandler {
 
     /// Check if the file interface is available (file loaded and ready)
     pub fn is_available(&self) -> bool {
-        self.file.as_ref().map_or(false, |f| f.available)
+        self.file.as_ref().is_some_and(|f| f.available)
     }
 
     /// Show status when not yet available

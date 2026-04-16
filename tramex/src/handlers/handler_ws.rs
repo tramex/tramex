@@ -102,12 +102,12 @@ impl WsHandler {
 
     /// Check if a connection is established and ready
     pub fn is_available(&self) -> bool {
-        self.inner.as_ref().map_or(false, |ws| ws.available)
+        self.inner.as_ref().is_some_and(|ws| ws.available)
     }
 
     /// Check if connecting
     pub fn is_connecting(&self) -> bool {
-        self.inner.as_ref().map_or(false, |ws| ws.connecting)
+        self.inner.as_ref().is_some_and(|ws| ws.connecting)
     }
 
     /// Check if handler has an active connection

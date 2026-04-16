@@ -344,7 +344,7 @@ impl ResourceBlocks {
     /// Get the frame number for the end of the window (exclusive)
     fn end_frame(&self) -> u16 {
         let end_slot = self.start_slot + self.window_total_slots();
-        ((end_slot + self.slots_per_frame() - 1) / self.slots_per_frame() % self.frame_per_hfn()) as u16
+        (end_slot.div_ceil(self.slots_per_frame()) % self.frame_per_hfn()) as u16
     }
 
     /// Navigate by frames
@@ -464,7 +464,7 @@ impl ResourceBlocks {
                 let global_slot = self.start_slot + slot_idx;
 
                 // SSB repeats every period_slots
-                if global_slot % period_slots != 0 {
+                if !global_slot.is_multiple_of(period_slots) {
                     continue;
                 }
 
@@ -540,8 +540,8 @@ impl ResourceBlocks {
     /// Get the aggregated resource type for a PRB in slot view mode
     /// Returns the resource type with highest priority found in any symbol of that PRB
     fn _get_slot_resource_type(&self, slot_idx: usize, prb: usize) -> ResourceType {
-        if let Some(slot) = self.slots.get(slot_idx) {
-            if prb < slot.grid.len() {
+        if let Some(slot) = self.slots.get(slot_idx)
+            && prb < slot.grid.len() {
                 let mut best_type = ResourceType::Empty;
                 let mut best_priority = 0u8;
 
@@ -556,7 +556,6 @@ impl ResourceBlocks {
 
                 return best_type;
             }
-        }
         ResourceType::Empty
     }
 
@@ -760,8 +759,8 @@ impl ResourceBlocks {
                                     );
 
                                     // Highlight focused event cells
-                                    if let Some(focused_idx) = self.focused_trace_index {
-                                        if slot.event_indices[prb][symbol] == Some(focused_idx) {
+                                    if let Some(focused_idx) = self.focused_trace_index
+                                        && slot.event_indices[prb][symbol] == Some(focused_idx) {
                                             painter.rect_stroke(
                                                 cell_rect,
                                                 0.0,
@@ -769,7 +768,6 @@ impl ResourceBlocks {
                                                 STROKE_KIND_STYLE,
                                             );
                                         }
-                                    }
 
                                     if resource_type == ResourceType::Dmrs {
                                         painter.circle_filled(
@@ -780,21 +778,20 @@ impl ResourceBlocks {
                                     }
 
                                     // Check hover
-                                    if let Some(pos) = pointer_pos {
-                                        if cell_rect.contains(pos) {
+                                    if let Some(pos) = pointer_pos
+                                        && cell_rect.contains(pos) {
                                             hovered_event_idx = slot.event_indices[prb][symbol];
                                             hovered_ssb_id = slot.ssb_ids[prb][symbol];
                                             hovered_slot_idx = Some(slot_idx);
                                             hovered_prb = Some(prb);
                                         }
-                                    }
                                 }
                             }
 
                             // Draw vertical line at LEFT edge of slot (border between slots)
                             // Vary width based on subframe boundary
                             let global_slot = start_slot + slot_idx;
-                            let is_subframe_boundary = global_slot % sps == 0;
+                            let is_subframe_boundary = global_slot.is_multiple_of(sps);
                             let border_width = if is_subframe_boundary { lg_border } else { md_border };
 
                             let grid_bottom = grid_origin_y + self.num_prbs as f32 * cell_size;
@@ -868,8 +865,8 @@ impl ResourceBlocks {
                             painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, theme.line_small), STROKE_KIND_STYLE);
 
                             // Highlight focused event cells - single pass through symbols
-                            if let Some(focused_idx) = self.focused_trace_index {
-                                if prb < slot.grid.len() {
+                            if let Some(focused_idx) = self.focused_trace_index
+                                && prb < slot.grid.len() {
                                     let mut has_focused = false;
                                     for symbol in 0..SYMBOLS_PER_SLOT {
                                         if slot.event_indices[prb][symbol] == Some(focused_idx) {
@@ -886,11 +883,10 @@ impl ResourceBlocks {
                                         );
                                     }
                                 }
-                            }
 
                             // Check hover - single pass for both SSB and events
-                            if let Some(pos) = pointer_pos {
-                                if cell_rect.contains(pos) {
+                            if let Some(pos) = pointer_pos
+                                && cell_rect.contains(pos) {
                                     hovered_slot_idx = Some(slot_idx);
                                     hovered_prb = Some(prb);
                                     if prb < slot.grid.len() {
@@ -907,13 +903,12 @@ impl ResourceBlocks {
                                         }
                                     }
                                 }
-                            }
                         }
 
                         // Draw vertical line at LEFT edge of slot
                         // Vary width based on frame boundary
                         let global_slot = start_slot + slot_idx;
-                        let is_frame_boundary = global_slot % spf == 0;
+                        let is_frame_boundary = global_slot.is_multiple_of(spf);
                         let border_width = if is_frame_boundary { lg_border } else { sm_border };
 
                         let grid_bottom = grid_origin_y + self.num_prbs as f32 * cell_size;
@@ -956,8 +951,8 @@ impl ResourceBlocks {
                                     "{}\nFrame {} | SubFrame {} | Slot {}\nPRB: {}-{} \nSymbols: {}-{}",
                                     channel_name,
                                     phy.frame,
-                                    phy.slot / self.slots_per_subframe as u8,
-                                    phy.slot % self.slots_per_subframe as u8,
+                                    phy.slot / self.slots_per_subframe,
+                                    phy.slot % self.slots_per_subframe,
                                     phy.prb_start,
                                     phy.prb_start + phy.prb_length - 1,
                                     phy.symb_start,
@@ -1087,7 +1082,7 @@ impl ResourceBlocks {
                         let slot_rel_x = get_slot_rel_x(slot_idx);
                         let slot_x = content_rect.left() + label_width + slot_rel_x;
 
-                        let sps_u8 = self.slots_per_subframe as u8;
+                        let sps_u8 = self.slots_per_subframe;
                         let slot_in_sf = slot.slot_number % sps_u8;
                         let subframe = slot.slot_number / sps_u8;
 

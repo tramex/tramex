@@ -272,13 +272,12 @@ impl HarqPanel {
         let scroll_height = ui.available_height();
         let mut scroll_area = egui::ScrollArea::vertical().auto_shrink([false, false]);
 
-        if self.should_scroll {
-            if let Some(pos) = self.arrows.iter().position(|a| a.trace_index == self.current_index) {
+        if self.should_scroll
+            && let Some(pos) = self.arrows.iter().position(|a| a.trace_index == self.current_index) {
                 let arrow_y = pos as f32 * arrow_height;
                 let centered = (arrow_y - scroll_height / 2.0).max(0.0);
                 scroll_area = scroll_area.vertical_scroll_offset(centered);
             }
-        }
 
         scroll_area.show(ui, |ui| {
             let total_height = (self.arrows.len() as f32 * arrow_height).max(100.0);
