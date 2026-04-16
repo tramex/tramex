@@ -33,7 +33,7 @@ impl LogGet {
     /// Create a new LogGet struct
     /// Note: layers_list parameter is ignored - we always request ALL layers
     /// The filtering is done by the Application, not by the server
-    pub fn new(id: u64, layers_list: Layers, max_size: u64) -> Self {
+    pub fn new(id: u64, _layers_list: Layers, max_size: u64) -> Self {
         let max_size = max_size.clamp(64, 4096);
         const HOURS_TO_FETCH: i64 = 12;
         Self {

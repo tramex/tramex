@@ -117,13 +117,13 @@ impl FrontEnd {
     /// Show the UI connector
     /// # Errors
     /// Return a vector of TramexError
-    pub fn ui_connector(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
+    pub fn ui_connector(&mut self, ui: &mut egui::Ui) -> Result<(), Vec<TramexError>> {
         let mut errors = vec![];
         if self.open_menu_connector {
-            egui::SidePanel::left("backend_panel")
+            egui::Panel::left("backend_panel")
                 .resizable(false)
-                .exact_width(240.0)
-                .show_animated(ctx, self.open_menu_connector, |ui| {
+                .exact_size(240.0)
+                .show_animated_inside(ui, self.open_menu_connector, |ui| {
                     ui.vertical_centered(|ui| {
                         ui.heading("Connector");
                         let save = self.radio_choice.clone();
@@ -191,7 +191,7 @@ impl FrontEnd {
                                 }
                                 #[cfg(feature = "websocket")]
                                 Some(Connector::WebSocket(ws_handler)) => {
-                                    match ws_handler.show_ui(ui, ctx.clone()) {
+                                    match ws_handler.show_ui(ui) {
                                         Ok(true) => {
                                             // Close requested
                                             self.connector = Some(Connector::WebSocket(WsHandler::new()));
@@ -247,7 +247,7 @@ impl FrontEnd {
     /// Show the UI
     /// # Errors
     /// Return a vector of TramexError
-    pub fn ui(&mut self, ctx: &egui::Context) -> Result<(), Vec<TramexError>> {
+    pub fn ui(&mut self, ui: &mut egui::Ui) -> Result<(), Vec<TramexError>> {
         let mut error_to_return = vec![];
 
         // Poll data source and process new events
@@ -255,7 +255,7 @@ impl FrontEnd {
             Self::collect_errors(&mut error_to_return, err);
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
             if self.source_set {
                 // Build NavState from Application
                 let nav_state = NavState {
@@ -269,7 +269,7 @@ impl FrontEnd {
 
                 // Show navigation panel
                 let mut nav_open = self.open_windows.contains("Navigation");
-                if let Err(err) = self.nav_panel.show_nav(ctx, &mut nav_open, &nav_state) {
+                if let Err(err) = self.nav_panel.show_nav(ui, &mut nav_open, &nav_state) {
                     log::error!("Error in Navigation panel");
                     error_to_return.push(err);
                 }
@@ -297,7 +297,7 @@ impl FrontEnd {
                 }
 
                 // Show panel windows and sync open state (X button)
-                let panel_results = self.application.show_panel_windows(ctx, &self.open_windows);
+                let panel_results = self.application.show_panel_windows(ui, &self.open_windows);
                 for (panel_name, is_open, result) in panel_results {
                     if is_open {
                         self.open_windows.insert(panel_name.clone());

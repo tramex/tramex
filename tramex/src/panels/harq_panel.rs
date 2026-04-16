@@ -51,7 +51,7 @@ struct HarqArrow {
     /// Direction (UL / DL)
     direction: Direction,
     /// Channel type
-    channel_type: PHYChannelType,
+    _channel_type: PHYChannelType,
     /// HARQ process number (None for PUCCH which has no direct harq id)
     harq: Option<u8>,
     /// Label text displayed on the arrow
@@ -126,7 +126,7 @@ impl HarqArrow {
         Some(HarqArrow {
             trace_index: index,
             direction: phy.direction.clone(),
-            channel_type: phy.channel_type,
+            _channel_type: phy.channel_type,
             harq,
             label,
             hfn: 0, // Will be set by HarqPanel during insertion

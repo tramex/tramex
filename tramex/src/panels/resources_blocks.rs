@@ -7,7 +7,7 @@
 
 use crate::event_system::{EventContext, EventSubscriber};
 use crate::theme::ThemeColors;
-use egui::{Color32, Pos2, Rect, Stroke, Vec2};
+use egui::{Color32, Pos2, PopupAnchor, Rect, Stroke, StrokeKind, Vec2};
 use tramex_tools::interface::parser::parser_phy::PHYInfos;
 use tramex_tools::{data::AdditionalInfos, data::Trace, errors::TramexError};
 
@@ -28,6 +28,12 @@ const SYMBOLS_PER_SLOT: usize = 14;
 
 /// Number of frames to display (1 frame = 10ms)
 const DEFAULT_WINDOW_FRAMES: u8 = 10;
+
+/// Stroke Kind style
+const STROKE_KIND_STYLE: StrokeKind = StrokeKind::Middle;
+
+/// Anchor
+const TOOLTIP_ANCHOR: PopupAnchor = PopupAnchor::Pointer;
 
 /// Cell type representing what occupies a resource element
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -531,7 +537,7 @@ impl ResourceBlocks {
 
     /// Get the aggregated resource type for a PRB in slot view mode
     /// Returns the resource type with highest priority found in any symbol of that PRB
-    fn get_slot_resource_type(&self, slot_idx: usize, prb: usize) -> ResourceType {
+    fn _get_slot_resource_type(&self, slot_idx: usize, prb: usize) -> ResourceType {
         if let Some(slot) = self.slots.get(slot_idx) {
             if prb < slot.grid.len() {
                 let mut best_type = ResourceType::Empty;
@@ -748,6 +754,7 @@ impl ResourceBlocks {
                                         cell_rect,
                                         0.0,
                                         Stroke::new(sm_border, theme.line_small),
+                                        STROKE_KIND_STYLE,
                                     );
 
                                     // Highlight focused event cells
@@ -757,6 +764,7 @@ impl ResourceBlocks {
                                                 cell_rect,
                                                 0.0,
                                                 Stroke::new(1.5, theme.text_strong),
+                                        STROKE_KIND_STYLE,
                                             );
                                         }
                                     }
@@ -851,7 +859,7 @@ impl ResourceBlocks {
                                 Color32::from_gray(180)
                             };
                             painter.rect_filled(cell_rect, 0.0, color);
-                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, theme.line_small));
+                            painter.rect_stroke(cell_rect, 0.0, Stroke::new(sm_border, theme.line_small), STROKE_KIND_STYLE);
 
                             // Highlight focused event cells - single pass through symbols
                             if let Some(focused_idx) = self.focused_trace_index {
@@ -868,6 +876,7 @@ impl ResourceBlocks {
                                             cell_rect,
                                             0.0,
                                             Stroke::new(1.5, theme.text_strong),
+                                            STROKE_KIND_STYLE,
                                         );
                                     }
                                 }
@@ -916,7 +925,7 @@ impl ResourceBlocks {
                 if let Some(event) = self.phy_events.iter().find(|e| e.trace_index == event_idx) {
                     let phy = &event.phy_info;
                     // Use egui's show_tooltip_at_pointer directly without pre-building string
-                    egui::show_tooltip_at_pointer(ui.ctx(), ui.layer_id(), egui::Id::new("rb_tooltip"), |ui| {
+                    egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR).at_pointer().show(|ui| {
                         let channel_name = match phy.channel_type {
                             tramex_tools::interface::parser::parser_phy::PHYChannelType::PDSCH => "PDSCH (DL Data)",
                             tramex_tools::interface::parser::parser_phy::PHYChannelType::PUSCH => "PUSCH (UL Data)",
@@ -967,7 +976,7 @@ impl ResourceBlocks {
                     .find(|cfg| cfg.id == ssb_id)
                     .unwrap_or_else(|| self.ssb_configs.first().unwrap());
 
-                egui::show_tooltip_at_pointer(ui.ctx(), ui.layer_id(), egui::Id::new("rb_tooltip"), |ui| {
+                egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR).at_pointer().show(|ui| {
                     if self.view_mode == ViewMode::Symbol {
                         ui.label(format!(
                             "SSB {} (Synchronization Signal Block)\nPeriod: {}ms\nPRB: {}-{} \nSymbols: {}-{}",
@@ -1003,7 +1012,7 @@ impl ResourceBlocks {
                     let summary = self.get_slot_resource_summary(slot_idx, prb);
                     if !summary.is_empty() {
                         let slot = &self.slots[slot_idx];
-                        egui::show_tooltip_at_pointer(ui.ctx(), ui.layer_id(), egui::Id::new("rb_tooltip"), |ui| {
+                        egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("rb_tooltip"), TOOLTIP_ANCHOR).at_pointer().show(|ui| {
                             ui.label(format!("PRB {} in Slot {}", prb, slot.slot_number));
                             ui.label(format!(
                                 "Frame {}.{} | {} symbols active",
@@ -1035,7 +1044,7 @@ impl ResourceBlocks {
                 Vec2::new(visible_rect.width(), header_height),
             );
             painter.rect_filled(header_bg, 0.0, panel_bg);
-            painter.rect_stroke(header_bg, 0.0, Stroke::new(1.0, theme.text_weak));
+            painter.rect_stroke(header_bg, 0.0, Stroke::new(1.0, theme.text_weak), STROKE_KIND_STYLE);
 
             if self.view_mode == ViewMode::Symbol {
                 for slot_idx in vis_start_slot..vis_end_slot {
@@ -1101,7 +1110,7 @@ impl ResourceBlocks {
                 Vec2::new(label_width, visible_rect.height()),
             );
             painter.rect_filled(label_bg, 0.0, panel_bg);
-            painter.rect_stroke(label_bg, 0.0, Stroke::new(1.0, theme.text_weak));
+            painter.rect_stroke(label_bg, 0.0, Stroke::new(1.0, theme.text_weak), STROKE_KIND_STYLE);
 
             let prb_label_x = visible_rect.left() + label_width / 2.0;
             let prb_origin_y = content_rect.top() + header_height + cell_size / 2.0;
@@ -1122,7 +1131,7 @@ impl ResourceBlocks {
                 Vec2::new(label_width, header_height),
             );
             painter.rect_filled(corner, 0.0, panel_bg);
-            painter.rect_stroke(corner, 0.0, Stroke::new(1.0, theme.text_weak));
+            painter.rect_stroke(corner, 0.0, Stroke::new(1.0, theme.text_weak), STROKE_KIND_STYLE);
             painter.text(
                 corner.center(),
                 egui::Align2::CENTER_CENTER,

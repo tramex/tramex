@@ -174,7 +174,7 @@ impl NavigationPanel {
                                     .size(15.0)
                             )
                             .fill(egui::Color32::from_rgb(150, 100, 50))
-                            .rounding(8.0)
+                            .corner_radius(8.0)
                             .min_size(egui::vec2(150.0, 40.0));
 
                             if ui.add(button).clicked() {
@@ -204,7 +204,7 @@ impl NavigationPanel {
                                     .size(15.0)
                             )
                             .fill(button_color)
-                            .rounding(8.0)
+                            .corner_radius(8.0)
                             .min_size(egui::vec2(150.0, 40.0));
 
                             if ui.add(button).clicked() {
@@ -230,7 +230,7 @@ impl NavigationPanel {
                                         .size(15.0)
                                 )
                                 .fill(button_color)
-                                .rounding(8.0)
+                                .corner_radius(8.0)
                                 .min_size(egui::vec2(150.0, 40.0));
 
                                 if ui.add(button).clicked() {

@@ -25,10 +25,10 @@ tokio = ["ewebsock/tokio"]
 ai = []
 
 [dependencies]
-serde = { version = "1.0.217", features = ["derive"] }
-log = "0.4.22"
-serde_json = "1.0.135"
+serde = { version = "1.0.228", features = ["derive"] }
+log = "0.4.29"
+serde_json = "1.0.149"
 ewebsock = { version = "0.8.0", features = ["tls"], optional = true }
-chrono = "0.4.39"
-pest = "2.7"
-pest_derive = "2.7"
+chrono = "0.4.44"
+pest = "2.8"
+pest_derive = "2.8"

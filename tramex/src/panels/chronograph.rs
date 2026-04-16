@@ -133,7 +133,7 @@ impl Chronograph {
     }
     
     /// Add arrow for current trace if it doesn't exist yet
-    fn add_arrow_for_current(&mut self, data: &Data) {
+    fn _add_arrow_for_current(&mut self, data: &Data) {
         let current_idx = data.current_index;
         
         // Check if we already have an arrow for this index

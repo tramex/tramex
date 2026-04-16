@@ -8,7 +8,7 @@ use crate::interface::interface_types::InterfaceTrait;
 use crate::interface::layer::Layers;
 use crate::tramex_error;
 use std::path::PathBuf;
-use std::collections::HashMap;
+//use std::collections::HashMap;
 
 use super::utils_file::parse_one_block;
 use super::file_index::{FileIndex};
@@ -41,7 +41,7 @@ pub struct File {
     pub index: Option<FileIndex>,
     
     /// Cache of parsed traces (index -> Trace)
-    parsed_cache: HashMap<usize, Trace>,
+    //_parsed_cache: HashMap<usize, Trace>,
     
     /// Current logical index in the file index
     pub current_log_index: usize,
@@ -57,7 +57,7 @@ impl Default for File {
             index_line: 0,
             available: true,
             index: None,
-            parsed_cache: HashMap::new(),
+            //parsed_cache: HashMap::new(),
             current_log_index: 0,
         }
     }
@@ -148,7 +148,7 @@ impl File {
             index_line: 0,
             available: true,
             index: None,
-            parsed_cache: HashMap::new(),
+            //parsed_cache: HashMap::new(),
             current_log_index: 0,
         }
     }
@@ -163,7 +163,7 @@ impl File {
             index_line: 0,
             available: true,
             index: None,
-            parsed_cache: HashMap::new(),
+            //parsed_cache: HashMap::new(),
             current_log_index: 0,
         }
     }

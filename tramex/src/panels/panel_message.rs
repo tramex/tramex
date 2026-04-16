@@ -254,7 +254,7 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
                 if let Some(vec_text) = &curr_trace.text {
                     let full_text = vec_text.join("\n");
                     if ui.button("📋").on_hover_text("Copy to clipboard").clicked() {
-                        ui.output_mut(|o| o.copied_text = full_text);
+                        ui.ctx().copy_text(full_text);
                     }
                 }
             });

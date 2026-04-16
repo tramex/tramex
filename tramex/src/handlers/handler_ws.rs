@@ -66,7 +66,7 @@ impl WsHandler {
 
     /// Show WebSocket UI.
     /// Returns Ok(true) if close was requested, Ok(false) otherwise.
-    pub fn show_ui(&mut self, ui: &mut egui::Ui, ctx: egui::Context) -> Result<bool, TramexError> {
+    pub fn show_ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
         if self.inner.is_some() {
             self.display_url(ui, false);
             if let Some(interface_ws) = &mut self.inner {
@@ -87,6 +87,7 @@ impl WsHandler {
             if (self.display_url(ui, true) && ui.input(|i| i.key_pressed(egui::Key::Enter)))
                 || ui.button("Connect").clicked()
             {
+                let ctx = ui.ctx().clone();
                 let wakeup_fn = move || ctx.request_repaint();
                 self.connect(wakeup_fn)?;
             }

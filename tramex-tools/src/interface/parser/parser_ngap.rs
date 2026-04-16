@@ -26,12 +26,6 @@ pub struct NGAPInfos {
 /// NGAP Parser
 pub struct NGAPParser;
 
-impl NGAPParser {
-    fn parse_lines(lines: &[String]) -> Result<Vec<String>, ParsingError> {
-        Ok(lines.to_vec())
-    }
-}
-
 impl FileParser for NGAPParser {
     fn parse_additional_infos(lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
         let line = &lines[0];
