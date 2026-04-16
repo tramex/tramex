@@ -6,3 +6,4 @@ extend-exclude = ["*.log"]
 UE = "UE"
 uper = "uper"
 MCH = "MCH"
+assocations = "assocations"
