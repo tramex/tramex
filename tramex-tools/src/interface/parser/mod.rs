@@ -18,6 +18,7 @@ use chrono::NaiveTime;
 use chrono::Timelike;
 
 /// Parsing error
+#[derive(Debug)]
 pub struct ParsingError {
     /// Error message
     pub message: String,

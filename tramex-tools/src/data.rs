@@ -289,3 +289,77 @@ impl AdditionalInfos {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::interface::parser::parser_rrc::RRCInfos;
+    use crate::interface::parser::parser_nas::NASInfos;
+    use crate::interface::parser::parser_ngap::NGAPInfos;
+
+    #[test]
+    fn test_additional_infos_get_direction() {
+        // Test RRCInfos
+        let rrc_infos = RRCInfos {
+            direction: Direction::DL,
+            canal: "BCCH".to_string(),
+            canal_msg: "SIB".to_string(),
+        };
+        let rrc_additional = AdditionalInfos::RRCInfos(rrc_infos);
+        assert_eq!(rrc_additional.get_direction(), Some(Direction::DL));
+
+        // Test NASInfos
+        let nas_infos = NASInfos {
+            direction: Direction::UL,
+            message_type: "Registration request".to_string(),
+        };
+        let nas_additional = AdditionalInfos::NASInfos(nas_infos);
+        assert_eq!(nas_additional.get_direction(), Some(Direction::UL));
+
+        // Test NGAPInfos
+        let ngap_infos = NGAPInfos {
+            direction: Direction::DL,
+            message_type: "Downlink NAS transport".to_string(),
+            connection_info: Some("127.0.1.100:38412".to_string()),
+        };
+        let ngap_additional = AdditionalInfos::NGAPInfos(ngap_infos);
+        assert_eq!(ngap_additional.get_direction(), Some(Direction::DL));
+
+        // Test None
+        let none_additional = AdditionalInfos::None;
+        assert_eq!(none_additional.get_direction(), None);
+    }
+
+    #[test]
+    fn test_additional_infos_get_message_name() {
+        // Test RRCInfos
+        let rrc_infos = RRCInfos {
+            direction: Direction::DL,
+            canal: "BCCH".to_string(),
+            canal_msg: "SIB".to_string(),
+        };
+        let rrc_additional = AdditionalInfos::RRCInfos(rrc_infos);
+        assert_eq!(rrc_additional.get_message_name(), Some("SIB".to_string()));
+
+        // Test NASInfos
+        let nas_infos = NASInfos {
+            direction: Direction::UL,
+            message_type: "Registration request".to_string(),
+        };
+        let nas_additional = AdditionalInfos::NASInfos(nas_infos);
+        assert_eq!(nas_additional.get_message_name(), Some("Registration request".to_string()));
+
+        // Test NGAPInfos
+        let ngap_infos = NGAPInfos {
+            direction: Direction::DL,
+            message_type: "Downlink NAS transport".to_string(),
+            connection_info: Some("127.0.1.100:38412".to_string()),
+        };
+        let ngap_additional = AdditionalInfos::NGAPInfos(ngap_infos);
+        assert_eq!(ngap_additional.get_message_name(), Some("Downlink NAS transport".to_string()));
+
+        // Test None
+        let none_additional = AdditionalInfos::None;
+        assert_eq!(none_additional.get_message_name(), None);
+    }
+}

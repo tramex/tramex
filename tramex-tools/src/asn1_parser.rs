@@ -25,6 +25,8 @@ struct ASN1Parser;
 ///
 /// # Example
 /// ```
+/// use tramex_tools::asn1_parser::parse_asn1_to_json;
+/// 
 /// let asn1 = r#"{
 ///     cellIdentity '001234501'H,
 ///     trackingAreaCode '000065'H
@@ -32,6 +34,7 @@ struct ASN1Parser;
 ///
 /// let json = parse_asn1_to_json(asn1)?;
 /// println!("{}", serde_json::to_string_pretty(&json)?);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
 /// # Errors

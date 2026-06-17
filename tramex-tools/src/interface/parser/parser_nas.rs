@@ -94,3 +94,51 @@ impl FileParser for NASParser {
         Ok(trace)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_nas_line() {
+        let line = "13:20:58.310 [NAS] UL 0048 5GMM: Service request";
+        let lines = vec![line.to_string()];
+        
+        let result = NASParser::parse_additional_infos(&lines);
+        assert!(result.is_ok());
+        
+        match result.unwrap() {
+            AdditionalInfos::NASInfos(infos) => {
+                assert_eq!(infos.direction, Direction::UL);
+                assert_eq!(infos.message_type, "Service request");
+            }
+            _ => panic!("Expected NASInfos"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nas_dl() {
+        let line = "13:20:58.310 [NAS] DL 0048 5GMM: Registration accept";
+        let lines = vec![line.to_string()];
+        
+        let result = NASParser::parse_additional_infos(&lines);
+        assert!(result.is_ok());
+        
+        match result.unwrap() {
+            AdditionalInfos::NASInfos(infos) => {
+                assert_eq!(infos.direction, Direction::DL);
+                assert_eq!(infos.message_type, "Registration accept");
+            }
+            _ => panic!("Expected NASInfos"),
+        }
+    }
+
+    #[test]
+    fn test_parse_nas_invalid_direction() {
+        let line = "13:20:58.310 [NAS] INVALID 0048 5GMM: Service request";
+        let lines = vec![line.to_string()];
+        
+        let result = NASParser::parse_additional_infos(&lines);
+        assert!(result.is_err());
+    }
+}

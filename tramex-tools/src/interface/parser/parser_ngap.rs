@@ -102,3 +102,69 @@ impl FileParser for NGAPParser {
         Ok(trace)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_ngap_line() {
+        let line = "13:20:58.310 [NGAP] TO 0080 003d 127.0.1.100:38412 UE context release complete";
+        let lines = vec![line.to_string()];
+        
+        let result = NGAPParser::parse_additional_infos(&lines);
+        assert!(result.is_ok());
+        
+        match result.unwrap() {
+            AdditionalInfos::NGAPInfos(infos) => {
+                assert_eq!(infos.direction, Direction::TO);
+                assert_eq!(infos.message_type, "UE context release complete");
+                assert_eq!(infos.connection_info, Some("127.0.1.100:38412".to_string()));
+            }
+            _ => panic!("Expected NGAPInfos"),
+        }
+    }
+
+    #[test]
+    fn test_parse_ngap_from() {
+        let line = "13:20:58.310 [NGAP] FROM 0080 003d 127.0.1.100:38412 Downlink NAS transport";
+        let lines = vec![line.to_string()];
+        
+        let result = NGAPParser::parse_additional_infos(&lines);
+        assert!(result.is_ok());
+        
+        match result.unwrap() {
+            AdditionalInfos::NGAPInfos(infos) => {
+                assert_eq!(infos.direction, Direction::FROM);
+                assert_eq!(infos.message_type, "Downlink NAS transport");
+            }
+            _ => panic!("Expected NGAPInfos"),
+        }
+    }
+
+    #[test]
+    fn test_parse_ngap_no_connection_info() {
+        let line = "13:20:58.310 [NGAP] TO 0080 003d UE context release complete";
+        let lines = vec![line.to_string()];
+        
+        let result = NGAPParser::parse_additional_infos(&lines);
+        assert!(result.is_ok());
+        
+        match result.unwrap() {
+            AdditionalInfos::NGAPInfos(infos) => {
+                assert_eq!(infos.connection_info, None);
+                assert_eq!(infos.message_type, "UE context release complete");
+            }
+            _ => panic!("Expected NGAPInfos"),
+        }
+    }
+
+    #[test]
+    fn test_parse_ngap_invalid_direction() {
+        let line = "13:20:58.310 [NGAP] INVALID 0080 003d 127.0.1.100:38412 UE context release complete";
+        let lines = vec![line.to_string()];
+        
+        let result = NGAPParser::parse_additional_infos(&lines);
+        assert!(result.is_err());
+    }
+}
