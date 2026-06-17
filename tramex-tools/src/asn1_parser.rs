@@ -26,7 +26,7 @@ struct ASN1Parser;
 /// # Example
 /// ```
 /// use tramex_tools::asn1_parser::parse_asn1_to_json;
-/// 
+///
 /// let asn1 = r#"{
 ///     cellIdentity '001234501'H,
 ///     trackingAreaCode '000065'H

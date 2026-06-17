@@ -293,9 +293,9 @@ impl AdditionalInfos {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interface::parser::parser_rrc::RRCInfos;
     use crate::interface::parser::parser_nas::NASInfos;
     use crate::interface::parser::parser_ngap::NGAPInfos;
+    use crate::interface::parser::parser_rrc::RRCInfos;
 
     #[test]
     fn test_additional_infos_get_direction() {

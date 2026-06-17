@@ -93,7 +93,10 @@ mod tests {
             }
             Err(e) => {
                 eprintln!("{e:?}");
-                assert!(e[0].message.contains("Could not parse the JSON like part") || e[0].message.contains("missing closing }"));
+                assert!(
+                    e[0].message.contains("Could not parse the JSON like part")
+                        || e[0].message.contains("missing closing }")
+                );
             }
         }
     }
@@ -198,7 +201,13 @@ mod tests {
         eprintln!("{} == {}", f.data.events.len(), count_events);
         assert!(f.data.events.len() == count_events);
         assert!(errors.len() == count_errors);
-        assert!(errors.last().unwrap().message.contains("The canal and/or canal message could not be parsed"));
+        assert!(
+            errors
+                .last()
+                .unwrap()
+                .message
+                .contains("The canal and/or canal message could not be parsed")
+        );
     }
 
     #[test]
@@ -331,4 +340,3 @@ mod tests {
         assert_eq!(json["mcc"][2], 1);
     }
 }
-
