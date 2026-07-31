@@ -472,7 +472,7 @@ Amarisoft servers often require you to enable "screens" to receive log data:
 **Check if screens are enabled:**
 ```bash
 # Connect to your Amarisoft VM
-ssh user@137.194.194.36
+ssh user@137.194.194.35
 
 # Check screen configuration
 # Look for screen settings in your ENB configuration file
@@ -514,7 +514,7 @@ You can test the WebSocket connection manually using a WebSocket client:
 
 ```javascript
 // Connect to the server
-const ws = new WebSocket('ws://137.194.194.36:9001');
+const ws = new WebSocket('ws://137.194.194.35:9001');
 
 ws.onopen = () => {
     console.log('Connected');

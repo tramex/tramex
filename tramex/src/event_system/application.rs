@@ -61,6 +61,12 @@ impl Application {
         self.data_source = Some(source);
     }
 
+    /// Drop the active data source and clear all loaded events
+    pub fn clear_data_source(&mut self) {
+        self.data_source = None;
+        self.clear_all();
+    }
+
     /// Get the current data source type
     pub fn data_source_type(&self) -> Option<String> {
         self.data_source.as_ref().map(|s| match s.source_type() {

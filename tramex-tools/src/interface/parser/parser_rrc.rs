@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
 
-use super::FileParser;
+use super::{FileParser, LayerParser, ParsedHeader};
 
 #[derive(Debug, Clone)]
 /// Data structure to store the message type (from the amarisoft API)
@@ -90,6 +90,29 @@ impl FileParser for RRCParser {
             relation: TraceRelation::default(),
         };
         Ok(trace)
+    }
+}
+
+impl LayerParser for RRCParser {
+    /// Parse RRC payload lines.
+    /// data_lines[0] should be "CANAL: message" (e.g. "DCCH-NR: RRC release")
+    fn parse_layer(header: &ParsedHeader, data_lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        if data_lines.is_empty() {
+            return Err(ParsingError::new("RRC: empty data lines".to_string(), 0));
+        }
+        let first_line = &data_lines[0];
+        let concatenated: Vec<&str> = first_line.split(':').collect();
+        if concatenated.len() < 2 || concatenated[0].is_empty() || concatenated[1].is_empty() {
+            return Err(ParsingError::new(
+                format!("RRC: cannot parse canal:message from '{}'", first_line),
+                0,
+            ));
+        }
+        Ok(AdditionalInfos::RRCInfos(RRCInfos {
+            direction: header.direction.clone(),
+            canal: concatenated[0].to_owned(),
+            canal_msg: concatenated[1].trim_start().to_owned(),
+        }))
     }
 }
 

@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
 
-use super::FileParser;
+use super::{FileParser, LayerParser, ParsedHeader};
 
 #[derive(Debug, Clone)]
 /// Data structure to store the NGAP message type
@@ -100,6 +100,45 @@ impl FileParser for NGAPParser {
             relation: TraceRelation::default(),
         };
         Ok(trace)
+    }
+}
+
+impl LayerParser for NGAPParser {
+    /// Parse NGAP payload lines.
+    /// data_lines[0] = "ID1 ID2 IP:PORT message type" (e.g. "00fc 009a 127.0.1.100:38412 UE context release request")
+    fn parse_layer(header: &ParsedHeader, data_lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        if data_lines.is_empty() {
+            return Err(ParsingError::new("NGAP: empty data lines".to_string(), 0));
+        }
+        let first_line = &data_lines[0];
+        let parts: Vec<&str> = first_line.split_whitespace().collect();
+
+        // Try to find connection info (IP:port) and message type from the data line
+        let mut connection_info = header.connection_info.clone();
+        let mut message_start_idx = 0;
+
+        // Look for IP:port pattern in the parts
+        for (i, part) in parts.iter().enumerate() {
+            if part.contains(':') && part.contains('.') {
+                connection_info = Some(part.to_string());
+                message_start_idx = i + 1;
+                break;
+            }
+        }
+
+        let message_type = if parts.len() > message_start_idx && message_start_idx > 0 {
+            parts[message_start_idx..].join(" ")
+        } else if !parts.is_empty() {
+            parts.join(" ")
+        } else {
+            "Unknown".to_string()
+        };
+
+        Ok(AdditionalInfos::NGAPInfos(NGAPInfos {
+            direction: header.direction.clone(),
+            message_type,
+            connection_info,
+        }))
     }
 }
 

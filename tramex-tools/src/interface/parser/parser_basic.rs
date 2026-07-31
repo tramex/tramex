@@ -1,6 +1,7 @@
 //! Basic parser for simple layers (PHY, RLC, MAC, PDCP, SDAP, etc.)
 use super::ParsingError;
 use super::hex_extractor::extract_binary_from_lines;
+use super::{LayerParser, ParsedHeader};
 use crate::data::{AdditionalInfos, Trace};
 use crate::interface::association::TraceRelation;
 use crate::interface::layer::Layer;
@@ -23,7 +24,13 @@ impl BasicParser {
 
         // Parse timestamp from first line
         let timestamp = if let Some(first_line) = lines.first() {
-            super::parse_timestamp(first_line)?
+            match chrono::NaiveDateTime::parse_from_str(first_line, "%Y-%m-%d %H:%M:%S%.3f") {
+                Ok(timestamp) => timestamp.and_utc().timestamp(),
+                Err(_) => match super::parse_timestamp(first_line) {
+                    Ok(timestamp) => timestamp,
+                    Err(_) => 0,
+                },
+            }
         } else {
             0
         };
@@ -37,5 +44,12 @@ impl BasicParser {
             relation: TraceRelation::default(),
         };
         Ok(trace)
+    }
+}
+
+impl LayerParser for BasicParser {
+    /// Basic layers have no structured additional info.
+    fn parse_layer(_header: &ParsedHeader, _data_lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        Ok(AdditionalInfos::None)
     }
 }

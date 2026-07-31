@@ -51,6 +51,9 @@ pub struct FileMetadata {
     /// Frequency (ARFCN - nr_arfcn or earfcn)
     pub arfcn: Option<u32>,
 
+    /// Number of resource blocks
+    pub n_rb: Option<u16>,
+
     /// IO mode ("SISO" if dl_mu=1, "MIMO" otherwise)
     pub io_mode: Option<String>,
 
@@ -64,6 +67,7 @@ impl FileMetadata {
         let mut metadata = FileMetadata::default();
 
         for line in lines {
+            println!("Line: {}", line);
             let trimmed = line.trim();
 
             // Stop parsing when we hit a non-comment line
@@ -99,6 +103,16 @@ impl FileMetadata {
                     metadata.arfcn = arfcn_value.parse().ok();
                 }
 
+                // Parse n_rb
+                if let Some(n_rb_value) = Self::extract_value(trimmed, "n_rb_dl=") {
+                    metadata.n_rb = n_rb_value.parse().ok();
+                    if let Some(n_rb_ul_value) = Self::extract_value(trimmed, "n_rb_ul=") {
+                        if n_rb_ul_value != n_rb_value {
+                            log::error!("n_rb_dl and n_rb_ul are different: {} and {}, this is not supported n_rb_dl has been used", n_rb_value, n_rb_ul_value);
+                        }
+                    }
+                }
+
                 // Parse IO mode
                 if let Some(dl_mu_value) = Self::extract_value(trimmed, "dl_mu=")
                     && let Some(ul_mu_value) = Self::extract_value(trimmed, "ul_mu=")
@@ -129,6 +143,7 @@ impl FileMetadata {
                 metadata.rotated_on = Some(trimmed.trim_start_matches("# Rotated on").trim().to_string());
             }
         }
+        log::debug!("{:?}", metadata);
         metadata
     }
 

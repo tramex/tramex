@@ -2,19 +2,15 @@
 
 use std::str::FromStr;
 
-use crate::data::{AdditionalInfos, Trace};
+use crate::data::Trace;
 use crate::errors::TramexError;
-use crate::interface::association::TraceRelation;
 use crate::interface::functions::extract_hexe;
-use crate::interface::parser::hex_extractor::extract_binary_from_lines;
+use crate::interface::parser::ParsedHeader;
 
 use crate::interface::{layer::Layer, types::SourceLog};
 use crate::tramex_error;
 
-use super::parser::parser_basic::BasicParser;
-use super::parser::parser_nas::NASInfos;
-use super::parser::parser_rrc::RRCInfos;
-use super::types::Direction; // to use the FileParser trait and implementations
+use super::types::Direction;
 
 #[derive(serde::Deserialize, Debug)]
 /// Data structure to store the log.
@@ -34,8 +30,29 @@ pub struct OneLog {
     /// index
     pub idx: u64,
 
-    /// index
+    /// Direction (UL/DL/TO/FROM)
     pub dir: Option<String>,
+
+    /// UE identifier
+    pub ue_id: Option<u64>,
+
+    /// Cell identifier
+    pub cell: Option<u64>,
+
+    /// RNTI
+    pub rnti: Option<u64>,
+
+    /// Frame number (PHY)
+    pub frame: Option<u16>,
+
+    /// Slot number (PHY)
+    pub slot: Option<u8>,
+
+    /// Channel name (PHY: PDCCH, PDSCH, etc.)
+    pub channel: Option<String>,
+
+    /// Log level
+    pub level: Option<u8>,
 }
 
 impl OneLog {
@@ -56,114 +73,52 @@ impl OneLog {
         None
     }
 
-    /// Extract the data of the log.
+    /// Build a ParsedHeader from the WebSocket JSON fields.
+    fn build_header(&self) -> Result<ParsedHeader, TramexError> {
+        let direction = match &self.dir {
+            Some(opt_dir) => Direction::from_str(opt_dir).unwrap_or(Direction::NA),
+            None => Direction::NA,
+        };
+
+        Ok(ParsedHeader {
+            timestamp: self.timestamp,
+            layer: self.layer.clone(),
+            direction,
+            ue_id: self.ue_id,
+            cell: self.cell,
+            rnti: self.rnti,
+            frame: self.frame,
+            slot: self.slot,
+            channel: self.channel.clone(),
+            connection_info: None,
+        })
+    }
+
+    /// Extract the data of the log using the unified LayerParser pipeline.
     /// # Errors
     /// Returns a TramexError if the data could not be extracted.
     pub fn extract_data(&self) -> Result<Trace, TramexError> {
-        match self.layer {
-            Layer::RRC => {
-                // log::debug!("self: {:?}", self);
-                let dir = match &self.dir {
-                    Some(opt_dir) => match Direction::from_str(opt_dir) {
-                        Ok(d) => d,
-                        Err(_) => {
-                            log::debug!("Direction: {:?}", self.dir);
-                            return Err(tramex_error!(
-                                format!("Can't format direction {}", opt_dir),
-                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
-                            ));
-                        }
-                    },
-                    None => {
-                        return Err(tramex_error!(
-                            "Direction not found".to_owned(),
-                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage
-                        ));
-                    }
-                };
-                let firs_line = self.data[0].split(':').collect::<Vec<&str>>();
-                if firs_line.len() < 2 {
-                    return Err(tramex_error!(
-                        format!("Invalid first line {}", self.data[0]),
-                        crate::errors::ErrorCode::WebSocketErrorDecodingMessage
-                    ));
-                }
-                let rrc: RRCInfos = RRCInfos {
-                    direction: dir,
-                    canal: firs_line[0].to_owned(),
-                    canal_msg: firs_line[1][1..].to_owned(),
-                };
-                let infos = AdditionalInfos::RRCInfos(rrc);
-                let text_lines: Vec<String> = self.data[1..].iter().map(|x| x.to_string()).collect();
-                let binary = extract_binary_from_lines(&self.data);
-                let trace = Trace {
-                    timestamp: self.timestamp,
-                    layer: Layer::RRC,
-                    additional_infos: infos,
-                    text: Some(text_lines),
-                    binary,
-                    relation: TraceRelation::default(),
-                };
-                Ok(trace)
-            }
-            Layer::NAS => {
-                let dir = match &self.dir {
-                    Some(opt_dir) => match Direction::from_str(opt_dir) {
-                        Ok(d) => d,
-                        Err(_) => {
-                            return Err(tramex_error!(
-                                format!("Can't format direction {}", opt_dir),
-                                crate::errors::ErrorCode::WebSocketErrorDecodingMessage
-                            ));
-                        }
-                    },
-                    None => {
-                        return Err(tramex_error!(
-                            "Direction not found".to_owned(),
-                            crate::errors::ErrorCode::WebSocketErrorDecodingMessage
-                        ));
-                    }
-                };
+        use crate::interface::parser::build_trace;
+        use crate::interface::parser::LayerParser;
+        use crate::interface::parser::parser_basic::BasicParser;
+        use crate::interface::parser::parser_gtpu::GTPUParser;
+        use crate::interface::parser::parser_nas::NASParser;
+        use crate::interface::parser::parser_ngap::NGAPParser;
+        use crate::interface::parser::parser_phy::PHYParser;
+        use crate::interface::parser::parser_rrc::RRCParser;
 
-                // First line contains the message type
-                // Example: "5GMM: Service request" or just "Service request"
-                let message_type = if self.data.is_empty() {
-                    "Unknown".to_string()
-                } else {
-                    // Remove protocol prefix if present (e.g., "5GMM: ")
-                    let first_line = &self.data[0];
-                    if let Some(colon_pos) = first_line.find(':') {
-                        first_line[colon_pos + 1..].trim().to_string()
-                    } else {
-                        first_line.trim().to_string()
-                    }
-                };
+        let header = self.build_header()?;
 
-                let nas = NASInfos {
-                    direction: dir,
-                    message_type,
-                };
-                let infos = AdditionalInfos::NASInfos(nas);
-                let text_lines: Vec<String> = self.data[1..].iter().map(|x| x.to_string()).collect();
-                let binary = extract_binary_from_lines(&self.data);
-                let trace = Trace {
-                    timestamp: self.timestamp,
-                    layer: Layer::NAS,
-                    additional_infos: infos,
-                    text: Some(text_lines),
-                    binary,
-                    relation: TraceRelation::default(),
-                };
-                Ok(trace)
-            }
-            _ => {
-                // Use BasicParser for all other layers (PHY, RLC, MAC, PDCP, SDAP, etc.)
-                let mut trace = BasicParser::parse_with_layer(&self.data, self.layer.clone())
-                    .map_err(|e| tramex_error!(e.message, crate::errors::ErrorCode::ParsingLayerNotImplemented))?;
-                // Set the timestamp from the WebSocket log
-                trace.timestamp = self.timestamp;
-                Ok(trace)
-            }
+        let additional_infos = match self.layer {
+            Layer::RRC => RRCParser::parse_layer(&header, &self.data),
+            Layer::NAS => NASParser::parse_layer(&header, &self.data),
+            Layer::NGAP => NGAPParser::parse_layer(&header, &self.data),
+            Layer::GTPU => GTPUParser::parse_layer(&header, &self.data),
+            Layer::PHY => PHYParser::parse_layer(&header, &self.data),
+            _ => BasicParser::parse_layer(&header, &self.data),
         }
+        .map_err(|e| tramex_error!(e.message, crate::errors::ErrorCode::ParsingLayerNotImplemented))?;
+
+        Ok(build_trace(&header, additional_infos, &self.data))
     }
 }

@@ -1311,6 +1311,8 @@ impl EventSubscriber for ResourceBlocks {
 
     fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {
         log::debug!("ResourceBlocks: Metadata changed, parsing SSB config");
+        self.num_prbs = metadata.n_rb.map(|v| v as usize).unwrap_or(DEFAULT_NUM_PRBS);
+        self.needs_rebuild = true;
         self.update_ssb_config_from_metadata(&metadata.ssb_info);
     }
 

@@ -141,9 +141,22 @@ impl AIConnector for MistralConnector {
         let json: serde_json::Value = serde_json::from_str(response_body)
             .map_err(|e| TramexError::new(format!("Failed to parse AI response: {e}"), ErrorCode::RequestError))?;
 
-        // Check for API error
+        // Check for API error (OpenAI-compatible nested or string error)
         if let Some(error) = json.get("error") {
-            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown API error");
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .or_else(|| error.as_str())
+                .unwrap_or("Unknown API error");
+            return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
+        }
+
+        // Some error responses expose details at the top level
+        if let Some(msg) = json
+            .get("message")
+            .and_then(|m| m.as_str())
+            .or_else(|| json.get("detail").and_then(|d| d.as_str()))
+        {
             return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
         }
 
@@ -160,5 +173,33 @@ impl AIConnector for MistralConnector {
                     ErrorCode::RequestError,
                 )
             })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_successful_response() {
+        let connector = MistralConnector::new();
+        let body = r#"{"choices":[{"message":{"content":"Hello"}}]}"#;
+        assert_eq!(connector.parse_response(body).unwrap(), "Hello");
+    }
+
+    #[test]
+    fn parse_error_with_nested_message() {
+        let connector = MistralConnector::new();
+        let body = r#"{"error":{"message":"Invalid API key","type":"unauthorized"}}"#;
+        let err = connector.parse_response(body).unwrap_err();
+        assert!(err.get_msg().contains("Invalid API key"));
+    }
+
+    #[test]
+    fn parse_error_with_top_level_message() {
+        let connector = MistralConnector::new();
+        let body = r#"{"message":"Unauthorized","request_id":"abc"}"#;
+        let err = connector.parse_response(body).unwrap_err();
+        assert!(err.get_msg().contains("Unauthorized"));
     }
 }

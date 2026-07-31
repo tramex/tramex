@@ -1,20 +1,80 @@
 //! Panel to display the RRC status
-use super::functions_panels::ArrowColor;
-use super::functions_panels::ArrowDirection;
-use super::functions_panels::make_arrow;
-use super::functions_panels::make_label;
 use crate::event_system::{EventContext, EventSubscriber};
 use crate::panels::PanelView;
-use crate::theme::ChannelColors;
-use egui::Color32;
+use crate::theme::{ArrowColors, ChannelColors, ThemeColors};
+use egui::{Color32, TextFormat};
 use tramex_tools::data::{AdditionalInfos, Trace};
 use tramex_tools::errors::TramexError;
 use tramex_tools::interface::parse_config::Technology;
 use tramex_tools::interface::types::Direction;
 
+/// Create a label with a background color (using Color32 directly)
+fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) -> egui::Response {
+    use egui::text::LayoutJob;
+    let mut job = LayoutJob::default();
+    let theme = ThemeColors::get(ui);
+
+    // Use theme-aware text color - dark text on colored backgrounds for readability
+    let text_color = if show { ChannelColors::TEXT_ON_COLOR } else { theme.text };
+
+    let background = if show { color } else { Color32::TRANSPARENT };
+
+    job.append(
+        label,
+        0.0,
+        TextFormat {
+            color: text_color,
+            background,
+            ..Default::default()
+        },
+    );
+    ui.label(job)
+}
+
 /// Make a label with hover effect
 fn make_label_hover(ui: &mut egui::Ui, label: &str, show: bool, color: Color32) {
     make_label(ui, label, show, color);
+}
+
+/// Arrow direction
+#[derive(Debug)]
+enum ArrowDirection {
+    /// Up arrow
+    Up,
+
+    /// Down arrow
+    Down,
+}
+
+/// Arrow color
+#[derive(Debug, Clone)]
+enum ArrowColor {
+    /// Green arrow
+    Green,
+
+    /// Black arrow
+    Black,
+}
+
+/// Create an arrow
+fn make_arrow(ui: &mut egui::Ui, direction: ArrowDirection, color: ArrowColor, font_id: &egui::FontId) {
+    // ↑↓
+    // ⇑⇓
+    // ⇡⇣ chosen
+    // ⮉⮋
+    // ⬆⬇
+    // ⇧⇩
+    let content = match direction {
+        ArrowDirection::Down => "⇣",
+        ArrowDirection::Up => "⇡",
+    };
+    let theme = ThemeColors::get(ui);
+    let current_color = match color {
+        ArrowColor::Green => ArrowColors::ACTIVE,
+        ArrowColor::Black => theme.text,
+    };
+
+    ui.label(egui::RichText::new(content).color(current_color).font(font_id.clone()));
 }
 
 /// RRC connection states

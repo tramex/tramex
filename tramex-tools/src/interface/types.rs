@@ -20,6 +20,9 @@ pub struct WebSocketLog {
     ///Number representing UTC seconds.
     pub utc: f64,
 
+    /// headers
+    pub headers: Option<Vec<String>>,
+    
     /// Logs vectors
     pub logs: Vec<OneLog>,
 }
