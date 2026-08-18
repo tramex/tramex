@@ -113,13 +113,13 @@ impl MessageBox {
                 Ok(resp) => {
                     let body = resp.text().unwrap_or("").to_string();
                     if !resp.ok {
-                        log::error!("Mistral API returned HTTP {}: {}", resp.status, body);
                         let conn = create_connector(&provider, &model_clone);
+                        log::error!("{} API returned HTTP {}: {}", conn.name(), resp.status, body);
                         let err_msg = match conn.parse_response(&body) {
                             Err(e) => e.get_msg(),
                             Ok(_) => body,
                         };
-                        Err(format!("Mistral API returned HTTP {}: {}", resp.status, err_msg))
+                        Err(format!("{} API returned HTTP {}: {}", conn.name(), resp.status, err_msg))
                     } else {
                         let conn = create_connector(&provider, &model_clone);
                         match conn.parse_response(&body) {

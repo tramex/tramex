@@ -3,7 +3,9 @@
 //! Provides a trait-based abstraction for AI chatbot APIs.
 //! Enable with the `ai` feature flag.
 
+pub mod anthropic;
 pub mod mistral;
+pub mod openai;
 
 use crate::data::Trace;
 use crate::errors::TramexError;
@@ -67,12 +69,18 @@ pub enum AIProvider {
     /// Mistral AI
     #[default]
     Mistral,
+    /// OpenAI (ChatGPT)
+    OpenAI,
+    /// Anthropic (Claude)
+    Anthropic,
 }
 
 impl std::fmt::Display for AIProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Mistral => write!(f, "Mistral"),
+            Self::OpenAI => write!(f, "OpenAI"),
+            Self::Anthropic => write!(f, "Anthropic"),
         }
     }
 }
@@ -80,7 +88,7 @@ impl std::fmt::Display for AIProvider {
 impl AIProvider {
     /// Return the list of all available providers
     pub fn all() -> &'static [AIProvider] {
-        &[AIProvider::Mistral]
+        &[AIProvider::Mistral, AIProvider::OpenAI, AIProvider::Anthropic]
     }
 
     /// Return available (display_name, model_id) pairs for this provider
@@ -91,6 +99,16 @@ impl AIProvider {
                 ("Medium", "mistral-medium-latest"),
                 ("Large", "mistral-large-latest"),
             ],
+            AIProvider::OpenAI => &[
+                ("GPT-4o mini", "gpt-4o-mini"),
+                ("GPT-4o", "gpt-4o"),
+                ("GPT-4.1", "gpt-4.1"),
+            ],
+            AIProvider::Anthropic => &[
+                ("Claude 3.5 Haiku", "claude-3-5-haiku-latest"),
+                ("Claude 3.5 Sonnet", "claude-3-5-sonnet-latest"),
+                ("Claude 3 Opus", "claude-3-opus-latest"),
+            ],
         }
     }
 
@@ -98,6 +116,8 @@ impl AIProvider {
     pub fn default_model(&self) -> &'static str {
         match self {
             AIProvider::Mistral => "mistral-medium-latest",
+            AIProvider::OpenAI => "gpt-4o-mini",
+            AIProvider::Anthropic => "claude-3-5-haiku-latest",
         }
     }
 }
@@ -106,5 +126,7 @@ impl AIProvider {
 pub fn create_connector(provider: &AIProvider, model: &str) -> Box<dyn AIConnector> {
     match provider {
         AIProvider::Mistral => Box::new(mistral::MistralConnector::with_model(model)),
+        AIProvider::OpenAI => Box::new(openai::OpenAIConnector::with_model(model)),
+        AIProvider::Anthropic => Box::new(anthropic::AnthropicConnector::with_model(model)),
     }
 }
