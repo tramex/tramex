@@ -67,7 +67,7 @@ impl FileMetadata {
         let mut metadata = FileMetadata::default();
 
         for line in lines {
-            println!("Line: {}", line);
+            // println!("Line: {}", line);
             let trimmed = line.trim();
 
             // Stop parsing when we hit a non-comment line

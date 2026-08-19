@@ -274,7 +274,7 @@ impl LogicalChannels {
                     physical: PhysicalChannelsEnum::PBCH,
                 });
             }
-            ("BCCH", "SIB1") | ("BCCH", "SIB") => {
+            ("BCCH", "SIB1") | ("BCCH", "SIB2") | ("BCCH", "SIB3") | ("BCCH", "SIB") => {
                 self.state = Some(ChannelState {
                     logical: LogicalChannelsEnum::BCCH,
                     transport: TransportChannelsEnum::DL_SCH,

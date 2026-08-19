@@ -115,15 +115,7 @@ impl Application {
             Vec::new()
         };
 
-        // 2. Process new events (source borrow dropped)
-        if !new_events.is_empty() {
-            log::debug!("Application: Polled {} new events", new_events.len());
-            if let Err(e) = self.process_new_events(new_events) {
-                errors.extend(e);
-            }
-        }
-
-        // 3. Sync metadata from data source if changed
+        // 2. Sync metadata from data source if changed
         let new_meta = self
             .data_source
             .as_ref()
@@ -134,6 +126,14 @@ impl Application {
             log::info!("Application: Synced metadata from source - Technology: {:?}", meta.technology);
             self.metadata = meta;
             self.event_bus.notify_metadata_changed(&self.metadata);
+        }
+
+        // 3. Process new events (source borrow dropped)
+        if !new_events.is_empty() {
+            log::debug!("Application: Polled {} new events", new_events.len());
+            if let Err(e) = self.process_new_events(new_events) {
+                errors.extend(e);
+            }
         }
 
         // 4. For auto-loading sources, request more data
