@@ -103,11 +103,15 @@ impl AIProvider {
                 ("GPT-4o mini", "gpt-4o-mini"),
                 ("GPT-4o", "gpt-4o"),
                 ("GPT-4.1", "gpt-4.1"),
+                ("GPT-5.3", "gpt-5.3"),
+                ("GPT-5.5", "gpt-5.5"),
             ],
             AIProvider::Anthropic => &[
                 ("Claude 3.5 Haiku", "claude-3-5-haiku-latest"),
                 ("Claude 3.5 Sonnet", "claude-3-5-sonnet-latest"),
                 ("Claude 3 Opus", "claude-3-opus-latest"),
+                ("Claude 4 Opus", "claude-4-opus-latest"),
+                ("Claude 5 Opus", "claude-5-opus-latest"),
             ],
         }
     }
