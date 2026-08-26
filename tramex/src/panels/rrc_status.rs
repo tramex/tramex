@@ -347,8 +347,6 @@ impl RRCStatusPanel {
                 canal_msg: Some(infos.canal_msg.to_owned()),
                 direction: Some(infos.direction.clone()),
             });
-        } else {
-            log::debug!("RRC Status: event idx={} is not an RRC message", index);
         }
     }
 

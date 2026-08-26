@@ -363,8 +363,12 @@ impl FrontEnd {
     }
 
     /// Handle navigate-next with on-demand loading
+    ///
+    /// Keeps requesting more data and retrying navigation until either a matching
+    /// (enabled-layer) event is found, or the data source is exhausted / stops
+    /// producing new events (e.g., WebSocket waiting for more data).
     fn handle_navigate_next(&mut self, errors: &mut Vec<TramexError>) {
-        let navigated = self.application.navigate_next();
+        let mut navigated = self.application.navigate_next();
         log::debug!(
             "Navigation result: {}, current: {}, total: {}",
             navigated,
@@ -372,8 +376,8 @@ impl FrontEnd {
             self.application.event_count()
         );
 
-        // If at end, try loading more data (but only once for WebSocket to avoid infinite loop)
-        if !navigated && self.application.has_more_data() {
+        // If at end, keep loading more data until we find a matching event or run out of data
+        while !navigated && self.application.has_more_data() {
             let count_before = self.application.event_count();
             log::info!(
                 "Reached end of loaded events ({}), loading more...",
@@ -392,10 +396,12 @@ impl FrontEnd {
             let count_after = self.application.event_count();
             if count_after > count_before {
                 // New events loaded, try navigating again
-                self.application.navigate_next();
+                navigated = self.application.navigate_next();
+            } else {
+                // No new events were loaded (e.g., WebSocket waiting for data), stop here
+                // The user can click Next again when more data arrives
+                break;
             }
-            // If no new events were loaded (e.g., WebSocket waiting for data), just return
-            // The user can click Next again when more data arrives
         }
     }
 
