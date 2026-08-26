@@ -373,12 +373,10 @@ impl AssociationRule for NgapToNasRule {
     }
 
     fn preferred_direction(&self, source: &Trace) -> SearchDirection {
-        if source.additional_infos.get_direction().unwrap() == Direction::UL
-            || source.additional_infos.get_direction().unwrap() == Direction::TO
-        {
-            SearchDirection::BackwardFirst
-        } else {
-            SearchDirection::ForwardFirst
+        match source.additional_infos.get_direction() {
+            Some(Direction::UL) | Some(Direction::TO) => SearchDirection::BackwardFirst,
+            Some(_) => SearchDirection::ForwardFirst,
+            None => SearchDirection::default(),
         }
     }
 

@@ -11,8 +11,6 @@ pub mod resources_blocks;
 pub mod rrc_status;
 pub mod trame_manager;
 
-pub mod functions_panels;
-
 use eframe::egui;
 
 /// Something to view in the demo windows

@@ -123,6 +123,35 @@ impl FrontEnd {
     /// Return a vector of TramexError
     pub fn ui_connector(&mut self, ui: &mut egui::Ui) -> Result<(), Vec<TramexError>> {
         let mut errors = vec![];
+
+        // Show collapse/expand button at the edge of the panel
+        let button_text = if self.open_menu_connector { "◀" } else { "▶" };
+        let button_tooltip = if self.open_menu_connector {
+            "Hide side panel"
+        } else {
+            "Show side panel"
+        };
+
+        // Draw the toggle button on the left side
+        let toggle_frame = egui::Frame::NONE.fill(ui.visuals().panel_fill);
+        egui::Panel::left("panel_toggle")
+            .resizable(false)
+            .exact_size(20.0)
+            .show_separator_line(false)
+            .frame(toggle_frame)
+            .show_inside(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(5.0);
+                    if ui
+                        .add(egui::Button::new(button_text).frame(false))
+                        .on_hover_text(button_tooltip)
+                        .clicked()
+                    {
+                        self.open_menu_connector = !self.open_menu_connector;
+                    }
+                });
+            });
+
         if self.open_menu_connector {
             egui::Panel::left("backend_panel")
                 .resizable(false)
@@ -196,11 +225,11 @@ impl FrontEnd {
                                 }
                                 #[cfg(feature = "websocket")]
                                 Some(Connector::WebSocket(ws_handler)) => {
-                                    match ws_handler.show_ui(ui) {
+                                    match ws_handler.show_ui(ui, self.source_set) {
                                         Ok(true) => {
                                             // Close requested
                                             self.connector = Some(Connector::WebSocket(WsHandler::new()));
-                                            self.application.clear_all();
+                                            self.application.clear_data_source();
                                             self.source_set = false;
                                         }
                                         Ok(false) => {
@@ -334,6 +363,10 @@ impl FrontEnd {
     }
 
     /// Handle navigate-next with on-demand loading
+    ///
+    /// Keeps requesting more data and retrying navigation until either a matching
+    /// (enabled-layer) event is found, or the data source is exhausted / stops
+    /// producing new events (e.g., WebSocket waiting for more data).
     fn handle_navigate_next(&mut self, errors: &mut Vec<TramexError>) {
         let mut navigated = self.application.navigate_next();
         log::debug!(
@@ -343,28 +376,27 @@ impl FrontEnd {
             self.application.event_count()
         );
 
-        // If at end, keep loading batches until we find an enabled event
-        while !navigated {
-            if self.application.has_more_data() {
-                log::info!(
-                    "Reached end of loaded events ({}), loading more...",
-                    self.application.event_count()
-                );
-                if let Err(err) = self.application.request_more_data() {
-                    Self::collect_errors(errors, err);
-                    break;
-                }
-                // Process newly loaded events
-                if let Err(err) = self.application.update() {
-                    Self::collect_errors(errors, err);
-                    break;
-                }
-                // Check if new events were actually loaded
-                if self.application.event_count() == 0 {
-                    break;
-                }
+        // If at end, keep loading more data until we find a matching event or run out of data
+        while !navigated && self.application.has_more_data() {
+            let count_before = self.application.event_count();
+            log::info!("Reached end of loaded events ({}), loading more...", count_before);
+            if let Err(err) = self.application.request_more_data() {
+                Self::collect_errors(errors, err);
+                return;
+            }
+            // Process newly loaded events
+            if let Err(err) = self.application.update() {
+                Self::collect_errors(errors, err);
+                return;
+            }
+            // Check if new events were actually loaded
+            let count_after = self.application.event_count();
+            if count_after > count_before {
+                // New events loaded, try navigating again
                 navigated = self.application.navigate_next();
             } else {
+                // No new events were loaded (e.g., WebSocket waiting for data), stop here
+                // The user can click Next again when more data arrives
                 break;
             }
         }

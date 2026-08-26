@@ -1,10 +1,10 @@
-//! Mistral AI connector implementation
+//! OpenAI (ChatGPT) connector implementation
 
 use crate::ai::{AIConnector, AIRequest};
 use crate::data::{AdditionalInfos, Trace};
 use crate::errors::{ErrorCode, TramexError};
 
-/// System prompt for Mistral AI explaining Amarisoft traces
+/// System prompt for OpenAI explaining Amarisoft traces
 const SYSTEM_PROMPT: &str = r#"You are a telecom protocol expert specializing in 4G LTE and 5G NR analysis. You are helping a user understand traces captured from an Amarisoft base station (eNB/gNB).
 
 When explaining a trace, structure your response in three sections:
@@ -14,27 +14,27 @@ When explaining a trace, structure your response in three sections:
 
 Be concise but technically accurate. Target approximately 200 words. Use markdown formatting for readability."#;
 
-/// Mistral AI connector
-pub struct MistralConnector {
+/// OpenAI (ChatGPT) connector
+pub struct OpenAIConnector {
     /// API endpoint
     endpoint: String,
     /// Model to use
     model: String,
 }
 
-impl MistralConnector {
-    /// Create a new MistralConnector with default settings
+impl OpenAIConnector {
+    /// Create a new OpenAIConnector with default settings
     pub fn new() -> Self {
         Self {
-            endpoint: "https://api.mistral.ai/v1/chat/completions".to_string(),
-            model: "mistral-medium-latest".to_string(),
+            endpoint: "https://api.openai.com/v1/chat/completions".to_string(),
+            model: "gpt-4o-mini".to_string(),
         }
     }
 
-    /// Create a MistralConnector with a specific model
+    /// Create an OpenAIConnector with a specific model
     pub fn with_model(model: &str) -> Self {
         Self {
-            endpoint: "https://api.mistral.ai/v1/chat/completions".to_string(),
+            endpoint: "https://api.openai.com/v1/chat/completions".to_string(),
             model: model.to_string(),
         }
     }
@@ -87,15 +87,15 @@ impl MistralConnector {
     }
 }
 
-impl Default for MistralConnector {
+impl Default for OpenAIConnector {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl AIConnector for MistralConnector {
+impl AIConnector for OpenAIConnector {
     fn name(&self) -> &'static str {
-        "Mistral"
+        "OpenAI"
     }
 
     fn build_request(&self, trace: &Trace, api_key: &str) -> Result<AIRequest, TramexError> {
@@ -148,7 +148,7 @@ impl AIConnector for MistralConnector {
                 .and_then(|m| m.as_str())
                 .or_else(|| error.as_str())
                 .unwrap_or("Unknown API error");
-            return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
+            return Err(TramexError::new(format!("OpenAI API error: {msg}"), ErrorCode::RequestError));
         }
 
         // Some error responses expose details at the top level
@@ -157,7 +157,7 @@ impl AIConnector for MistralConnector {
             .and_then(|m| m.as_str())
             .or_else(|| json.get("detail").and_then(|d| d.as_str()))
         {
-            return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
+            return Err(TramexError::new(format!("OpenAI API error: {msg}"), ErrorCode::RequestError));
         }
 
         // Extract the assistant's message content
@@ -169,7 +169,7 @@ impl AIConnector for MistralConnector {
             .map(|s| s.to_string())
             .ok_or_else(|| {
                 TramexError::new(
-                    "Unexpected response format from Mistral API".to_string(),
+                    "Unexpected response format from OpenAI API".to_string(),
                     ErrorCode::RequestError,
                 )
             })
@@ -182,22 +182,22 @@ mod tests {
 
     #[test]
     fn parse_successful_response() {
-        let connector = MistralConnector::new();
+        let connector = OpenAIConnector::new();
         let body = r#"{"choices":[{"message":{"content":"Hello"}}]}"#;
         assert_eq!(connector.parse_response(body).unwrap(), "Hello");
     }
 
     #[test]
     fn parse_error_with_nested_message() {
-        let connector = MistralConnector::new();
-        let body = r#"{"error":{"message":"Invalid API key","type":"unauthorized"}}"#;
+        let connector = OpenAIConnector::new();
+        let body = r#"{"error":{"message":"Invalid API key","type":"invalid_request_error"}}"#;
         let err = connector.parse_response(body).unwrap_err();
         assert!(err.get_msg().contains("Invalid API key"));
     }
 
     #[test]
     fn parse_error_with_top_level_message() {
-        let connector = MistralConnector::new();
+        let connector = OpenAIConnector::new();
         let body = r#"{"message":"Unauthorized","request_id":"abc"}"#;
         let err = connector.parse_response(body).unwrap_err();
         assert!(err.get_msg().contains("Unauthorized"));

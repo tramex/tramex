@@ -7,6 +7,7 @@ use tramex_tools::data::Trace;
 use tramex_tools::errors::{ErrorCode, TramexError};
 use tramex_tools::interface::interface_types::InterfaceTrait;
 use tramex_tools::interface::layer::Layers;
+use tramex_tools::interface::parse_config::FileMetadata;
 use tramex_tools::interface::websocket::ws_connection::WsConnection;
 use tramex_tools::tramex_error;
 
@@ -113,6 +114,15 @@ impl DataSource for WebSocketSource {
         DataSourceType::WebSocket {
             url: self.url.clone(),
             connected: self.connected,
+        }
+    }
+
+    fn metadata(&self) -> Option<&FileMetadata> {
+        // Return metadata if headers have been received and parsed
+        if self.connection.headers_received {
+            Some(&self.temp_data.metadata)
+        } else {
+            None
         }
     }
 

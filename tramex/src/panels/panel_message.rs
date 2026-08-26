@@ -112,10 +112,20 @@ impl MessageBox {
             let result = match response {
                 Ok(resp) => {
                     let body = resp.text().unwrap_or("").to_string();
-                    let conn = create_connector(&provider, &model_clone);
-                    match conn.parse_response(&body) {
-                        Ok(explanation) => Ok(explanation),
-                        Err(e) => Err(e.get_msg()),
+                    if !resp.ok {
+                        let conn = create_connector(&provider, &model_clone);
+                        log::error!("{} API returned HTTP {}: {}", conn.name(), resp.status, body);
+                        let err_msg = match conn.parse_response(&body) {
+                            Err(e) => e.get_msg(),
+                            Ok(_) => body,
+                        };
+                        Err(format!("{} API returned HTTP {}: {}", conn.name(), resp.status, err_msg))
+                    } else {
+                        let conn = create_connector(&provider, &model_clone);
+                        match conn.parse_response(&body) {
+                            Ok(explanation) => Ok(explanation),
+                            Err(e) => Err(e.get_msg()),
+                        }
                     }
                 }
                 Err(err) => Err(format!("HTTP error: {err}")),

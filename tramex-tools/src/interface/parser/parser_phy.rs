@@ -6,7 +6,7 @@ use crate::data::{AdditionalInfos, Trace};
 use crate::interface::association::TraceRelation;
 use crate::interface::{layer::Layer, types::Direction};
 
-use super::FileParser;
+use super::{FileParser, LayerParser, ParsedHeader};
 
 /// PHY channel type for resource grid visualization
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -248,6 +248,67 @@ pub fn parse_phy_lines(lines: &[String], direction: Direction) -> Option<PHYInfo
         harq_si,
         channel_data,
     })
+}
+
+impl LayerParser for PHYParser {
+    /// Parse PHY payload from WebSocket data lines + ParsedHeader metadata.
+    /// header provides: direction, frame, slot, channel
+    /// data_lines contain key=value fields (e.g. ["ss_id=2 cce_index=12 al=2 dci=0_1 k2=4", "ndi=0", ...])
+    fn parse_layer(header: &ParsedHeader, data_lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        let channel_name = header.channel.as_deref().unwrap_or("");
+        let channel_type = match channel_name {
+            "PDSCH" => PHYChannelType::PDSCH,
+            "PUSCH" => PHYChannelType::PUSCH,
+            "PUCCH" => PHYChannelType::PUCCH,
+            "PDCCH" => PHYChannelType::PDCCH,
+            "PRACH" => PHYChannelType::PRACH,
+            _ => PHYChannelType::Other,
+        };
+
+        if matches!(channel_type, PHYChannelType::Other) {
+            return Ok(AdditionalInfos::None);
+        }
+
+        let frame = header.frame.unwrap_or(0);
+        let slot = header.slot.unwrap_or(0);
+
+        // For WebSocket, the first data line may contain key=value pairs on one line
+        // Concatenate first line with remaining lines to build a unified view for helpers
+        let first_line = data_lines.first().map(|s| s.as_str()).unwrap_or("");
+
+        // Parse prb from the data lines (PDCCH has no prb)
+        let (prb_start, prb_length) = if matches!(channel_type, PHYChannelType::PDCCH) {
+            (0, 0)
+        } else {
+            parse_prb(first_line).unwrap_or((0, 0))
+        };
+
+        let (symb_start, symb_length) = parse_symb(first_line).unwrap_or((0, 14));
+        let (harq, harq_si) = parse_harq(first_line);
+
+        // Parse channel-specific data from all data lines
+        let channel_data = match channel_type {
+            PHYChannelType::PDCCH => parse_pdcch_data(data_lines),
+            PHYChannelType::PDSCH => parse_pdsch_data(first_line),
+            PHYChannelType::PUSCH => parse_pusch_data(first_line),
+            PHYChannelType::PUCCH => parse_pucch_data(first_line),
+            _ => PHYChannelData::None,
+        };
+
+        Ok(AdditionalInfos::PHYInfos(PHYInfos {
+            direction: header.direction.clone(),
+            channel_type,
+            frame,
+            slot,
+            prb_start,
+            prb_length,
+            symb_start,
+            symb_length,
+            harq,
+            harq_si,
+            channel_data,
+        }))
+    }
 }
 
 /// Convenience wrapper for single-line parsing (used in tests)

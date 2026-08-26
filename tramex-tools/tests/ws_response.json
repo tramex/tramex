@@ -1,0 +1,118 @@
+{
+    "message": "log_get",
+    "message_id": 42,
+    "headers": [
+        "# lteenb version 2024-12-13",
+        "# Cell 0: nr_arfcn=640000 pci=1 mode=TDD n_rb_dl=51 dl_mu=1 ul_mu=1",
+        "# SSB: ssb_nr_arfcn=640000 ssb_scs=30 ssb_period=20",
+        "# Started on 2024-12-13 10:00:00"
+    ],
+    "logs": [
+        {
+            "data": [
+                "ss_id=2 cce_index=12 al=2 dci=0_1 k2=4",
+                "rb_alloc=0xd0",
+                "time_domain_rsc=1",
+                "mcs=17",
+                "ndi=0",
+                "rv_idx=0",
+                "harq_process=0",
+                "dai=3",
+                "tpc_command=1",
+                "antenna_ports=0",
+                "srs_request=0",
+                "dmrs_seq_init=0",
+                "ul_sch_indicator=1"
+            ],
+            "src": "ENB",
+            "idx": 141111,
+            "level": 4,
+            "timestamp": 1785487689385,
+            "layer": "PHY",
+            "dir": "DL",
+            "ue_id": 153,
+            "cell": 1,
+            "rnti": 18073,
+            "frame": 46,
+            "slot": 15,
+            "channel": "PDCCH"
+        },
+        {
+            "data": [
+                "TAG:0 ta=31 PAD:len=57 "
+            ],
+            "src": "ENB",
+            "idx": 141725,
+            "level": 4,
+            "timestamp": 1785489496003,
+            "layer": "MAC",
+            "dir": "DL",
+            "ue_id": 154,
+            "cell": 1
+        },
+        {
+            "data": [
+                "SRB1 SN=3"
+            ],
+            "src": "ENB",
+            "idx": 142024,
+            "level": 3,
+            "timestamp": 1785489499513,
+            "layer": "PDCP",
+            "dir": "DL",
+            "ue_id": 154
+        },
+        {
+            "data": [
+                "DCCH-NR: RRC release",
+                "0000:  10 00                                             ..",
+                "{",
+                "  message c1: rrcRelease: {",
+                "    rrc-TransactionIdentifier 0,",
+                "    criticalExtensions rrcRelease: {",
+                "    }",
+                "  }",
+                "}",
+                ""
+            ],
+            "src": "ENB",
+            "idx": 142023,
+            "level": 4,
+            "timestamp": 1785489499513,
+            "layer": "RRC",
+            "dir": "DL",
+            "ue_id": 154,
+            "cell": 1
+        },
+        {
+            "data": [
+                "00fc 009a 127.0.1.100:38412 UE context release request",
+                "0000:  00 2a 40 1e 00 00 04 00  0a 00 02 00 fc 00 55 00  .*@...........U.",
+                "0010:  02 00 9a 00 85 00 05 01  00 01 00 02 00 0f 40 02  ..............@.",
+                "0020:  05 00                                             ..",
+                "initiatingMessage: {",
+                "  procedureCode id-UEContextReleaseRequest,",
+                "  criticality ignore,",
+                "  value {",
+                "    protocolIEs {",
+                "      {",
+                "        id id-AMF-UE-NGAP-ID,",
+                "        criticality reject,",
+                "        value 252",
+                "      }",
+                "    }",
+                "  }",
+                "}",
+                ""
+            ],
+            "src": "ENB",
+            "idx": 142020,
+            "level": 4,
+            "timestamp": 1785489499513,
+            "layer": "NGAP",
+            "dir": "TO"
+        }
+    ],
+    "time": 164772.65,
+    "utc": 1711704509.801
+}

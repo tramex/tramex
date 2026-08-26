@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
 
-use super::FileParser;
+use super::{FileParser, LayerParser, ParsedHeader};
 
 #[derive(Debug, Clone)]
 /// Data structure to store the GTPU message type
@@ -102,5 +102,35 @@ impl FileParser for GTPUParser {
             relation: TraceRelation::default(),
         };
         Ok(trace)
+    }
+}
+
+impl LayerParser for GTPUParser {
+    /// Parse GTPU payload lines.
+    /// data_lines[0] = "IP:PORT G-PDU TEID=... QFI=... SDU_len=..."
+    fn parse_layer(header: &ParsedHeader, data_lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        if data_lines.is_empty() {
+            return Err(ParsingError::new("GTPU: empty data lines".to_string(), 0));
+        }
+        let first_line = &data_lines[0];
+        let parts: Vec<&str> = first_line.split_whitespace().collect();
+
+        // Try to find connection info and message type from the data line
+        let mut connection_info = header.connection_info.clone();
+        let mut message_start_idx = 0;
+
+        // First part might be IP:port
+        if !parts.is_empty() && parts[0].contains(':') && parts[0].contains('.') {
+            connection_info = Some(parts[0].to_string());
+            message_start_idx = 1;
+        }
+
+        let message_type = parts.get(message_start_idx).unwrap_or(&"Unknown").to_string();
+
+        Ok(AdditionalInfos::GTPUInfos(GTPUInfos {
+            direction: header.direction.clone(),
+            message_type,
+            connection_info,
+        }))
     }
 }

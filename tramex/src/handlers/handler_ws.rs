@@ -1,6 +1,7 @@
 //! WebSocket handler panel — UI-only connector for WebSocket
 use eframe::egui;
 use tramex_tools::{
+    data::Data,
     errors::{ErrorCode, TramexError},
     interface::websocket::ws_connection::WsConnection,
     tramex_error,
@@ -13,6 +14,9 @@ pub struct WsHandler {
 
     /// WsConnection (held temporarily until consumed by Application)
     inner: Option<WsConnection>,
+
+    /// Last error message from connection attempt
+    last_error: Option<String>,
 }
 
 impl Default for WsHandler {
@@ -25,8 +29,9 @@ impl WsHandler {
     /// Create a new ws handler
     pub fn new() -> Self {
         Self {
-            url: "ws://137.194.194.36:9001".to_owned(),
+            url: "ws://137.194.194.35:9001".to_owned(),
             inner: None,
+            last_error: None,
         }
     }
 
@@ -34,13 +39,16 @@ impl WsHandler {
     /// # Errors
     /// Return an error if the connection failed
     pub fn connect(&mut self, wakeup: impl Fn() + Send + Sync + 'static) -> Result<(), TramexError> {
+        self.last_error = None;
+        log::info!("🔌 WsHandler::connect() - attempting to connect to {}", &self.url);
         match WsConnection::connect(&self.url, wakeup) {
             Ok((ws_sender, ws_receiver)) => {
+                log::info!("🔌 WsHandler::connect() - WsConnection::connect succeeded, creating WsConnection");
                 self.inner = Some(WsConnection::new(ws_sender, ws_receiver));
                 Ok(())
             }
             Err(error) => {
-                log::error!("Failed to connect to {:?}: {}", &self.url, error);
+                log::error!("❌ WsHandler::connect() - Failed to connect to {:?}: {}", &self.url, error);
                 Err(tramex_error!(error.to_string(), ErrorCode::WebSocketFailedToConnect))
             }
         }
@@ -73,27 +81,75 @@ impl WsHandler {
     ///
     /// # Errors
     ///
-    pub fn show_ui(&mut self, ui: &mut egui::Ui) -> Result<bool, TramexError> {
+    pub fn show_ui(&mut self, ui: &mut egui::Ui, source_connected: bool) -> Result<bool, TramexError> {
+        if source_connected {
+            self.display_url(ui, false);
+            ui.label(egui::RichText::new("✓ Connected").color(egui::Color32::GREEN));
+            return Ok(ui.button("Disconnect").clicked());
+        }
+
+        if let Some(interface_ws) = &mut self.inner {
+            let mut handshake_data = Data::default();
+            if let Err(errors) = interface_ws.try_recv(&mut handshake_data) {
+                self.last_error = Some(
+                    errors
+                        .iter()
+                        .map(|error| error.message.as_str())
+                        .collect::<Vec<_>>()
+                        .join("; "),
+                );
+            }
+        }
+
         if self.inner.is_some() {
             self.display_url(ui, false);
             if let Some(interface_ws) = &mut self.inner {
-                if interface_ws.connecting {
-                    ui.label("Connecting...");
-                    ui.spinner();
-                } else {
-                    ui.label(format!("Name: {}", &interface_ws.name));
+                // Log current state for debugging
+                log::trace!(
+                    "🖥️ WsHandler::show_ui() - inner.is_some()=true, connecting={}, available={}",
+                    interface_ws.connecting,
+                    interface_ws.available
+                );
+
+                // Always show connection status
+                ui.horizontal(|ui| {
+                    if interface_ws.connecting {
+                        ui.label(egui::RichText::new("⏳ Connecting").color(egui::Color32::ORANGE));
+                        ui.spinner();
+                    } else if interface_ws.available {
+                        ui.label(egui::RichText::new("✓ Connected").color(egui::Color32::GREEN));
+                    } else {
+                        ui.label(egui::RichText::new("✗ Disconnected").color(egui::Color32::RED));
+                    }
+                });
+
+                if !interface_ws.connecting {
+                    if !interface_ws.name.is_empty() {
+                        ui.label(format!("Server: {}", &interface_ws.name));
+                    }
+                    if let Some(error) = &self.last_error {
+                        ui.colored_label(egui::Color32::RED, error);
+                    }
                     if ui.button("Close").clicked() {
                         self.close_ws()?;
                         self.inner = None;
+                        self.last_error = None;
                         return Ok(true);
                     }
                 }
             }
             Ok(false)
         } else {
-            if (self.display_url(ui, true) && ui.input(|i| i.key_pressed(egui::Key::Enter)))
-                || ui.button("Connect").clicked()
-            {
+            // Show "Not connected" status
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("○ Not connected").color(egui::Color32::GRAY));
+            });
+
+            let url_lost_focus = self.display_url(ui, true);
+            let connect_clicked = ui.button("Connect").clicked();
+            let enter_pressed = url_lost_focus && ui.input(|i| i.key_pressed(egui::Key::Enter));
+
+            if connect_clicked || enter_pressed {
                 let ctx = ui.ctx().clone();
                 let wakeup_fn = move || ctx.request_repaint();
                 self.connect(wakeup_fn)?;

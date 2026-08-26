@@ -1,10 +1,13 @@
-//! Mistral AI connector implementation
+//! Anthropic (Claude) connector implementation
 
 use crate::ai::{AIConnector, AIRequest};
 use crate::data::{AdditionalInfos, Trace};
 use crate::errors::{ErrorCode, TramexError};
 
-/// System prompt for Mistral AI explaining Amarisoft traces
+/// Anthropic API version header value
+const ANTHROPIC_VERSION: &str = "2023-06-01";
+
+/// System prompt for Anthropic explaining Amarisoft traces
 const SYSTEM_PROMPT: &str = r#"You are a telecom protocol expert specializing in 4G LTE and 5G NR analysis. You are helping a user understand traces captured from an Amarisoft base station (eNB/gNB).
 
 When explaining a trace, structure your response in three sections:
@@ -14,27 +17,27 @@ When explaining a trace, structure your response in three sections:
 
 Be concise but technically accurate. Target approximately 200 words. Use markdown formatting for readability."#;
 
-/// Mistral AI connector
-pub struct MistralConnector {
+/// Anthropic (Claude) connector
+pub struct AnthropicConnector {
     /// API endpoint
     endpoint: String,
     /// Model to use
     model: String,
 }
 
-impl MistralConnector {
-    /// Create a new MistralConnector with default settings
+impl AnthropicConnector {
+    /// Create a new AnthropicConnector with default settings
     pub fn new() -> Self {
         Self {
-            endpoint: "https://api.mistral.ai/v1/chat/completions".to_string(),
-            model: "mistral-medium-latest".to_string(),
+            endpoint: "https://api.anthropic.com/v1/messages".to_string(),
+            model: "claude-3-5-haiku-latest".to_string(),
         }
     }
 
-    /// Create a MistralConnector with a specific model
+    /// Create an AnthropicConnector with a specific model
     pub fn with_model(model: &str) -> Self {
         Self {
-            endpoint: "https://api.mistral.ai/v1/chat/completions".to_string(),
+            endpoint: "https://api.anthropic.com/v1/messages".to_string(),
             model: model.to_string(),
         }
     }
@@ -87,15 +90,15 @@ impl MistralConnector {
     }
 }
 
-impl Default for MistralConnector {
+impl Default for AnthropicConnector {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl AIConnector for MistralConnector {
+impl AIConnector for AnthropicConnector {
     fn name(&self) -> &'static str {
-        "Mistral"
+        "Anthropic"
     }
 
     fn build_request(&self, trace: &Trace, api_key: &str) -> Result<AIRequest, TramexError> {
@@ -108,13 +111,12 @@ impl AIConnector for MistralConnector {
 
         let user_message = Self::build_user_message(trace);
 
+        // Anthropic Messages API: system prompt is a top-level field,
+        // not a message with role "system".
         let body = serde_json::json!({
             "model": self.model,
+            "system": SYSTEM_PROMPT,
             "messages": [
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
                 {
                     "role": "user",
                     "content": user_message
@@ -130,7 +132,8 @@ impl AIConnector for MistralConnector {
         Ok(AIRequest {
             url: self.endpoint.clone(),
             headers: vec![
-                ("Authorization".to_string(), format!("Bearer {api_key}")),
+                ("x-api-key".to_string(), api_key.to_string()),
+                ("anthropic-version".to_string(), ANTHROPIC_VERSION.to_string()),
                 ("Content-Type".to_string(), "application/json".to_string()),
             ],
             body: body_str,
@@ -141,14 +144,17 @@ impl AIConnector for MistralConnector {
         let json: serde_json::Value = serde_json::from_str(response_body)
             .map_err(|e| TramexError::new(format!("Failed to parse AI response: {e}"), ErrorCode::RequestError))?;
 
-        // Check for API error (OpenAI-compatible nested or string error)
+        // Anthropic error format: {"type":"error","error":{"type":"...","message":"..."}}
         if let Some(error) = json.get("error") {
             let msg = error
                 .get("message")
                 .and_then(|m| m.as_str())
                 .or_else(|| error.as_str())
                 .unwrap_or("Unknown API error");
-            return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
+            return Err(TramexError::new(
+                format!("Anthropic API error: {msg}"),
+                ErrorCode::RequestError,
+            ));
         }
 
         // Some error responses expose details at the top level
@@ -157,19 +163,25 @@ impl AIConnector for MistralConnector {
             .and_then(|m| m.as_str())
             .or_else(|| json.get("detail").and_then(|d| d.as_str()))
         {
-            return Err(TramexError::new(format!("Mistral API error: {msg}"), ErrorCode::RequestError));
+            return Err(TramexError::new(
+                format!("Anthropic API error: {msg}"),
+                ErrorCode::RequestError,
+            ));
         }
 
-        // Extract the assistant's message content
-        json.get("choices")
-            .and_then(|c| c.get(0))
-            .and_then(|c| c.get("message"))
-            .and_then(|m| m.get("content"))
-            .and_then(|c| c.as_str())
+        // Anthropic response format: {"content":[{"type":"text","text":"..."}], ...}
+        json.get("content")
+            .and_then(|c| c.as_array())
+            .and_then(|arr| {
+                arr.iter()
+                    .find(|block| block.get("type").and_then(|t| t.as_str()) == Some("text"))
+            })
+            .and_then(|block| block.get("text"))
+            .and_then(|t| t.as_str())
             .map(|s| s.to_string())
             .ok_or_else(|| {
                 TramexError::new(
-                    "Unexpected response format from Mistral API".to_string(),
+                    "Unexpected response format from Anthropic API".to_string(),
                     ErrorCode::RequestError,
                 )
             })
@@ -182,22 +194,22 @@ mod tests {
 
     #[test]
     fn parse_successful_response() {
-        let connector = MistralConnector::new();
-        let body = r#"{"choices":[{"message":{"content":"Hello"}}]}"#;
+        let connector = AnthropicConnector::new();
+        let body = r#"{"content":[{"type":"text","text":"Hello"}]}"#;
         assert_eq!(connector.parse_response(body).unwrap(), "Hello");
     }
 
     #[test]
     fn parse_error_with_nested_message() {
-        let connector = MistralConnector::new();
-        let body = r#"{"error":{"message":"Invalid API key","type":"unauthorized"}}"#;
+        let connector = AnthropicConnector::new();
+        let body = r#"{"type":"error","error":{"type":"authentication_error","message":"Invalid API key"}}"#;
         let err = connector.parse_response(body).unwrap_err();
         assert!(err.get_msg().contains("Invalid API key"));
     }
 
     #[test]
     fn parse_error_with_top_level_message() {
-        let connector = MistralConnector::new();
+        let connector = AnthropicConnector::new();
         let body = r#"{"message":"Unauthorized","request_id":"abc"}"#;
         let err = connector.parse_response(body).unwrap_err();
         assert!(err.get_msg().contains("Unauthorized"));

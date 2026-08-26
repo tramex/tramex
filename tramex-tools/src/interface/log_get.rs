@@ -47,4 +47,10 @@ impl LogGet {
             start_timestamp: chrono::Utc::now().timestamp() - HOURS_TO_FETCH * 3600, // only fetch last 12h
         }
     }
+
+    /// Set headers flag to true (request log file headers from the server)
+    pub fn with_headers(mut self) -> Self {
+        self.headers = true;
+        self
+    }
 }

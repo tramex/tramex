@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use crate::interface::{layer::Layer, types::Direction};
 
-use super::FileParser;
+use super::{FileParser, LayerParser, ParsedHeader};
 
 #[derive(Debug, Clone)]
 /// Data structure to store the NAS message type
@@ -92,6 +92,27 @@ impl FileParser for NASParser {
             relation: TraceRelation::default(),
         };
         Ok(trace)
+    }
+}
+
+impl LayerParser for NASParser {
+    /// Parse NAS payload lines.
+    /// data_lines[0] should be "PROTO: message" (e.g. "5GMM: Service request")
+    fn parse_layer(header: &ParsedHeader, data_lines: &[String]) -> Result<AdditionalInfos, ParsingError> {
+        let message_type = if data_lines.is_empty() {
+            "Unknown".to_string()
+        } else {
+            let first_line = &data_lines[0];
+            if let Some(colon_pos) = first_line.find(':') {
+                first_line[colon_pos + 1..].trim().to_string()
+            } else {
+                first_line.trim().to_string()
+            }
+        };
+        Ok(AdditionalInfos::NASInfos(NASInfos {
+            direction: header.direction.clone(),
+            message_type,
+        }))
     }
 }
 

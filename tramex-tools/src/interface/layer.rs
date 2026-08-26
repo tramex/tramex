@@ -4,9 +4,10 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::str::FromStr;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone, Default)]
 /// Layer enum
 pub enum Layer {
+    #[default]
     /// Physical layer
     PHY,
 

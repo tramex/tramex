@@ -287,6 +287,15 @@ pub struct ResourceBlocks {
     #[serde(skip)]
     focused_trace_index: Option<usize>,
 
+    /// PHY info of the currently focused event (used to recompute scroll target
+    /// on rebuild / view mode switch, and to highlight headers/labels)
+    #[serde(skip)]
+    focused_phy_info: Option<PHYInfos>,
+
+    /// Set when the view needs to auto-scroll to bring the focused event into view
+    #[serde(skip)]
+    scroll_pending: bool,
+
     /// Flag indicating grid needs rebuild
     #[serde(skip)]
     needs_rebuild: bool,
@@ -316,6 +325,8 @@ impl ResourceBlocks {
             start_limit: (0, 0, 0),
             end_limit: (0, 0, 0),
             focused_trace_index: None,
+            focused_phy_info: None,
+            scroll_pending: false,
             needs_rebuild: true,
             view_mode: ViewMode::default(),
         }
@@ -524,6 +535,20 @@ impl ResourceBlocks {
         }
     }
 
+    /// Compute the absolute global slot index of the currently focused PHY event, if any
+    fn focused_global_slot(&self) -> Option<usize> {
+        let phy = self.focused_phy_info.as_ref()?;
+        let spf = self.slots_per_frame();
+        let frame_per_hfn = self.frame_per_hfn();
+        let hfn = self
+            .phy_events
+            .iter()
+            .find(|e| e.phy_info.frame == phy.frame && e.phy_info.slot == phy.slot)
+            .map(|e| e.hfn)
+            .unwrap_or(self.end_limit.0);
+        Some((hfn as usize * frame_per_hfn + phy.frame as usize) * spf + phy.slot as usize)
+    }
+
     /// Check if a slot is within the received event limits
     fn is_slot_within_limits(&self, hfn: u32, frame: u16, slot: u8) -> bool {
         // If limits not initialized (still at (0,0)), consider all slots valid
@@ -623,6 +648,9 @@ impl ResourceBlocks {
                     ViewMode::Symbol => ViewMode::Slot,
                     ViewMode::Slot => ViewMode::Symbol,
                 };
+                if self.focused_phy_info.is_some() {
+                    self.scroll_pending = true;
+                }
             }
 
             ui.separator();
@@ -687,6 +715,15 @@ impl ResourceBlocks {
         // Helper to get X position - no gaps, simple calculation
         let get_slot_rel_x = move |i: usize| -> f32 { i as f32 * slot_width };
 
+        // Compute the focused event's global slot / PRB range once, used both for
+        // auto-scrolling and for highlighting the corresponding header/label.
+        let focused_global_slot = self.focused_global_slot();
+        let focused_prb_range: Option<(usize, usize)> = self.focused_phy_info.as_ref().map(|phy| {
+            let start = phy.prb_start as usize;
+            let end = start + (phy.prb_length as usize).max(1) - 1;
+            (start, end)
+        });
+
         // Single ScrollArea for the entire grid.
         // Headers and labels are drawn as overlays pinned to the viewport edges.
         egui::ScrollArea::both().auto_shrink([false, false]).show(ui, |ui| {
@@ -699,6 +736,29 @@ impl ResourceBlocks {
             let total_height = header_height + (self.num_prbs as f32 * cell_size);
 
             let (content_rect, _) = ui.allocate_exact_size(Vec2::new(total_width, total_height), egui::Sense::hover());
+
+            // Auto-scroll to bring the focused event into view (once per focus change
+            // or view-mode switch, so it also works before any manual scroll happens).
+            if self.scroll_pending {
+                if let Some(global_slot) = focused_global_slot
+                    && let Some(slot_idx) = global_slot.checked_sub(self.start_slot)
+                    && slot_idx < self.slots.len()
+                {
+                    let slot_rel_x = get_slot_rel_x(slot_idx);
+                    let slot_x = content_rect.left() + label_width + slot_rel_x;
+                    let (y_top, y_height) = match focused_prb_range {
+                        Some((prb_start, prb_end)) => {
+                            let top = content_rect.top() + header_height + prb_start as f32 * cell_size;
+                            let height = ((prb_end - prb_start + 1) as f32 * cell_size).max(cell_size);
+                            (top, height)
+                        }
+                        None => (content_rect.top() + header_height, self.num_prbs as f32 * cell_size),
+                    };
+                    let target_rect = Rect::from_min_size(Pos2::new(slot_x, y_top), Vec2::new(slot_width, y_height));
+                    ui.scroll_to_rect(target_rect, Some(egui::Align::Center));
+                }
+                self.scroll_pending = false;
+            }
 
             let painter = ui.painter();
             let visible_rect = ui.clip_rect();
@@ -1095,6 +1155,19 @@ impl ResourceBlocks {
                         let slot_in_sf = slot.slot_number % sps_u8;
                         let subframe = slot.slot_number / sps_u8;
 
+                        // Highlight the header of the slot containing the focused event
+                        let is_focused_slot = focused_global_slot == Some(start_slot + slot_idx);
+                        if is_focused_slot {
+                            let hl_rect = Rect::from_min_size(
+                                Pos2::new(slot_x, visible_rect.top()),
+                                Vec2::new(slot_width, header_height),
+                            );
+                            let fill =
+                                Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
+                            painter.rect_filled(hl_rect, 0.0, fill);
+                            painter.rect_stroke(hl_rect, 0.0, Stroke::new(1.5, theme.accent), STROKE_KIND_STYLE);
+                        }
+
                         // Frame.subframe on top line (wrap frame to 0-1023)
                         let display_frame = slot.frame_number % 1024;
                         let frame_text = format!("{}.{}", display_frame, subframe);
@@ -1103,7 +1176,7 @@ impl ResourceBlocks {
                             egui::Align2::CENTER_CENTER,
                             frame_text,
                             egui::FontId::proportional(10.0),
-                            theme.text,
+                            if is_focused_slot { theme.text_strong } else { theme.text },
                         );
 
                         // Slot index below
@@ -1113,11 +1186,26 @@ impl ResourceBlocks {
                             egui::Align2::CENTER_CENTER,
                             slot_text,
                             egui::FontId::proportional(9.0),
-                            theme.text_weak,
+                            if is_focused_slot { theme.text_strong } else { theme.text_weak },
                         );
                     }
                 }
             } else {
+                // Highlight the header column of the slot containing the focused event
+                if let Some(g) = focused_global_slot
+                    && let Some(slot_idx) = g.checked_sub(start_slot)
+                    && slot_idx >= vis_start_slot
+                    && slot_idx < vis_end_slot
+                {
+                    let slot_rel_x = get_slot_rel_x(slot_idx);
+                    let slot_x = content_rect.left() + label_width + slot_rel_x;
+                    let hl_rect =
+                        Rect::from_min_size(Pos2::new(slot_x, visible_rect.top()), Vec2::new(slot_width, header_height));
+                    let fill = Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
+                    painter.rect_filled(hl_rect, 0.0, fill);
+                    painter.rect_stroke(hl_rect, 0.0, Stroke::new(1.5, theme.accent), STROKE_KIND_STYLE);
+                }
+
                 // Slot view: show frame number in middle of each frame
                 let first_visible_frame = (start_slot + vis_start_slot) / spf;
                 let last_visible_frame = (start_slot + vis_end_slot.saturating_sub(1)) / spf;
@@ -1155,12 +1243,21 @@ impl ResourceBlocks {
             let prb_origin_y = content_rect.top() + header_height + cell_size / 2.0;
             for prb in vis_start_prb..vis_end_prb {
                 let y = prb_origin_y + (prb as f32 * cell_size);
+                let is_focused_prb = focused_prb_range.is_some_and(|(s, e)| prb >= s && prb <= e);
+                if is_focused_prb {
+                    let hl_rect = Rect::from_min_size(
+                        Pos2::new(visible_rect.left(), y - cell_size / 2.0),
+                        Vec2::new(label_width, cell_size),
+                    );
+                    let fill = Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
+                    painter.rect_filled(hl_rect, 0.0, fill);
+                }
                 painter.text(
                     Pos2::new(prb_label_x, y),
                     egui::Align2::CENTER_CENTER,
                     format!("{}", prb),
                     egui::FontId::proportional(9.0),
-                    theme.text_weak,
+                    if is_focused_prb { theme.text_strong } else { theme.text_weak },
                 );
             }
 
@@ -1279,24 +1376,17 @@ impl EventSubscriber for ResourceBlocks {
 
         // If focused event is a PHY trace, center the grid on it
         if let AdditionalInfos::PHYInfos(phy_info) = &event.additional_infos {
-            let spf = self.slots_per_frame();
-            let frame_per_hfn = self.frame_per_hfn();
+            self.focused_phy_info = Some(phy_info.clone());
+            self.scroll_pending = true;
 
-            // Find the event's HFN from cache, or use end_limit's HFN as fallback
-            let hfn = self
-                .phy_events
-                .iter()
-                .find(|e| e.phy_info.frame == phy_info.frame && e.phy_info.slot == phy_info.slot)
-                .map(|e| e.hfn)
-                .unwrap_or(self.end_limit.0);
+            if let Some(event_global_slot) = self.focused_global_slot() {
+                let half_window = self.window_total_slots() / 2;
+                let new_start = event_global_slot.saturating_sub(half_window);
 
-            let event_global_slot = (hfn as usize * frame_per_hfn + phy_info.frame as usize) * spf + phy_info.slot as usize;
-            let half_window = self.window_total_slots() / 2;
-            let new_start = event_global_slot.saturating_sub(half_window);
-
-            if new_start != self.start_slot {
-                self.start_slot = new_start;
-                self.needs_rebuild = true;
+                if new_start != self.start_slot {
+                    self.start_slot = new_start;
+                    self.needs_rebuild = true;
+                }
             }
         }
     }
@@ -1307,10 +1397,15 @@ impl EventSubscriber for ResourceBlocks {
         self.ssb_configs.clear();
         self.start_limit = (0, 0, 0);
         self.end_limit = (0, 0, 0);
+        self.focused_trace_index = None;
+        self.focused_phy_info = None;
+        self.scroll_pending = false;
     }
 
     fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {
         log::debug!("ResourceBlocks: Metadata changed, parsing SSB config");
+        self.num_prbs = metadata.n_rb.map(|v| v as usize).unwrap_or(DEFAULT_NUM_PRBS);
+        self.needs_rebuild = true;
         self.update_ssb_config_from_metadata(&metadata.ssb_info);
     }
 

@@ -35,6 +35,20 @@
 13:20:45.575 [RLC] UL 003d DRB1 D/C=1 P=1 SI=00 SN=102823
 13:20:45.575 [RLC] UL 003d DRB1 D/C=1 P=0 SI=00 SN=102824
 13:20:45.575 [RLC] UL 003d DRB1 D/C=1 P=0 SI=01 SN=102825
+10:32:20.330 [RRC] DL 0001 01 DCCH-NR: Security mode command
+        {
+          message c1: securityModeCommand: {
+            rrc-TransactionIdentifier 0,
+            criticalExtensions securityModeCommand: {
+              securityConfigSMC {
+                securityAlgorithmConfig {
+                  cipheringAlgorithm nea0,
+                  integrityProtAlgorithm nia2
+                }
+              }
+            }
+          }
+        }
 13:20:45.575 [PDCP] UL 003d DRB1 D/C=1 SN=157827
 13:20:45.575 [PDCP] UL 003d DRB1 D/C=1 SN=157828
 13:20:45.575 [RLC] DL 003d DRB1 D/C=0 CPT=0 ACK_SN=102825

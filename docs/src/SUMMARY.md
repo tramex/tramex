@@ -8,16 +8,13 @@
 
 # Project Documentation
 
+- [Developer Guide & good practice](./dev_guide.md)
+- [Development Log](./devlog.md)
 - [Architecture](./architecture.md)
-- [Development](./development.md)
-- [DevLog](./devlog.md) & [Dev Report](./dev_report.md)
-- [Documentation](./documentation.md)
 - [ASN.1](./asn1.md)
-- [CI/CD](./ci_cd.md)
 - [Amarisoft Resources](./amarisoft-resources/index.md)
   - [Log File Format](./amarisoft-resources/log_file_format.md)
 
 # Information
 
-- [Knowledge base](./knowledge_base.md)
 - [Contributors](./contributors.md)

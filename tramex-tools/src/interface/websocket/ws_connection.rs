@@ -8,7 +8,7 @@ use crate::interface::types::BaseMessage;
 use crate::tramex_error;
 use crate::{data::Data, errors::TramexError};
 
-use crate::interface::{layer::Layer, layer::Layers, log_get::LogGet, types::WebSocketLog};
+use crate::interface::{layer::Layer, layer::Layers, log_get::LogGet, parse_config::FileMetadata, types::WebSocketLog};
 /// WsConnection struct
 pub struct WsConnection {
     /// WebSocket sender
@@ -37,21 +37,26 @@ pub struct WsConnection {
 
     /// Waiting for response flag - true when a request has been sent and we're waiting for the response
     pub waiting_for_response: bool,
+
+    /// Whether we have already requested and received headers (only need them once)
+    pub headers_received: bool,
 }
 
 impl WsConnection {
     /// Create a new WsConnection
     pub fn new(ws_sender: WsSender, ws_receiver: WsReceiver) -> Self {
+        log::info!("🔌 WsConnection::new() - creating connection (connecting=true, available=false)");
         Self {
             ws_sender,
             ws_receiver,
             msg_id: 1,
             connecting: true,
             asking_size_max: 1024,
-            available: true,
+            available: false, // Start as unavailable until WsEvent::Opened is received
             name: "".to_string(),
             auto_loading: true, // Auto-loading enabled by default
             waiting_for_response: false,
+            headers_received: false,
         }
     }
 
@@ -84,6 +89,8 @@ impl InterfaceTrait for WsConnection {
         }
 
         let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max);
+        // Request headers on the first request to get FileMetadata (technology, pci, etc.)
+        let msg = if !self.headers_received { msg.with_headers() } else { msg };
         log::debug!("📤 Sending log_get request #{}", self.msg_id);
         match serde_json::to_string(&msg) {
             Ok(msg_stringed) => {
@@ -134,12 +141,18 @@ impl WsConnection {
     /// Return an error if the data is not received correctly
     pub fn try_recv(&mut self, data: &mut Data) -> Result<(), Vec<TramexError>> {
         while let Some(event) = self.ws_receiver.try_recv() {
-            // log::debug!("🔵 WebSocket event received: {:?}", event);
-            log::debug!("🔵 WebSocket event received");
-            self.connecting = false;
+            log::debug!(
+                "🔵 WsConnection::try_recv() - event received, current state: connecting={}, available={}",
+                self.connecting,
+                self.available
+            );
             match event {
                 WsEvent::Message(msg) => {
-                    self.available = true;
+                    // Only set available=true if we've already opened (connecting=false)
+                    // This handles the case where messages arrive before the Opened event
+                    if !self.connecting {
+                        self.available = true;
+                    }
                     match msg {
                         WsMessage::Text(event_text) => {
                             // log::debug!("📨 Raw WebSocket text message: {}", event_text);
@@ -150,6 +163,20 @@ impl WsConnection {
 
                                     // Mark that we received the response - ready for next request
                                     self.waiting_for_response = false;
+
+                                    // Extract FileMetadata from top-level headers if present (first request only)
+                                    if !self.headers_received
+                                        && let Some(ref headers) = decoded_data.headers
+                                    {
+                                        data.metadata = FileMetadata::parse_from_lines(headers);
+                                        log::info!(
+                                            "📋 Parsed WebSocket metadata: technology={:?}, pci={:?}, mode={:?}",
+                                            data.metadata.technology,
+                                            data.metadata.pci,
+                                            data.metadata.mode
+                                        );
+                                        self.headers_received = true;
+                                    }
 
                                     let mut errors = vec![];
                                     for one_log in decoded_data.logs {
@@ -223,20 +250,26 @@ impl WsConnection {
                     }
                 }
                 WsEvent::Opened => {
+                    log::info!("✅ WsEvent::Opened - connection established! Setting connecting=false, available=true");
+                    self.connecting = false;
                     self.available = true;
-                    log::debug!("✅ WebSocket connection opened successfully");
                 }
                 WsEvent::Closed => {
+                    log::warn!("⚠️ WsEvent::Closed - connection closed. Setting connecting=false, available=false");
                     self.available = false;
-                    log::debug!("WebSocket closed");
+                    self.connecting = false;
                     return Err(vec![tramex_error!(
                         "WebSocket closed".to_string(),
                         crate::errors::ErrorCode::WebSocketClosed
                     )]);
                 }
                 WsEvent::Error(str_err) => {
+                    log::error!(
+                        "❌ WsEvent::Error - connection failed: {}. Setting connecting=false, available=false",
+                        str_err
+                    );
                     self.available = false;
-                    log::error!("WebSocket error: {str_err:?}");
+                    self.connecting = false;
                     return Err(vec![tramex_error!(str_err, crate::errors::ErrorCode::WebSocketError)]);
                 }
             }
