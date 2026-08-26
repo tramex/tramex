@@ -552,8 +552,7 @@ impl RRCStatusPanel {
         }
 
         // Check for IDLE -> CONNECTED
-        if self.build_state == RrcState::Idle
-            && RrcStateMachine::message_is(canal_msg, state_machine.idle_to_connected_msg)
+        if self.build_state == RrcState::Idle && RrcStateMachine::message_is(canal_msg, state_machine.idle_to_connected_msg)
         {
             log::debug!("RRC Status: matched idle->connected transition");
             self.build_state = RrcState::Connected;
@@ -646,7 +645,10 @@ mod tests {
 
         let lte = RrcStateMachine::lte();
         assert!(lte.is_pertinent_message("RRC connection setup"));
-        assert!(!RrcStateMachine::message_is("RRC connection setup", lte.idle_to_connected_msg));
+        assert!(!RrcStateMachine::message_is(
+            "RRC connection setup",
+            lte.idle_to_connected_msg
+        ));
     }
 
     #[test]

@@ -74,6 +74,9 @@ impl OneLog {
     }
 
     /// Build a ParsedHeader from the WebSocket JSON fields.
+    ///
+    /// # Errors
+    /// Returns a TramexError if the header cannot be built.
     fn build_header(&self) -> Result<ParsedHeader, TramexError> {
         let direction = match &self.dir {
             Some(opt_dir) => Direction::from_str(opt_dir).unwrap_or(Direction::NA),
@@ -98,8 +101,8 @@ impl OneLog {
     /// # Errors
     /// Returns a TramexError if the data could not be extracted.
     pub fn extract_data(&self) -> Result<Trace, TramexError> {
-        use crate::interface::parser::build_trace;
         use crate::interface::parser::LayerParser;
+        use crate::interface::parser::build_trace;
         use crate::interface::parser::parser_basic::BasicParser;
         use crate::interface::parser::parser_gtpu::GTPUParser;
         use crate::interface::parser::parser_nas::NASParser;

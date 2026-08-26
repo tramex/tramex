@@ -151,7 +151,10 @@ impl AIConnector for AnthropicConnector {
                 .and_then(|m| m.as_str())
                 .or_else(|| error.as_str())
                 .unwrap_or("Unknown API error");
-            return Err(TramexError::new(format!("Anthropic API error: {msg}"), ErrorCode::RequestError));
+            return Err(TramexError::new(
+                format!("Anthropic API error: {msg}"),
+                ErrorCode::RequestError,
+            ));
         }
 
         // Some error responses expose details at the top level
@@ -160,13 +163,19 @@ impl AIConnector for AnthropicConnector {
             .and_then(|m| m.as_str())
             .or_else(|| json.get("detail").and_then(|d| d.as_str()))
         {
-            return Err(TramexError::new(format!("Anthropic API error: {msg}"), ErrorCode::RequestError));
+            return Err(TramexError::new(
+                format!("Anthropic API error: {msg}"),
+                ErrorCode::RequestError,
+            ));
         }
 
         // Anthropic response format: {"content":[{"type":"text","text":"..."}], ...}
         json.get("content")
             .and_then(|c| c.as_array())
-            .and_then(|arr| arr.iter().find(|block| block.get("type").and_then(|t| t.as_str()) == Some("text")))
+            .and_then(|arr| {
+                arr.iter()
+                    .find(|block| block.get("type").and_then(|t| t.as_str()) == Some("text"))
+            })
             .and_then(|block| block.get("text"))
             .and_then(|t| t.as_str())
             .map(|s| s.to_string())

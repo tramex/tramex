@@ -165,17 +165,17 @@ impl WsConnection {
                                     self.waiting_for_response = false;
 
                                     // Extract FileMetadata from top-level headers if present (first request only)
-                                    if !self.headers_received {
-                                        if let Some(ref headers) = decoded_data.headers {
-                                            data.metadata = FileMetadata::parse_from_lines(headers);
-                                            log::info!(
-                                                "📋 Parsed WebSocket metadata: technology={:?}, pci={:?}, mode={:?}",
-                                                data.metadata.technology,
-                                                data.metadata.pci,
-                                                data.metadata.mode
-                                            );
-                                            self.headers_received = true;
-                                        }
+                                    if !self.headers_received
+                                        && let Some(ref headers) = decoded_data.headers
+                                    {
+                                        data.metadata = FileMetadata::parse_from_lines(headers);
+                                        log::info!(
+                                            "📋 Parsed WebSocket metadata: technology={:?}, pci={:?}, mode={:?}",
+                                            data.metadata.technology,
+                                            data.metadata.pci,
+                                            data.metadata.mode
+                                        );
+                                        self.headers_received = true;
                                     }
 
                                     let mut errors = vec![];
@@ -250,16 +250,12 @@ impl WsConnection {
                     }
                 }
                 WsEvent::Opened => {
-                    log::info!(
-                        "✅ WsEvent::Opened - connection established! Setting connecting=false, available=true"
-                    );
+                    log::info!("✅ WsEvent::Opened - connection established! Setting connecting=false, available=true");
                     self.connecting = false;
                     self.available = true;
                 }
                 WsEvent::Closed => {
-                    log::warn!(
-                        "⚠️ WsEvent::Closed - connection closed. Setting connecting=false, available=false"
-                    );
+                    log::warn!("⚠️ WsEvent::Closed - connection closed. Setting connecting=false, available=false");
                     self.available = false;
                     self.connecting = false;
                     return Err(vec![tramex_error!(

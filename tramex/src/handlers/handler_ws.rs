@@ -15,6 +15,7 @@ pub struct WsHandler {
     /// WsConnection (held temporarily until consumed by Application)
     inner: Option<WsConnection>,
 
+    /// Last error message from connection attempt
     last_error: Option<String>,
 }
 

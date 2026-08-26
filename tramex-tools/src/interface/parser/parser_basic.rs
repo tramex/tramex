@@ -26,10 +26,7 @@ impl BasicParser {
         let timestamp = if let Some(first_line) = lines.first() {
             match chrono::NaiveDateTime::parse_from_str(first_line, "%Y-%m-%d %H:%M:%S%.3f") {
                 Ok(timestamp) => timestamp.and_utc().timestamp(),
-                Err(_) => match super::parse_timestamp(first_line) {
-                    Ok(timestamp) => timestamp,
-                    Err(_) => 0,
-                },
+                Err(_) => super::parse_timestamp(first_line).unwrap_or_default(),
             }
         } else {
             0

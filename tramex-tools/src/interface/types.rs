@@ -22,7 +22,7 @@ pub struct WebSocketLog {
 
     /// headers
     pub headers: Option<Vec<String>>,
-    
+
     /// Logs vectors
     pub logs: Vec<OneLog>,
 }

@@ -379,10 +379,7 @@ impl FrontEnd {
         // If at end, keep loading more data until we find a matching event or run out of data
         while !navigated && self.application.has_more_data() {
             let count_before = self.application.event_count();
-            log::info!(
-                "Reached end of loaded events ({}), loading more...",
-                count_before
-            );
+            log::info!("Reached end of loaded events ({}), loading more...", count_before);
             if let Err(err) = self.application.request_more_data() {
                 Self::collect_errors(errors, err);
                 return;

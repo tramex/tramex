@@ -49,13 +49,13 @@ pub struct ParsedHeader {
 impl ParsedHeader {
     /// Build a ParsedHeader by parsing the first line of a file-format trace.
     /// File format: "HH:MM:SS.mmm [LAYER] DIR id1 id2 id3 ... payload"
+    ///
+    /// # Errors
+    /// Returns a ParsingError if the line cannot be parsed.
     pub fn from_file_line(first_line: &str) -> Result<Self, ParsingError> {
         let parts: Vec<&str> = first_line.split_whitespace().collect();
         if parts.len() < 3 {
-            return Err(ParsingError::new(
-                format!("Not enough parts in line: {}", first_line),
-                0,
-            ));
+            return Err(ParsingError::new(format!("Not enough parts in line: {}", first_line), 0));
         }
 
         let timestamp = parse_timestamp(first_line)?;
@@ -196,11 +196,7 @@ pub fn extract_file_payload(first_line: &str, layer: &Layer) -> String {
 
 /// Build a Trace from a ParsedHeader, AdditionalInfos, and data lines.
 /// This is the single assembly point used by both file and WebSocket paths.
-pub fn build_trace(
-    header: &ParsedHeader,
-    additional_infos: AdditionalInfos,
-    data_lines: &[String],
-) -> Trace {
+pub fn build_trace(header: &ParsedHeader, additional_infos: AdditionalInfos, data_lines: &[String]) -> Trace {
     use crate::interface::association::TraceRelation;
     let binary = hex_extractor::extract_binary_from_lines(data_lines);
     Trace {

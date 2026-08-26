@@ -1,8 +1,8 @@
 //! Logical Channels panel
 
-use crate::theme::{ChannelColors, ThemeColors};
 use crate::event_system::{EventContext, EventSubscriber};
 use crate::panels::PanelView;
+use crate::theme::{ChannelColors, ThemeColors};
 use eframe::egui;
 use egui::{Color32, TextFormat};
 use tramex_tools::data::{AdditionalInfos, Trace};

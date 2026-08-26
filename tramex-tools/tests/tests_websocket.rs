@@ -27,7 +27,12 @@ mod tests {
         let ws_log = load_fixture();
         for (i, one_log) in ws_log.logs.iter().enumerate() {
             let result = one_log.extract_data();
-            assert!(result.is_ok(), "Log #{i} ({:?}) failed to parse: {:?}", one_log.layer, result.err());
+            assert!(
+                result.is_ok(),
+                "Log #{i} ({:?}) failed to parse: {:?}",
+                one_log.layer,
+                result.err()
+            );
         }
     }
 
@@ -208,8 +213,8 @@ mod tests {
             .collect();
 
         assert_eq!(directions[0], Some(Direction::DL)); // PHY
-        assert_eq!(directions[1], None);                 // MAC (BasicParser, no direction)
-        assert_eq!(directions[2], None);                 // PDCP (BasicParser, no direction)
+        assert_eq!(directions[1], None); // MAC (BasicParser, no direction)
+        assert_eq!(directions[2], None); // PDCP (BasicParser, no direction)
         assert_eq!(directions[3], Some(Direction::DL)); // RRC
         assert_eq!(directions[4], Some(Direction::TO)); // NGAP
     }
@@ -223,10 +228,10 @@ mod tests {
             .map(|log| log.extract_data().unwrap().additional_infos.get_message_name())
             .collect();
 
-        assert_eq!(names[0], Some("PDCCH".to_string()));                     // PHY
-        assert_eq!(names[1], None);                                           // MAC
-        assert_eq!(names[2], None);                                           // PDCP
-        assert_eq!(names[3], Some("RRC release".to_string()));               // RRC
+        assert_eq!(names[0], Some("PDCCH".to_string())); // PHY
+        assert_eq!(names[1], None); // MAC
+        assert_eq!(names[2], None); // PDCP
+        assert_eq!(names[3], Some("RRC release".to_string())); // RRC
         assert_eq!(names[4], Some("UE context release request".to_string())); // NGAP
     }
 

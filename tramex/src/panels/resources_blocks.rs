@@ -740,28 +740,24 @@ impl ResourceBlocks {
             // Auto-scroll to bring the focused event into view (once per focus change
             // or view-mode switch, so it also works before any manual scroll happens).
             if self.scroll_pending {
-                if let Some(global_slot) = focused_global_slot {
-                    if let Some(slot_idx) = global_slot.checked_sub(self.start_slot) {
-                        if slot_idx < self.slots.len() {
-                            let slot_rel_x = get_slot_rel_x(slot_idx);
-                            let slot_x = content_rect.left() + label_width + slot_rel_x;
-                            let (y_top, y_height) = match focused_prb_range {
-                                Some((prb_start, prb_end)) => {
-                                    let top = content_rect.top() + header_height + prb_start as f32 * cell_size;
-                                    let height = ((prb_end - prb_start + 1) as f32 * cell_size).max(cell_size);
-                                    (top, height)
-                                }
-                                None => (content_rect.top() + header_height, self.num_prbs as f32 * cell_size),
-                            };
-                            let target_rect =
-                                Rect::from_min_size(Pos2::new(slot_x, y_top), Vec2::new(slot_width, y_height));
-                            ui.scroll_to_rect(target_rect, Some(egui::Align::Center));
-                            self.scroll_pending = false;
+                if let Some(global_slot) = focused_global_slot
+                    && let Some(slot_idx) = global_slot.checked_sub(self.start_slot)
+                    && slot_idx < self.slots.len()
+                {
+                    let slot_rel_x = get_slot_rel_x(slot_idx);
+                    let slot_x = content_rect.left() + label_width + slot_rel_x;
+                    let (y_top, y_height) = match focused_prb_range {
+                        Some((prb_start, prb_end)) => {
+                            let top = content_rect.top() + header_height + prb_start as f32 * cell_size;
+                            let height = ((prb_end - prb_start + 1) as f32 * cell_size).max(cell_size);
+                            (top, height)
                         }
-                    }
-                } else {
-                    self.scroll_pending = false;
+                        None => (content_rect.top() + header_height, self.num_prbs as f32 * cell_size),
+                    };
+                    let target_rect = Rect::from_min_size(Pos2::new(slot_x, y_top), Vec2::new(slot_width, y_height));
+                    ui.scroll_to_rect(target_rect, Some(egui::Align::Center));
                 }
+                self.scroll_pending = false;
             }
 
             let painter = ui.painter();
@@ -1166,12 +1162,8 @@ impl ResourceBlocks {
                                 Pos2::new(slot_x, visible_rect.top()),
                                 Vec2::new(slot_width, header_height),
                             );
-                            let fill = Color32::from_rgba_unmultiplied(
-                                theme.accent.r(),
-                                theme.accent.g(),
-                                theme.accent.b(),
-                                70,
-                            );
+                            let fill =
+                                Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
                             painter.rect_filled(hl_rect, 0.0, fill);
                             painter.rect_stroke(hl_rect, 0.0, Stroke::new(1.5, theme.accent), STROKE_KIND_STYLE);
                         }
@@ -1200,25 +1192,18 @@ impl ResourceBlocks {
                 }
             } else {
                 // Highlight the header column of the slot containing the focused event
-                if let Some(g) = focused_global_slot {
-                    if let Some(slot_idx) = g.checked_sub(start_slot) {
-                        if slot_idx >= vis_start_slot && slot_idx < vis_end_slot {
-                            let slot_rel_x = get_slot_rel_x(slot_idx);
-                            let slot_x = content_rect.left() + label_width + slot_rel_x;
-                            let hl_rect = Rect::from_min_size(
-                                Pos2::new(slot_x, visible_rect.top()),
-                                Vec2::new(slot_width, header_height),
-                            );
-                            let fill = Color32::from_rgba_unmultiplied(
-                                theme.accent.r(),
-                                theme.accent.g(),
-                                theme.accent.b(),
-                                70,
-                            );
-                            painter.rect_filled(hl_rect, 0.0, fill);
-                            painter.rect_stroke(hl_rect, 0.0, Stroke::new(1.5, theme.accent), STROKE_KIND_STYLE);
-                        }
-                    }
+                if let Some(g) = focused_global_slot
+                    && let Some(slot_idx) = g.checked_sub(start_slot)
+                    && slot_idx >= vis_start_slot
+                    && slot_idx < vis_end_slot
+                {
+                    let slot_rel_x = get_slot_rel_x(slot_idx);
+                    let slot_x = content_rect.left() + label_width + slot_rel_x;
+                    let hl_rect =
+                        Rect::from_min_size(Pos2::new(slot_x, visible_rect.top()), Vec2::new(slot_width, header_height));
+                    let fill = Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
+                    painter.rect_filled(hl_rect, 0.0, fill);
+                    painter.rect_stroke(hl_rect, 0.0, Stroke::new(1.5, theme.accent), STROKE_KIND_STYLE);
                 }
 
                 // Slot view: show frame number in middle of each frame
@@ -1264,8 +1249,7 @@ impl ResourceBlocks {
                         Pos2::new(visible_rect.left(), y - cell_size / 2.0),
                         Vec2::new(label_width, cell_size),
                     );
-                    let fill =
-                        Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
+                    let fill = Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 70);
                     painter.rect_filled(hl_rect, 0.0, fill);
                 }
                 painter.text(

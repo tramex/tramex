@@ -106,10 +106,14 @@ impl FileMetadata {
                 // Parse n_rb
                 if let Some(n_rb_value) = Self::extract_value(trimmed, "n_rb_dl=") {
                     metadata.n_rb = n_rb_value.parse().ok();
-                    if let Some(n_rb_ul_value) = Self::extract_value(trimmed, "n_rb_ul=") {
-                        if n_rb_ul_value != n_rb_value {
-                            log::error!("n_rb_dl and n_rb_ul are different: {} and {}, this is not supported n_rb_dl has been used", n_rb_value, n_rb_ul_value);
-                        }
+                    if let Some(n_rb_ul_value) = Self::extract_value(trimmed, "n_rb_ul=")
+                        && n_rb_ul_value != n_rb_value
+                    {
+                        log::error!(
+                            "n_rb_dl and n_rb_ul are different: {} and {}, this is not supported n_rb_dl has been used",
+                            n_rb_value,
+                            n_rb_ul_value
+                        );
                     }
                 }
 
