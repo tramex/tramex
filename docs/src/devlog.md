@@ -1310,6 +1310,35 @@ Vertical-only borders with thickness indicating hierarchy:
 
 **No horizontal borders** - visual clarity through vertical separation only.
 
+#### 8.4.5. Auto-Scroll & Focus Highlighting
+
+Recentering the data window (`start_slot`) on a focused event is not enough: `egui::ScrollArea` keeps its own independent scroll offset, so the focused slot could still be rendered far outside the visible viewport, and switching `ViewMode` (Symbol ↔ Slot) changes `slot_width` drastically, invalidating any previous scroll position.
+
+**Fix - explicit scroll request:**
+
+```rust
+// Set whenever focus changes or the view mode is toggled
+self.scroll_pending = true;
+
+// Inside the ScrollArea closure, once per pending request:
+if self.scroll_pending {
+    if let Some(slot_idx) = focused_global_slot.and_then(|g| g.checked_sub(self.start_slot)) {
+        let target_rect = Rect::from_min_size(Pos2::new(slot_x, y_top), Vec2::new(slot_width, y_height));
+        ui.scroll_to_rect(target_rect, Some(egui::Align::Center));
+        self.scroll_pending = false;
+    }
+}
+```
+
+`Ui::scroll_to_rect` must be called from within the `ScrollArea`'s child `Ui` - it queues an animated scroll to bring the given rect into view regardless of the current offset, which fixes the "wrong X position until manual scroll" issue.
+
+**Focus legend:** the header (slot/frame label) and PRB label corresponding to the focused event are highlighted with a translucent `theme.accent` fill + border, so the current position remains identifiable even after scrolling away:
+
+| Element | Highlight condition |
+|---------|----------------------|
+| Slot/Frame header | `global_slot == focused_global_slot` |
+| PRB label | `prb` within `[prb_start, prb_start + prb_length - 1]` |
+
 ### 8.5. Performance Optimizations
 
 #### 8.5.1. Hot Path Optimizations
@@ -1359,7 +1388,7 @@ response.on_hover_ui(|ui| {
 
 ### 8.6. Files
 
-- `tramex/src/panels/ressources_blocks.rs` - Panel implementation
+- `tramex/src/panels/resources_blocks.rs` - Panel implementation
 - `tramex-tools/src/interface/layer.rs` - PHY layer visibility (default: on)
 
 ### 8.7. Usage
