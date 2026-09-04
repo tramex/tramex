@@ -4,8 +4,9 @@
 //! colored by HARQ process number. The focused event arrow is highlighted.
 
 use crate::event_system::{EventContext, EventSubscriber};
+use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::ThemeColors;
-use egui::{self, Color32, Pos2, Rect, Stroke, Vec2};
+use egui::{self, Color32, CursorIcon, Pos2, Rect, Sense, Stroke, Vec2};
 use tramex_tools::{
     data::{AdditionalInfos, Trace},
     errors::TramexError,
@@ -123,15 +124,22 @@ impl HarqArrow {
                 );
                 (phy.harq, label)
             }
-            PHYChannelData::Pusch { retx, rv_idx, crc } => {
+            PHYChannelData::Pusch {
+                retx,
+                rv_idx,
+                crc,
+                ack,
+            } => {
                 let crc_str = crc.map_or("-", |v| if v { "OK" } else { "KO" });
+                let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
                 let label = format!(
-                    "{}:{} PUSCH retx={} rv_idx={} crc={}",
+                    "{}:{} PUSCH retx={} rv_idx={} crc={}, {}",
                     phy.frame,
                     phy.slot,
                     fmt_opt(*retx),
                     fmt_opt(*rv_idx),
-                    crc_str
+                    crc_str,
+                    ack_str,
                 );
                 (phy.harq, label)
             }
@@ -141,7 +149,13 @@ impl HarqArrow {
                     return None;
                 }
                 let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
-                let label = format!("{}:{} PUCCH format={} {}", phy.frame, phy.slot, fmt_opt(*format), ack_str);
+                let label = format!(
+                    "{}:{} PUCCH format={}, {}", 
+                    phy.frame, 
+                    phy.slot, 
+                    fmt_opt(*format), 
+                    ack_str,
+                );
                 (None, label) // No HARQ process on PUCCH
             }
             PHYChannelData::None => return None,
@@ -181,6 +195,10 @@ pub struct HarqPanel {
     /// Whether we have received any event yet
     #[serde(skip)]
     has_first_event: bool,
+
+    /// HARQ process id currently used to filter the timeline (None = show all).
+    /// Toggled by clicking a HARQ id in the legend.
+    filter_harq: Option<u8>,
 }
 
 impl Default for HarqPanel {
@@ -198,6 +216,7 @@ impl HarqPanel {
             should_scroll: false,
             end_limit: (0, 0, 0),
             has_first_event: false,
+            filter_harq: None,
         }
     }
 
@@ -269,21 +288,33 @@ impl HarqPanel {
 
         ui.separator();
 
+        // Apply HARQ filter (None = show all)
+        let filter_harq = self.filter_harq;
+        let displayed: Vec<&HarqArrow> = self
+            .arrows
+            .iter()
+            .filter(|a| filter_harq.is_none_or(|f| a.harq == Some(f)))
+            .collect();
+
         // ── Scrollable arrow area ──
         let scroll_height = ui.available_height();
         let mut scroll_area = egui::ScrollArea::vertical().auto_shrink([false, false]);
 
         if self.should_scroll
-            && let Some(pos) = self.arrows.iter().position(|a| a.trace_index == self.current_index)
+            && let Some(pos) = displayed.iter().position(|a| a.trace_index == self.current_index)
         {
             let arrow_y = pos as f32 * arrow_height;
             let centered = (arrow_y - scroll_height / 2.0).max(0.0);
             scroll_area = scroll_area.vertical_scroll_offset(centered);
         }
 
+        // Set by a click on an arrow row; forwarded to the shared navigate-request
+        // memory slot after the closure so the FrontEnd can trigger navigation.
+        let mut clicked_index: Option<usize> = None;
+
         scroll_area.show(ui, |ui| {
-            let total_height = (self.arrows.len() as f32 * arrow_height).max(100.0);
-            let (rect, _) = ui.allocate_exact_size(Vec2::new(available_width - 20.0, total_height), egui::Sense::hover());
+            let total_height = (displayed.len() as f32 * arrow_height).max(100.0);
+            let (rect, _) = ui.allocate_exact_size(Vec2::new(available_width - 20.0, total_height), Sense::hover());
 
             let painter = ui.painter();
 
@@ -297,9 +328,27 @@ impl HarqPanel {
             painter.line_segment([Pos2::new(bst_x, rect.top()), Pos2::new(bst_x, rect.bottom())], line_stroke);
 
             // Draw arrows
-            for (i, arrow) in self.arrows.iter().enumerate() {
+            for (i, arrow) in displayed.iter().enumerate() {
                 let y = rect.top() + (i as f32 * arrow_height) + arrow_height / 2.0;
                 let is_current = arrow.trace_index == self.current_index;
+
+                // Clickable row: navigate to this trace when clicked
+                let row_rect = Rect::from_min_max(
+                    Pos2::new(rect.left(), y - arrow_height / 2.0),
+                    Pos2::new(rect.right(), y + arrow_height / 2.0),
+                );
+                // Id is keyed by row position (not trace_index): arrows are inserted in
+                // sorted SFN order (not always appended), so the row at a given screen
+                // position can correspond to a different trace between frames. Keying by
+                // position keeps the widget Id stable for that rect and avoids egui's
+                // "changed id between passes" warning.
+                let row_response = ui.interact(row_rect, egui::Id::new("harq_arrow_row").with(i), Sense::click());
+                if row_response.clicked() {
+                    clicked_index = Some(arrow.trace_index);
+                }
+                if row_response.hovered() {
+                    ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
+                }
 
                 // Arrow direction: UL = UE→BST, DL = BST→UE
                 let (from_x, to_x) = match arrow.direction {
@@ -325,7 +374,7 @@ impl HarqPanel {
                     );
                     painter.rect_filled(highlight_rect, 2.0, highlight_bg);
                     // Use strong text for focused label, bright arrow
-                    (theme.text_strong, 3.0, theme.text_strong)
+                    (base_color, 3.0, theme.text_strong)
                 } else {
                     (base_color, 1.5, theme.text)
                 };
@@ -354,28 +403,40 @@ impl HarqPanel {
                     text_pos,
                     egui::Align2::CENTER_CENTER,
                     &arrow.label,
-                    egui::FontId::proportional(10.0),
+                    egui::FontId::proportional(12.0),
                     label_color,
                 );
             }
         });
 
+        // Forward click-to-navigate request to FrontEnd via shared egui memory
+        if let Some(idx) = clicked_index {
+            ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new(NAVIGATE_REQUEST_ID), idx));
+        }
+
         self.should_scroll = false;
     }
 
-    /// Draw a compact HARQ color legend
-    fn draw_legend(&self, ui: &mut egui::Ui) {
+    /// Draw a compact HARQ color legend. Clicking a HARQ id toggles filtering the
+    /// timeline to only that process (click again, or the active one, to clear).
+    fn draw_legend(&mut self, ui: &mut egui::Ui) {
         ui.horizontal_wrapped(|ui| {
-            ui.label("HARQ: ");
+            ui.label("HARQ:");
             // Determine which HARQ IDs are actually present
             let mut seen: Vec<u8> = self.arrows.iter().filter_map(|a| a.harq).collect();
             seen.sort();
             seen.dedup();
             for h in seen {
                 let color = harq_color(h);
-                let (response, painter) = ui.allocate_painter(Vec2::new(30.0, 16.0), egui::Sense::hover());
+                let is_active = self.filter_harq == Some(h);
+                let is_dimmed = self.filter_harq.is_some() && !is_active;
+
+                let (response, painter) = ui.allocate_painter(Vec2::new(30.0, 16.0), Sense::click());
                 let r = response.rect;
-                painter.rect_filled(r, 3.0, color);
+
+                let swatch_color = if is_dimmed { color.linear_multiply(0.3) } else { color };
+                painter.rect_filled(r, 3.0, swatch_color);
+
                 // Use theme text color for dark mode compatibility
                 let text_color = ui.visuals().strong_text_color();
                 painter.text(
@@ -385,6 +446,14 @@ impl HarqPanel {
                     egui::FontId::proportional(10.0),
                     text_color,
                 );
+
+                if response.clicked() {
+                    self.filter_harq = if is_active { None } else { Some(h) };
+                }
+                if response.hovered() {
+                    ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
+                    response.on_hover_text(format!("Filter timeline to HARQ {}", h));
+                }
             }
         });
     }

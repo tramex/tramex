@@ -1406,6 +1406,7 @@ response.on_hover_ui(|ui| {
 
 #### Implementation Date
 2026-03-12
+2026-09-01 - Added filtering by HARQ process & Click to event
 
 ### 9.0. Overview
 
@@ -1475,10 +1476,8 @@ The HARQ panel provides a chronograph-style visualization of PHY layer events, s
 
 #### 9.2.3. Focus & Navigation
 
-When an event is focused in the navigation panel:
-- The corresponding arrow is highlighted with a colored background
-- The panel auto-scrolls to center on the focused arrow
-- Arrow line becomes thicker (3.0 vs 1.5)
+- When an event is focused in the navigation panel the corresponding arrow is highlighted with a colored background
+- It is possible to click on an arrow to focus on the corresponding event in the navigation panel
 
 ### 9.3. Filtering Logic
 
@@ -1490,6 +1489,8 @@ The panel automatically filters out non-HARQ events:
 | PUCCH format=2 | CSI (Channel State Info) only, no HARQ feedback |
 | PDCCH without `harq_process` | DCI 1_0 for SIB (no HARQ) |
 | PRACH | Random access, not HARQ |
+
+If one harq process has been selected, only the corresponding arrows will appear in the panel.
 
 ### 9.4. PHY Trace Parsing
 
@@ -1507,7 +1508,7 @@ pub enum PHYChannelData {
         harq_feedback_timing: Option<u8>  // DCI 1_1 only
     },
     Pdsch { retx: Option<u8>, rv_idx: Option<u8> },
-    Pusch { retx: Option<u8>, rv_idx: Option<u8>, crc: Option<bool> },
+    Pusch { retx: Option<u8>, rv_idx: Option<u8>, crc: Option<bool>, ack: Option<bool> },
     Pucch { format: Option<u8>, ack: Option<bool> },
     None,
 }
@@ -1570,7 +1571,7 @@ The panel implements `EventSubscriber`:
 3. Navigate through events — panel auto-scrolls to focused PHY event
 4. Identify HARQ processes by color
 5. Track retransmissions by watching `retx`, `rv_idx` changes
-6. Monitor ACK/NACK feedback in PUCCH arrows
+6. Monitor ACK/NACK feedback in PUCCH/PUSCH arrows
 
 ---
 

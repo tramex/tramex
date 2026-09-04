@@ -297,15 +297,17 @@ The HARQ panel provides a chronograph-style visualization of PHY layer events, s
 **Arrow labels:**
 - **PDCCH**: `PDCCH dci={format} ndi={} rv_idx={}`
 - **PDSCH**: `PDSCH harq={} retx={} rv_idx={}`
-- **PUSCH**: `PUSCH harq={} retx={} rv_idx={} crc={OK/KO}`
+- **PUSCH**: `PUSCH harq={} retx={} rv_idx={} crc={OK/KO} {ACK/NACK}`
 - **PUCCH**: `PUCCH format={} {ACK/NACK}`
 
 **Filtering:**
 - Automatically filters out non-HARQ events (MIB/SIB broadcasts, CSI-only PUCCH)
+- It is possible to filter by HARQ process to better understand the sequence
 
 **Features:**
 - Color-coded HARQ processes for easy tracking
 - Focused event highlighted with background bar
+- Clicking on an arrow navigate to the corresponding trace
 - Auto-scrolls to centered on focused event
 - Track retransmissions via `retx` and `rv_idx` fields
 
