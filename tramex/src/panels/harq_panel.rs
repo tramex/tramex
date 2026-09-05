@@ -15,7 +15,7 @@ use tramex_tools::{
 };
 
 /// Max arrow
-const MAX_ARROWS: usize = 200;
+const MAX_ARROWS: usize = 100;
 
 /// HARQ process color palette (16 colors for HARQ 0-15)
 const HARQ_COLORS: [Color32; 16] = [
@@ -124,12 +124,7 @@ impl HarqArrow {
                 );
                 (phy.harq, label)
             }
-            PHYChannelData::Pusch {
-                retx,
-                rv_idx,
-                crc,
-                ack,
-            } => {
+            PHYChannelData::Pusch { retx, rv_idx, crc, ack } => {
                 let crc_str = crc.map_or("-", |v| if v { "OK" } else { "KO" });
                 let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
                 let label = format!(
@@ -144,18 +139,12 @@ impl HarqArrow {
                 (phy.harq, label)
             }
             PHYChannelData::Pucch { format, ack } => {
-                // Skip format=2 (CSI only, no HARQ feedback)
-                if *format == Some(2) {
+                // Skip format != 1 (CSI only, no HARQ feedback)
+                if *format != Some(1) {
                     return None;
                 }
                 let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
-                let label = format!(
-                    "{}:{} PUCCH format={}, {}", 
-                    phy.frame, 
-                    phy.slot, 
-                    fmt_opt(*format), 
-                    ack_str,
-                );
+                let label = format!("{}:{} PUCCH {}", phy.frame, phy.slot, ack_str,);
                 (None, label) // No HARQ process on PUCCH
             }
             PHYChannelData::None => return None,
@@ -252,6 +241,59 @@ impl HarqPanel {
         }
 
         hfn
+    }
+
+    /// Trace index range currently held in the arrow buffer
+    fn buffered_range(&self) -> Option<(usize, usize)> {
+        let mut iter = self.arrows.iter().map(|a| a.trace_index);
+        let first = iter.next()?;
+        Some(iter.fold((first, first), |(lo, hi), i| (lo.min(i), hi.max(i))))
+    }
+
+    /// Rebuild the arrow buffer centered on `index`.
+    ///
+    /// Used when navigating to an event that was dropped from the buffer
+    /// (older than `MAX_ARROWS` back) so arrows are regenerated on demand.
+    fn rebuild_window(&mut self, all_events: &[Trace], index: usize) {
+        if all_events.is_empty() {
+            return;
+        }
+        let center = index.min(all_events.len() - 1);
+        let half = MAX_ARROWS / 2;
+
+        // Walk backwards from the focused event until half the buffer is filled
+        let mut arrows: Vec<HarqArrow> = Vec::new();
+        let mut i = center;
+        loop {
+            if let Some(arrow) = HarqArrow::from_trace(&all_events[i], i) {
+                arrows.push(arrow);
+            }
+            if i == 0 || arrows.len() >= half {
+                break;
+            }
+            i -= 1;
+        }
+        arrows.reverse();
+
+        // Then forwards until the buffer is full
+        for (j, event) in all_events.iter().enumerate().skip(center + 1) {
+            if arrows.len() >= MAX_ARROWS {
+                break;
+            }
+            if let Some(arrow) = HarqArrow::from_trace(event, j) {
+                arrows.push(arrow);
+            }
+        }
+
+        // Recompute HFNs sequentially over the new window
+        self.has_first_event = false;
+        self.end_limit = (0, 0, 0);
+        for arrow in arrows.iter_mut() {
+            arrow.hfn = self.compute_hfn(arrow.frame, arrow.slot);
+        }
+        arrows.sort_by_key(|a| (a.hfn, a.frame, a.slot));
+
+        self.arrows = arrows;
     }
 
     /// Draw the HARQ chronograph
@@ -494,9 +536,32 @@ impl EventSubscriber for HarqPanel {
         }
     }
 
-    fn on_event_focused(&mut self, _event: &Trace, index: usize, _context: &EventContext) {
+    fn on_event_focused(&mut self, _event: &Trace, index: usize, context: &EventContext) {
         self.current_index = index;
         self.should_scroll = true;
+
+        // The buffer only keeps MAX_ARROWS entries: navigating outside that window
+        // (typically backwards to dropped events) requires regenerating the arrows.
+        let needs_rebuild = match self.buffered_range() {
+            // Backwards out of the window: arrows were dropped, rebuild.
+            Some((lo, _)) if index < lo => true,
+            // Forwards out of the window: only rebuild if PHY arrows are missing
+            // in between (otherwise the buffer already holds the newest arrows).
+            Some((_, hi)) if index > hi => context
+                .all_events
+                .get((hi + 1)..=index.min(context.all_events.len().saturating_sub(1)))
+                .is_some_and(|slice| {
+                    slice
+                        .iter()
+                        .enumerate()
+                        .any(|(offset, ev)| HarqArrow::from_trace(ev, hi + 1 + offset).is_some())
+                }),
+            Some(_) => false,
+            None => true,
+        };
+        if needs_rebuild {
+            self.rebuild_window(context.all_events, index);
+        }
     }
 
     fn on_events_cleared(&mut self) {
