@@ -1539,8 +1539,8 @@ The parser handles continuation lines with `parse_phy_lines()`.
 
 #### 9.4.4. Format & Inferences from Amarisoft
 
-Because the traces are from the BST point of vue, the informations availabled in PUSCH or PUCCH 
-traces are not all sent fromt the UE. 
+Because the traces are from the BST point of vue, the information available in PUSCH or PUCCH 
+traces are not all sent front the UE. 
 
 
 
