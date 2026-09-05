@@ -18,3 +18,8 @@ pub trait PanelView {
     /// Show the UI of the panel
     fn ui(&mut self, ui: &mut egui::Ui);
 }
+
+/// Shared `egui` memory key used by panels to request navigation to a specific
+/// trace index (e.g. clicking an arrow in the HARQ panel). `FrontEnd` polls this
+/// value after showing panel windows and forwards it to `Application::navigate_to`.
+pub const NAVIGATE_REQUEST_ID: &str = "tramex_panel_navigate_request";

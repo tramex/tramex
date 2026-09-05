@@ -378,6 +378,7 @@ impl EventSubscriber for MessageBox {
             .resizable(true)
             .default_width(600.0)
             .default_height(400.0)
+            .max_height(1200.0)
             .open(open)
             .show(ctx, |ui| {
                 self.ui(ui);

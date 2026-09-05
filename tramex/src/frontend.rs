@@ -344,6 +344,14 @@ impl FrontEnd {
                         error_to_return.push(err);
                     }
                 }
+
+                // Handle navigation requests from panels (e.g. clicking an arrow in the HARQ panel)
+                if let Some(target_index) = ui
+                    .ctx()
+                    .data_mut(|d| d.remove_temp::<usize>(egui::Id::new(crate::panels::NAVIGATE_REQUEST_ID)))
+                {
+                    self.handle_goto_event(target_index, &mut error_to_return);
+                }
             } else {
                 // Show connector status
                 match &self.connector {

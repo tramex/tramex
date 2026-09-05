@@ -1406,6 +1406,7 @@ response.on_hover_ui(|ui| {
 
 #### Implementation Date
 2026-03-12
+2026-09-01 - Added filtering by HARQ process & Click to event
 
 ### 9.0. Overview
 
@@ -1475,10 +1476,8 @@ The HARQ panel provides a chronograph-style visualization of PHY layer events, s
 
 #### 9.2.3. Focus & Navigation
 
-When an event is focused in the navigation panel:
-- The corresponding arrow is highlighted with a colored background
-- The panel auto-scrolls to center on the focused arrow
-- Arrow line becomes thicker (3.0 vs 1.5)
+- When an event is focused in the navigation panel the corresponding arrow is highlighted with a colored background
+- It is possible to click on an arrow to focus on the corresponding event in the navigation panel
 
 ### 9.3. Filtering Logic
 
@@ -1487,9 +1486,11 @@ The panel automatically filters out non-HARQ events:
 | Filtered Out | Reason |
 |--------------|--------|
 | `harq=si` | MIB/SIB broadcasts (system info, no HARQ) |
-| PUCCH format=2 | CSI (Channel State Info) only, no HARQ feedback |
+| PUCCH format!=1 | CSI (Channel State Info) only, no HARQ feedback |
 | PDCCH without `harq_process` | DCI 1_0 for SIB (no HARQ) |
 | PRACH | Random access, not HARQ |
+
+If one harq process has been selected, only the corresponding arrows will appear in the panel.
 
 ### 9.4. PHY Trace Parsing
 
@@ -1507,7 +1508,7 @@ pub enum PHYChannelData {
         harq_feedback_timing: Option<u8>  // DCI 1_1 only
     },
     Pdsch { retx: Option<u8>, rv_idx: Option<u8> },
-    Pusch { retx: Option<u8>, rv_idx: Option<u8>, crc: Option<bool> },
+    Pusch { retx: Option<u8>, rv_idx: Option<u8>, crc: Option<bool>, ack: Option<bool> },
     Pucch { format: Option<u8>, ack: Option<bool> },
     None,
 }
@@ -1536,26 +1537,48 @@ The parser handles continuation lines with `parse_phy_lines()`.
 | **1_0** | DL grant with RNTI | NA |
 | **1_1** | DL grant | `ndi1=`, `rv_idx1=`, `harq_feedback_timing=` |
 
+#### 9.4.4. Format & Inferences from Amarisoft
+
+Because the traces are from the BST point of vue, the information available in PUSCH or PUCCH 
+traces are not all sent front the UE. 
+
+
+
 ### 9.5. Performance
 
-#### 9.5.1. Arrow Limit
+#### 9.5.1. Arrow Buffer
 
-The panel maintains a maximum of 200 arrows for memory efficiency:
+The panel keeps a sliding buffer of at most `MAX_ARROWS` arrows for memory efficiency.
+When the limit is reached, the oldest half is dropped:
 
 ```rust
-const MAX_ARROWS: usize = 200;
+const MAX_ARROWS: usize = 100;
 
 if self.arrows.len() >= MAX_ARROWS {
     self.arrows.drain(0..50);  // Remove oldest 50
 }
 ```
 
-#### 9.5.2. Event System Integration
+#### 9.5.2. Buffer Regeneration on Navigation
+
+Because arrows outside the buffer are discarded, navigating back to an older event
+would otherwise show nothing. `on_event_focused` therefore rebuilds the window on demand:
+
+- `buffered_range()` returns the `(min, max)` trace index currently held in `arrows`.
+- If the focused index is **before** that range, the arrows were dropped → rebuild.
+- If it is **after** the range, a rebuild happens only when a PHY arrow actually exists
+  in between (avoids useless rebuilds while stepping through non-PHY traces).
+- `rebuild_window(all_events, index)` walks backwards from the focused event until
+  `MAX_ARROWS / 2` arrows are collected, then forwards up to `MAX_ARROWS`, recomputes
+  the HFNs sequentially (anti-wrap state is reset first) and re-sorts by `(hfn, frame, slot)`.
+
+#### 9.5.3. Event System Integration
 
 The panel implements `EventSubscriber`:
 - `on_event_added`: Creates arrow if PHY event matches criteria
-- `on_event_focused`: Updates highlight and triggers auto-scroll
-- `on_events_cleared`: Clears all arrows
+- `on_event_focused`: Updates highlight, triggers auto-scroll, and rebuilds the arrow
+  buffer if the focused event lies outside it
+- `on_events_cleared`: Clears all arrows and resets the HFN tracking state
 
 
 ### 9.7. Files
@@ -1570,7 +1593,7 @@ The panel implements `EventSubscriber`:
 3. Navigate through events — panel auto-scrolls to focused PHY event
 4. Identify HARQ processes by color
 5. Track retransmissions by watching `retx`, `rv_idx` changes
-6. Monitor ACK/NACK feedback in PUCCH arrows
+6. Monitor ACK/NACK feedback in PUCCH/PUSCH arrows
 
 ---
 

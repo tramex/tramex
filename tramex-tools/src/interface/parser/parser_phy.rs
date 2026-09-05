@@ -56,6 +56,8 @@ pub enum PHYChannelData {
         rv_idx: Option<u8>,
         /// CRC result (true = OK, false = KO)
         crc: Option<bool>,
+        /// ACK/NACK (true = ACK, false = NACK)
+        ack: Option<bool>,
     },
     /// PUCCH uplink control channel data
     Pucch {
@@ -444,7 +446,8 @@ fn parse_pusch_data(line: &str) -> PHYChannelData {
     let retx = extract_field_u8(line, "retx=");
     let rv_idx = extract_field_u8(line, "rv_idx=");
     let crc = extract_field_str(line, "crc=").map(|s| s != "KO");
-    PHYChannelData::Pusch { retx, rv_idx, crc }
+    let ack = extract_field_str(line, "ack=").map(|s| s != "0");
+    PHYChannelData::Pusch { retx, rv_idx, crc, ack }
 }
 
 /// Parse PUCCH channel-specific data from the first line
@@ -566,9 +569,9 @@ mod tests {
 
     #[test]
     fn test_parse_pusch() {
-        let line = "10:37:38.884 [PHY] UL 0001 01 003d   267.5 PUSCH: harq=3 prb=2:4 symb=0:13 CW0: tb_len=11 mod=2 rv_idx=0 retx=0 crc=OK snr=26.2 epre=-35.6 ta=0.1";
+        let line = "10:37:38.884 [PHY] UL 0001 01 003d   267.5 PUSCH: harq=3 prb=2:4 symb=0:13 CW0: tb_len=11 mod=2 rv_idx=0 retx=0 crc=OK snr=26.2 epre=-35.6 ta=0.1 ack=1";
         let info = parse_phy_line(line, Direction::UL).unwrap();
-
+        // println!("{:?}", info);
         assert_eq!(info.frame, 267);
         assert_eq!(info.slot, 5);
         assert_eq!(info.prb_start, 2);
@@ -582,7 +585,8 @@ mod tests {
             PHYChannelData::Pusch {
                 retx: Some(0),
                 rv_idx: Some(0),
-                crc: Some(true)
+                crc: Some(true),
+                ack: Some(true),
             }
         ));
     }
