@@ -1539,9 +1539,12 @@ The parser handles continuation lines with `parse_phy_lines()`.
 
 #### 9.4.4. Format & Inferences from Amarisoft
 
-Because the traces are from the BST point of vue, the information available in PUSCH or PUCCH 
-traces are not all sent front the UE. 
+Because the traces are logged from the BST's point of view, not all fields in PUSCH/PUCCH traces originate from the UE:
 
+- **ACK**: Sent by the UE to acknowledge a previously received PDSCH.
+- **CRC**: Computed locally by the BST after decoding the uplink message — it is *not* transmitted by the UE.
+
+Additionally, an ACK may appear in a PUSCH trace even though it is nominally a data channel. This is called **piggybacking**: the UE embeds the HARQ feedback in the PUSCH transmission instead of sending a separate PUCCH, reducing latency.
 
 
 ### 9.5. Performance
@@ -1820,3 +1823,56 @@ cargo build --no-default-features --features websocket
 4. **Caching**: Store explanations to avoid duplicate API calls
 5. **Offline mode**: Pre-trained model on-device for disconnected operation
 6. **Multi-language**: Translated explanations for international users
+
+
+## 11. Power Panel
+
+### 11.1. Motivation
+
+The gNB PHY layer reports several uplink measurements on PUSCH and PUCCH traces that are useful for diagnosing radio conditions:
+
+- **EPRE** (Energy Per Resource Element): received signal power in dB
+- **TA** (Timing Advance): propagation delay compensation in µs
+- **CSI** (Channel State Information): feedback from the UE encoded in binary
+
+These values were present in the log but not extracted by the parser or visualized. The Power panel fills this gap by plotting them over time (SFN) so that trends and anomalies are easy to spot.
+
+### 11.2. Parser Changes
+
+The PHY parser (`tramex-tools/src/interface/parser/parser_phy.rs`) was extended:
+
+1. **New struct `UlMeasurements`** with optional `epre: f32`, `ta: f32`, `csi: u32` fields.
+2. **`PHYChannelData::Pusch` and `PHYChannelData::Pucch`** now include a `measurements: UlMeasurements` field.
+3. **`parse_ul_measurements()`** helper extracts `epre=`, `ta=` and `csi=` from the trace line. `csi` is decoded from binary at parse time (`0101` → `5`).
+4. **Tests** updated and a new test added for the sample line `epre=-45.4 ta=0.1 csi=0101`.
+
+### 11.3. Panel Implementation
+
+`tramex/src/panels/power_panel.rs` implements the `EventSubscriber` trait:
+
+| Callback | Behavior |
+|----------|----------|
+| `on_event_added` | If the trace is PUSCH/PUCCH with at least one measurement, cache it with computed HFN |
+| `on_event_focused` | Center the X window on the focused event (or nearest sample for non-PHY events) |
+| `on_events_cleared` | Clear the sample cache and reset state |
+
+**Rendering:**
+- Three stacked graphs (EPRE, TA, CSI) drawn with the egui painter (no external plot crate).
+- Y axis auto-scales to visible data with a minimum span to avoid noise zoom.
+- X axis shows frame numbers at frame boundaries; HFN boundaries are drawn with a stronger line.
+- Points colored by channel type (PUSCH cyan, PUCCH green), reusing `ResourceType` colors.
+- Focused point highlighted with an accent ring; vertical marker across all graphs.
+- Hover tooltip shows all measurements plus raw CSI bits; click navigates via `NAVIGATE_REQUEST_ID`.
+
+**HFN handling** reuses the same anti-wrap logic as the HARQ panel: if a new event's frame is more than 512 frames behind the current end, it is assigned to the previous HFN; if it jumps forward by more than 512, the HFN is incremented.
+
+### 11.4. Files Changed
+
+**New Files:**
+- `tramex/src/panels/power_panel.rs` — Panel implementation
+
+**Modified Files:**
+- `tramex-tools/src/interface/parser/parser_phy.rs` — `UlMeasurements`, `measurements` field, `parse_ul_measurements()`
+- `tramex/src/panels/mod.rs` — Registered `power_panel` module
+- `tramex/src/panels/harq_panel.rs` — Adjusted match arms for new `measurements` field
+- `tramex/src/event_system/integration.rs` — Subscribed `PowerPanel`

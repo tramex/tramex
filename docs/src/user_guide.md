@@ -313,6 +313,35 @@ The HARQ panel provides a chronograph-style visualization of PHY layer events, s
 
 ---
 
+### Power Panel
+
+The Power panel displays three point graphs sharing a common SFN (System Frame Number) X axis, built from uplink measurements reported on **PUSCH** and **PUCCH** PHY traces:
+
+| Metric | Description |
+|--------|-------------|
+| **EPRE** | Energy Per Resource Element (dB) |
+| **TA** | Timing Advance (µs) |
+| **CSI** | Channel State Information (decoded from binary, e.g. `0101` → 5) |
+
+**Layout:**
+- Three stacked graphs, each with its own Y axis auto-scaled to visible data
+- Shared X axis labeled with frame numbers at frame boundaries
+- Points only (no lines) since events do not arrive in SFN order
+
+**Controls:**
+- **Window slider**: Adjust the number of frames displayed (5–500)
+- **◀◀ / ▶▶**: Navigate by one frame
+- **PUSCH / PUCCH toggles**: Show or hide samples from each channel type
+- **Drag**: Pan the X window left/right
+
+**Features:**
+- Focused event highlighted with an accent ring and a vertical marker across all graphs
+- Hover over a point to see all measurements in a tooltip (including raw CSI bits)
+- Click a point to navigate to the corresponding trace
+- Window automatically re-centers on the focused event
+
+---
+
 ## Options and Settings
 
 ### Layer Filtering

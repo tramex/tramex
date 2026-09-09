@@ -6,8 +6,9 @@
 //! Uses real PHY trace data (PDSCH/PUSCH) to populate the grid.
 
 use crate::event_system::{EventContext, EventSubscriber};
+use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::ThemeColors;
-use egui::{Color32, PopupAnchor, Pos2, Rect, Stroke, StrokeKind, Vec2};
+use egui::{Color32, CursorIcon, PopupAnchor, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
 use tramex_tools::interface::parser::parser_phy::PHYInfos;
 use tramex_tools::{data::AdditionalInfos, data::Trace, errors::TramexError};
 
@@ -735,7 +736,7 @@ impl ResourceBlocks {
             let total_width = label_width + total_grid_width;
             let total_height = header_height + (self.num_prbs as f32 * cell_size);
 
-            let (content_rect, _) = ui.allocate_exact_size(Vec2::new(total_width, total_height), egui::Sense::hover());
+            let (content_rect, grid_response) = ui.allocate_exact_size(Vec2::new(total_width, total_height), Sense::click());
 
             // Auto-scroll to bring the focused event into view (once per focus change
             // or view-mode switch, so it also works before any manual scroll happens).
@@ -1137,6 +1138,16 @@ impl ResourceBlocks {
                 }
             }
 
+            // Click-to-navigate: if a cell with a PHY event is hovered and clicked,
+            // request navigation to that trace index.
+            if let Some(event_idx) = hovered_event_idx {
+                ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
+                if grid_response.clicked() {
+                    ui.ctx()
+                        .data_mut(|d| d.insert_temp(egui::Id::new(NAVIGATE_REQUEST_ID), event_idx));
+                }
+            }
+
             // --- 2. SLOT HEADERS (fixed at top, scrolls horizontally) ---
             let header_bg = Rect::from_min_size(
                 Pos2::new(visible_rect.left(), visible_rect.top()),
@@ -1400,10 +1411,13 @@ impl EventSubscriber for ResourceBlocks {
         self.focused_trace_index = None;
         self.focused_phy_info = None;
         self.scroll_pending = false;
+        self.num_prbs = DEFAULT_NUM_PRBS;
+        self.start_slot = 0;
     }
 
     fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {
         log::debug!("ResourceBlocks: Metadata changed, parsing SSB config");
+        log::debug!("Metadata: {:?}", metadata);
         self.num_prbs = metadata.n_rb.map(|v| v as usize).unwrap_or(DEFAULT_NUM_PRBS);
         self.needs_rebuild = true;
         self.update_ssb_config_from_metadata(&metadata.ssb_info);

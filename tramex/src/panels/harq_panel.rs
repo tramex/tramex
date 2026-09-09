@@ -124,7 +124,9 @@ impl HarqArrow {
                 );
                 (phy.harq, label)
             }
-            PHYChannelData::Pusch { retx, rv_idx, crc, ack } => {
+            PHYChannelData::Pusch {
+                retx, rv_idx, crc, ack, ..
+            } => {
                 let crc_str = crc.map_or("-", |v| if v { "OK" } else { "KO" });
                 let ack_str = ack.map_or("-".to_string(), |v| if v { "ACK".to_string() } else { "NACK".to_string() });
                 let label = format!(
@@ -138,7 +140,7 @@ impl HarqArrow {
                 );
                 (phy.harq, label)
             }
-            PHYChannelData::Pucch { format, ack } => {
+            PHYChannelData::Pucch { format, ack, .. } => {
                 // Skip format != 1 (CSI only, no HARQ feedback)
                 if *format != Some(1) {
                     return None;
