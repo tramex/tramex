@@ -100,6 +100,10 @@ impl MessageBox {
 
         // Build ehttp request
         let mut ehttp_req = ehttp::Request::post(&request.url, request.body.into_bytes());
+        // `Request::post` sets default headers (Accept, Content-Type: text/plain).
+        // Clear them so our own headers (in particular Content-Type: application/json)
+        // aren't sent duplicated, which some APIs (e.g. Mistral) mishandle.
+        ehttp_req.headers = ehttp::Headers::default();
         for (key, value) in &request.headers {
             ehttp_req.headers.insert(key.clone(), value.clone());
         }
