@@ -4,7 +4,7 @@
 
 Tramex is a university project conducted in Télécom Paris supervised by Philippe Martins
 
-Tramex is a project that serves the goal of allowing users to analyze and visualize frames in a 4G network.
+Tramex is a project that serves the goal of allowing users to analyze and visualize frames in a 4G and 5G network.
 
 Tramex is a project derived from:
 
@@ -15,7 +15,7 @@ Tramex is a project derived from:
 
 One of the functionalities of the VIGIE software is to analyze the frames of a 2G/3G network. For more information on this topic, please visit <https://hal.science/hal-02141173>.
 
-Tramex can be seen as an upgrade of the VIGIE software because it allows the user to analyze the frames of a 4G and 5G network. Note that Tramex does not have all the functionalities implemented in the VIGIE software.
+Tramex can be seen as an upgrade of the VIGIE software because it allows the user to analyze the frames of a 4G and 5G network.
 
 <details>
 
@@ -42,7 +42,7 @@ Tramex can be seen as an upgrade of the VIGIE software because it allows the use
 
 ## Amarisoft web interface
 
-Amarisoft is a software company that provides a 4G LTE software suite. The web interface of Amarisoft lets the user visualize the frames of a 4G network. This tool uses a Websocket to retrieve the frames transmitted within the network.
+Amarisoft is a software company that provides a 4G LTE and 5G NR software suite. The web interface of Amarisoft lets the user visualize the frames of a 4G and 5G network. This tool uses a Websocket API to retrieve the frames transmitted within the network.
 
 ## Tramex
 

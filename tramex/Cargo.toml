@@ -39,6 +39,8 @@ eframe = { version = "0.34.1", default-features = false, features = [
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
     "ron",
+    "wayland",
+    "x11"
 ] }
 log = "0.4"
 serde_json = "1.0.149"
