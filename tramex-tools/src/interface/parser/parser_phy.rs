@@ -58,6 +58,8 @@ pub enum PHYChannelData {
         crc: Option<bool>,
         /// ACK/NACK (true = ACK, false = NACK)
         ack: Option<bool>,
+        /// Uplink power / timing / CSI measurements
+        measurements: UlMeasurements,
     },
     /// PUCCH uplink control channel data
     Pucch {
@@ -65,9 +67,23 @@ pub enum PHYChannelData {
         format: Option<u8>,
         /// ACK/NACK (true = ACK, i.e. value != 0)
         ack: Option<bool>,
+        /// Uplink power / timing / CSI measurements
+        measurements: UlMeasurements,
     },
     /// No channel-specific data
     None,
+}
+
+/// Uplink measurements reported by the gNB on PUSCH / PUCCH traces
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct UlMeasurements {
+    /// Energy Per Resource Element (dB)
+    pub epre: Option<f32>,
+    /// Timing Advance (µs)
+    pub ta: Option<f32>,
+    /// Channel State Information, decoded from its binary representation
+    /// (e.g. `csi=0101` -> 5)
+    pub csi: Option<u32>,
 }
 
 /// PHY layer information extracted from trace lines
@@ -447,7 +463,22 @@ fn parse_pusch_data(line: &str) -> PHYChannelData {
     let rv_idx = extract_field_u8(line, "rv_idx=");
     let crc = extract_field_str(line, "crc=").map(|s| s != "KO");
     let ack = extract_field_str(line, "ack=").map(|s| s != "0");
-    PHYChannelData::Pusch { retx, rv_idx, crc, ack }
+    PHYChannelData::Pusch {
+        retx,
+        rv_idx,
+        crc,
+        ack,
+        measurements: parse_ul_measurements(line),
+    }
+}
+
+/// Parse `epre=`, `ta=` and `csi=` fields shared by PUSCH / PUCCH traces
+fn parse_ul_measurements(line: &str) -> UlMeasurements {
+    UlMeasurements {
+        epre: extract_field_str(line, "epre=").and_then(|s| s.parse::<f32>().ok()),
+        ta: extract_field_str(line, "ta=").and_then(|s| s.parse::<f32>().ok()),
+        csi: extract_field_str(line, "csi=").and_then(|s| u32::from_str_radix(&s, 2).ok()),
+    }
 }
 
 /// Parse PUCCH channel-specific data from the first line
@@ -458,7 +489,11 @@ fn parse_pucch_data(line: &str) -> PHYChannelData {
     let format = extract_field_u8(line, "format=");
     // ack field: may be multi-digit (e.g. "11", "111") — treat any non-"0" as true
     let ack = extract_field_str(line, "ack=").map(|s| s != "0");
-    PHYChannelData::Pucch { format, ack }
+    PHYChannelData::Pucch {
+        format,
+        ack,
+        measurements: parse_ul_measurements(line),
+    }
 }
 
 /// Parse the prb field from the trace line
@@ -580,15 +615,38 @@ mod tests {
         assert_eq!(info.symb_length, 13);
         assert!(matches!(info.channel_type, PHYChannelType::PUSCH));
         assert_eq!(info.harq, Some(3));
-        assert!(matches!(
-            info.channel_data,
+        match &info.channel_data {
             PHYChannelData::Pusch {
-                retx: Some(0),
-                rv_idx: Some(0),
-                crc: Some(true),
-                ack: Some(true),
+                retx,
+                rv_idx,
+                crc,
+                ack,
+                measurements,
+            } => {
+                assert_eq!(*retx, Some(0));
+                assert_eq!(*rv_idx, Some(0));
+                assert_eq!(*crc, Some(true));
+                assert_eq!(*ack, Some(true));
+                assert_eq!(measurements.epre, Some(-35.6));
+                assert_eq!(measurements.ta, Some(0.1));
+                assert_eq!(measurements.csi, None);
             }
-        ));
+            _ => panic!("Expected Pusch channel data"),
+        }
+    }
+
+    #[test]
+    fn test_parse_pusch_measurements_with_csi() {
+        let line = "13:20:46.485 [PHY] UL 003d 01 4644   820.9 PUSCH: harq=0 prb=2 symb=0:14 CW0: tb_len=141 mod=8 rv_idx=0 cr=0.92 retx=0 crc=KO snr=24.4 epre=-45.4 ta=0.1 csi=0101";
+        let info = parse_phy_line(line, Direction::UL).unwrap();
+        match &info.channel_data {
+            PHYChannelData::Pusch { measurements, .. } => {
+                assert_eq!(measurements.epre, Some(-45.4));
+                assert_eq!(measurements.ta, Some(0.1));
+                assert_eq!(measurements.csi, Some(5));
+            }
+            _ => panic!("Expected Pusch channel data"),
+        }
     }
 
     #[test]
@@ -682,9 +740,15 @@ mod tests {
         let info = parse_phy_line(line, Direction::UL).unwrap();
         assert!(matches!(info.channel_type, PHYChannelType::PUCCH));
         match &info.channel_data {
-            PHYChannelData::Pucch { format, ack } => {
+            PHYChannelData::Pucch {
+                format,
+                ack,
+                measurements,
+            } => {
                 assert_eq!(*format, Some(1));
                 assert_eq!(*ack, Some(true));
+                assert_eq!(measurements.epre, Some(-88.5));
+                assert_eq!(measurements.ta, None);
             }
             _ => panic!("Expected Pucch channel data"),
         }
@@ -695,7 +759,7 @@ mod tests {
         let line = "13:20:47.884 [PHY] UL 003d 01 4644   960.8 PUCCH: format=1 prb=50 prb2=0 symb=0:14 cs=9 occ=2 sr=1 snr=18.9 epre=-53.8";
         let info = parse_phy_line(line, Direction::UL).unwrap();
         match &info.channel_data {
-            PHYChannelData::Pucch { format, ack } => {
+            PHYChannelData::Pucch { format, ack, .. } => {
                 assert_eq!(*format, Some(1));
                 assert_eq!(*ack, None); // sr present, not ack
             }
@@ -717,9 +781,15 @@ mod tests {
         let line = "13:20:47.885 [PHY] UL 003d 01 4644   960.9 PUCCH: format=2 prb=1 prb2=49 symb=8:2 csi=0101 epre=-51.3";
         let info = parse_phy_line(line, Direction::UL).unwrap();
         match &info.channel_data {
-            PHYChannelData::Pucch { format, ack } => {
+            PHYChannelData::Pucch {
+                format,
+                ack,
+                measurements,
+            } => {
                 assert_eq!(*format, Some(2));
                 assert_eq!(*ack, None); // format=2 has no ack
+                assert_eq!(measurements.csi, Some(5));
+                assert_eq!(measurements.epre, Some(-51.3));
             }
             _ => panic!("Expected Pucch channel data"),
         }

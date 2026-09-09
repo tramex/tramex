@@ -7,6 +7,7 @@ pub mod identity;
 pub mod logical_channels;
 pub mod navigation_panel;
 pub mod panel_message;
+pub mod power_panel;
 pub mod resources_blocks;
 pub mod rrc_status;
 pub mod trame_manager;
