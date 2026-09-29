@@ -8,6 +8,7 @@ pub fn create_application_with_panels() -> Application {
 
     // Register all panels
     app.subscribe(Box::new(crate::panels::chronograph::Chronograph::new()));
+    app.subscribe(Box::new(crate::panels::chronograph_mac::ChronographMac::new()));
     app.subscribe(Box::new(crate::panels::rrc_status::RRCStatusPanel::new()));
     app.subscribe(Box::new(crate::panels::bst_config::BstConfig::new()));
     app.subscribe(Box::new(crate::panels::logical_channels::LogicalChannels::new()));

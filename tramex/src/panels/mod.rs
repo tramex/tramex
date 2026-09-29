@@ -2,6 +2,7 @@
 
 pub mod bst_config;
 pub mod chronograph;
+pub mod chronograph_mac;
 pub mod harq_panel;
 pub mod identity;
 pub mod logical_channels;
