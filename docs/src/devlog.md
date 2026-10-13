@@ -1564,7 +1564,12 @@ The parser handles continuation lines with `parse_phy_lines()`.
 #### 9.4.4. Format & Inferences from Amarisoft
 
 Because the traces are logged from the BST's point of view, not all fields in PUSCH/PUCCH traces originate from the UE:
+Because the traces are logged from the BST's point of view, not all fields in PUSCH/PUCCH traces originate from the UE:
 
+- **ACK**: Sent by the UE to acknowledge a previously received PDSCH.
+- **CRC**: Computed locally by the BST after decoding the uplink message — it is *not* transmitted by the UE.
+
+Additionally, an ACK may appear in a PUSCH trace even though it is nominally a data channel. This is called **piggybacking**: the UE embeds the HARQ feedback in the PUSCH transmission instead of sending a separate PUCCH, reducing latency.
 - **ACK**: Sent by the UE to acknowledge a previously received PDSCH.
 - **CRC**: Computed locally by the BST after decoding the uplink message — it is *not* transmitted by the UE.
 
