@@ -1,7 +1,7 @@
 # **Development Log**
 
 ## Overview
-This document tracks major improvements to Tramex, including the indexed file navigation system, automatic batch continuation, and enhanced UI with a dedicated navigation panel.
+This document tracks major improvements to Tramex, including the indexed file navigation system, automatic batch continuation, and the fixed layout with a navigation toolbar and grouped panels.
 
 ---
 
@@ -141,94 +141,115 @@ while self.trame_manager.should_get_more_log {
 
 ---
 
-## 3. Enhanced Navigation UI
+## 3. Fixed Layout, Navigation Toolbar & Panel Groups
 
 #### Implementation Date
-2025-10-10
+2025-10-10 : Dedicated Navigation Panel window (Previous/Next, event counter, jump to event)
+2026-10-13 : Fixed layout (navigation toolbar, inline Messages, status bar), panel groups with layer presets, Settings window, unified theme
 
 ### 3.0. Overview
 #### 3.0.1. Problem Solved
-- Limited visibility into navigation state
-- No clear indication of progress or total events
-- Plain, unstyled controls
+- Every panel was a floating window: with ten of them open at once the workspace quickly became unusable
+- Navigation and Messages are needed in every context, yet they could be closed or hidden behind other windows
+- Hard-coded colors made the light theme partially unreadable and the look inconsistent
+- Layer filters and file options took permanent space in the sidebar
 
-#### 3.0.2. Solution: Dedicated Navigation Panel + Enhanced Controls
+#### 3.0.2. Solution: Fixed Core UI + Grouped Floating Panels
+Navigation and Messages are now fixed parts of the layout. The remaining panels stay floating windows but are organized in three groups that can be switched with a single click, each group also applying a layer-filter preset.
+
+```
+┌ Menu bar: [theme] Menu | Windows | Settings | About ──────────────────────────┐
+├ Toolbar: [◀ Previous] [▶ Next] [⏸ Pause] | Event 12 / 4567 | Time 12:03:01.234 │
+│                                                        [ RRC ] [ NAS ] [ Radio ] │
+├────────┬─────────────────────────────────────────────────────────────────────────┤
+│ Source │  Messages (fixed)                                                       │
+│ (side  │   [RRC]  AdditionalInfos(...)                                           │
+│  bar)  │   [x] Show full message        📋                                       │
+│        │   [AI Explain]                                                          │
+│        │                       (floating panels of the active group on top)     │
+├────────┴─────────────────────────────────────────────────────────────────────────┤
+└ Status: File: trace.log | Loaded 1500 / 4567 | ● auto-loading     Fully loaded ─┘
+```
 
 #### 3.0.3. Future Enhancements
+1. **Keyboard shortcuts**: Arrow keys for Previous/Next
+2. **Event markers / bookmarks**: Mark and save important event positions
+3. **Search**: Search through events by content
+4. **Dockable panels**: Optional `egui_tiles`/`egui_dock` layout for split views inside a group
+5. **Batch controls**: Skip forward/backward by N events
+6. **Auto-play**: Automatically advance through events
 
-##### 3.0.3.1 Navigation Features
-1. **Jump to Event**: Input field to jump to specific event number
-2. **Keyboard shortcuts**: Arrow keys for navigation
-3. **Event markers**: Visual indicators for important events
-4. **Timeline view**: Visual timeline of events
-5. **Search**: Search through events by content
-6. **Bookmarks**: Mark and save important event positions
+### 3.1. Navigation Toolbar (`navigation_panel.rs`)
 
-#### 3.0.3.2 Performance
-1. **Parallel indexing**: Build index in background thread
-2. **Incremental updates**: Update index as file grows
-3. **Smart caching**: LRU cache for parsed events
-4. **Batch size optimization**: Adaptive batch sizes
+`NavigationPanel::show_toolbar(ui, &NavState)` renders a single row inside a fixed `egui::Panel::top("nav_toolbar")`:
 
-#### 3.0.3.3 UI/UX
-1. **Filtering UI**: Visual filter controls in navigation panel
-2. **Statistics graphs**: Charts showing event distribution
-3. **Performance metrics**: Show parsing speed, memory usage
-4. **Batch controls**: Skip forward/backward by N events
-5. **Auto-play**: Automatically advance through events
-6. **Dark/Light themes**: Theme support
+- **◀ Previous** (default style, disabled on the first event)
+- **▶ Start / ▶ Next** (accent fill; disabled only when at the end *and* the source is fully loaded)
+- **⏸ Pause / ▶ Resume** (WebSocket only) toggles auto-loading
+- **Event N / M**: the index is a clickable label that turns into an inline text field to jump to a given event
+- **Time**: timestamp of the current event (HH:MM:SS.FFF)
 
+The *Layer* label was removed (the layer is shown in the Messages header) and the *Loaded* counter moved to the status bar.
 
-### 3.1. New Navigation Panel Window (`navigation_panel.rs`)
+The toolbar does not touch the `Application` directly: it sets flags (`should_go_next`, `should_go_previous`, `should_goto_event`, `should_toggle_auto_loading`) that `FrontEnd::ui` consumes after rendering, exactly as the former window did.
 
-Navigation Panel Window Layout
-```
-┌─────────────────────────────────────────┐
-│  Navigation                     [X]     │
-├─────────────────────────────────────────┤
-│  Event: 1 / 1234   |  Loaded: 150       │
-│  Time: 12:34:56.789   |  Layer: RRC     │
-│  ─────────────────────────────────────  │
-│   [  ◀ Previous  ]        [  ▶ Next  ] │
-└─────────────────────────────────────────┘
+### 3.2. Panel Groups (`event_bus.rs`, `frontend.rs`)
+
+`EventSubscriber` gained two methods:
+
+```rust
+pub enum PanelGroup { Main, Rrc, Nas, Radio }
+
+pub trait EventSubscriber: Send {
+    fn group(&self) -> PanelGroup;                       // required
+    fn show_inline(&mut self, _ui: &mut egui::Ui) {}     // Main-group panels only
+    fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError>;
+    // ...event callbacks unchanged
+}
 ```
 
-#### 3.1.1. Functionalities
-A floating window that displays comprehensive navigation statistics:
+| Group | Panels | Layer preset |
+|-------|--------|--------------|
+| Main | Messages (rendered inline in the central panel via `show_inline`) | — |
+| RRC | RAN Config, RRC Status, Logical Channels | RRC |
+| NAS | Chronograph RAN, Identity | RRC, NAS, NGAP, GTPU |
+| Radio | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
-**Statistics Display:**
-- **Event**: Current position with total count (e.g., "1 / 1234")
-- **Loaded**: Events currently in memory
-- **Time**: Current event timestamp (HH:MM:SS.FFF format)
-- **Layer**: Current event layer
+- `EventBus::show_windows` skips `Main` panels; `EventBus::show_main` renders them inline. The event notifications are unchanged: every panel keeps receiving events whether or not its window is open.
+- The group buttons on the right of the toolbar are **exclusive**: selecting a group opens its windows, closes the other groups' windows and applies its layer preset (`FrontEnd::select_group` / `layers_for_group`). Clicking the active group closes its windows.
+- **RRC is the default group**: it is selected as soon as a file is loaded or a WebSocket connects, before the first data request so the server receives the RRC-only filter.
+- The **Windows** menu stays non-exclusive (Show all / Hide all + one checkbox per panel, listed by group) and stays open while clicking (`MenuConfig::close_behavior(CloseOnClickOutside)`).
+- `open_windows` starts empty on first launch; later launches restore the persisted state.
 
-**Navigation Controls:**
-- **▶ Next** button (blue, rounded corners)
-- **◀ Previous** button (brown, rounded corners)
-- Centered layout for better visual balance
-- Large buttons (150x40px) for easy clicking
+### 3.3. Messages, Sidebar, Status Bar and Settings
 
-**Features:**
-- Opens by default with other windows
-- Can be toggled via Windows menu
-- Resizable and movable
-- Real-time updates as you navigate
+- **Messages** (`panel_message.rs`): rendered inline inside one outer `ScrollArea`; the "Layer : X" heading became a colored pill badge followed by the additional infos. "Show full message", copy to clipboard and the AI Explain section are unchanged (the inner scroll areas were removed since the whole view scrolls).
+- **Sidebar** (`ui_connector`): reduced to the source selection (File / WebSocket) and the connector UI. It collapses automatically when a source becomes active and reopens when the file is closed or the socket disconnected; the ◀/▶ toggle still works in between.
+- **Status bar** (`egui::Panel::bottom("status_bar")`): data source description, `Loaded N / total`, WebSocket auto-loading state, and `Fully loaded` on the right.
+- **Settings window** (`app.rs`): always available from the *Settings* menu with tabs **AI** (feature `ai`), **Layers** (`FrontEnd::show_layer_options`) and **File options** (`FrontEnd::show_file_options`, File mode only).
 
-### 3.2. Menu Organization
-Moved Windows menu to top menu bar:
-- **Menu**: Organize windows, About, Quit
-- **Windows**: Toggle all panels (Navigation, Message Box, etc.)
-- **About**: Documentation links
+### 3.4. Theme (`theme.rs`)
 
-### 3.3. Files Modified
-**New Files:**
-- `tramex/src/panels/navigation_panel.rs`
+`ThemeColors` is now the single source of truth for colors and drives egui's own styling through `ThemeColors::apply_style(ctx)`, called once in `TramexApp::new`:
 
+- One palette per mode (dark / light), with new `accent_fill` / `on_accent` fields for primary buttons
+- `Visuals` per theme (`ctx.set_visuals_of`): panel/window fills, strokes, corner radii, shadows, selection and hyperlink colors, widget states
+- Shared `Style` (`ctx.all_styles_mut`): compact spacing (item spacing 6×4, button padding 8×3, interact height 20) and text styles (Heading 15, Body 13, Button 13, Monospace 12, Small 10.5)
+- UI colors that used to be hard-coded (navigation buttons, status labels, error labels, `color_label`) now come from the palette. Data-encoding palettes (HARQ processes, resource types, channel/arrow colors) are intentionally kept fixed.
+
+**Gotcha:** egui's `strong_text_color()` resolves to `widgets.active.fg_stroke.color`; it must stay a text color (not the on-accent white) or every `.strong()` label becomes invisible in light mode.
+
+### 3.5. Files Modified
 **Modified Files:**
-- `tramex/src/panels/mod.rs` - Added navigation_panel module
-- `tramex/src/frontend.rs` - Added NavigationPanel, updated menu integration
-- `tramex/src/app.rs` - Integrated Windows menu in top bar
-- `tramex/src/panels/panel_message.rs` - Re-added "Show full message" checkbox
+- `tramex/src/panels/navigation_panel.rs` - `show_nav` window replaced by `show_toolbar`
+- `tramex/src/event_system/event_bus.rs` - `PanelGroup`, `group()`, `show_inline()`, `show_main()`, `subscriber_groups()`
+- `tramex/src/event_system/application.rs` - `panel_groups()`, `show_main_panel()`
+- `tramex/src/frontend.rs` - Toolbar, status bar, group toggles, `select_group`, `layers_for_group`, sidebar auto-hide, Windows menu
+- `tramex/src/app.rs` - Settings window with tabs, `apply_style` call
+- `tramex/src/theme.rs` - Palettes, `apply_style`
+- `tramex/src/panels/panel_message.rs` - Inline rendering, layer badge
+- `tramex/src/panels/*.rs` - `group()` implementations
+- `tramex/src/handlers/handler_file.rs` - `ui_options` without collapsing header
 ---
 
 ## 4. RRC Field Viewer & Message Panel Improvements
@@ -527,7 +548,7 @@ Your `log_get` request includes layer filters. Make sure:
 2. The layers match what the server is configured to send
 
 **Check your layer configuration:**
-- Open the Options panel in your app
+- Open **Settings → Layers** in your app (or select a panel group in the toolbar to apply a preset)
 - Make sure at least one layer is enabled (e.g., RRC, NAS, S1AP)
 
 #### 5.3.3. Server Not Sending Data
@@ -983,6 +1004,8 @@ Related traces are visually highlighted:
 - **Parent/child traces**: Lighter blue
 - **Other traces**: Theme-aware default color
 
+Chronograph arrows are interactive: clicking an arrow writes its trace index under the shared `NAVIGATE_REQUEST_ID`, which the frontend forwards to `Application::navigate_to`. HARQ, Power, Chronograph RAN, and Chronograph MAC-RLC-PDCP use the same panel-to-frontend navigation mechanism.
+
 ### 7.6. Implemented Rules
 
 #### NasToRrcRule
@@ -1406,7 +1429,7 @@ response.on_hover_ui(|ui| {
 
 #### Implementation Date
 2026-03-12
-2026-09-01 - Added filtering by HARQ process & Click to event
+2026-09-01 - Added filtering by HARQ process and click-to-navigate
 
 ### 9.0. Overview
 
@@ -1477,6 +1500,7 @@ The HARQ panel provides a chronograph-style visualization of PHY layer events, s
 #### 9.2.3. Focus & Navigation
 
 - When an event is focused in the navigation panel the corresponding arrow is highlighted with a colored background
+- Clicking an arrow navigates to its corresponding trace through the shared `NAVIGATE_REQUEST_ID` mechanism
 - It is possible to click on an arrow to focus on the corresponding event in the navigation panel
 
 ### 9.3. Filtering Logic
@@ -1876,3 +1900,27 @@ The PHY parser (`tramex-tools/src/interface/parser/parser_phy.rs`) was extended:
 - `tramex/src/panels/mod.rs` — Registered `power_panel` module
 - `tramex/src/panels/harq_panel.rs` — Adjusted match arms for new `measurements` field
 - `tramex/src/event_system/integration.rs` — Subscribed `PowerPanel`
+
+---
+
+## 12. Chronograph MAC-RLC-PDCP Panel
+
+### Implementation
+
+Implementation : 09/09/2026, commit 9ed6dc867c34adc032226cda61e30c702aaf4a42
+
+### 12.1. Overview
+
+The MAC-RLC-PDCP chronograph reuses the design principles of the Chronograph RAN panel: chronological arrows, focused and related-event highlighting, bounded history, automatic centering, and event-driven updates. Refer to **7.5. Chronograph Integration** and the Chronograph RAN implementation for those shared principles.
+
+The panel specializes that model for the radio protocol stack:
+
+- It has two lifelines, **UE** and **BST**, with no Core Network lifeline.
+- It accepts only **MAC**, **RLC**, and **PDCP** traces.
+- **UL** messages flow from UE to BST and **DL** messages flow from BST to UE.
+- Labels preserve the layer and full first-line log message; the hover tooltip exposes the full value when the rendered label is truncated.
+- Clicking an arrow sends its trace index through `NAVIGATE_REQUEST_ID`.
+
+### 12.2. Shared Click-to-Navigate Contract
+
+Interactive event visualizations do not navigate the event store directly. Chronograph RAN, Chronograph MAC-RLC-PDCP, HARQ, and Power publish a trace index into temporary egui memory using `NAVIGATE_REQUEST_ID`. After drawing panel windows, `FrontEnd` consumes that request and calls `Application::navigate_to`, ensuring every subscriber receives the normal focused-event notification.

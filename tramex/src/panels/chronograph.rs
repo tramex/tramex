@@ -2,9 +2,10 @@
 //!
 //! Displays a visual timeline of RRC, NAS, and GTPU message exchanges between UE, BST, and CN
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
+use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::{ArrowColors, ThemeColors};
-use egui::{self, Pos2, Rect, Stroke, Vec2};
+use egui::{self, CursorIcon, Pos2, Rect, Sense, Stroke, Vec2};
 use tramex_tools::{
     data::{Data, Trace},
     errors::TramexError,
@@ -205,6 +206,7 @@ impl Chronograph {
             scroll_area
         };
 
+        let mut clicked_index = None;
         scroll_area.show(ui, |ui| {
             // Reserve space for all arrows + padding
             let arrow_height = 40.0;
@@ -265,6 +267,18 @@ impl Chronograph {
                 let is_related_parent = self.related_parent.as_ref().is_some_and(|v| v.contains(&arrow.trace_index));
                 let is_related_child = self.related_child.as_ref().is_some_and(|v| v.contains(&arrow.trace_index));
 
+                let row_rect = Rect::from_min_max(
+                    Pos2::new(rect.left(), y - arrow_height / 2.0),
+                    Pos2::new(rect.right(), y + arrow_height / 2.0),
+                );
+                let row_response = ui.interact(row_rect, egui::Id::new("chronograph_arrow_row").with(i), Sense::click());
+                if row_response.clicked() {
+                    clicked_index = Some(arrow.trace_index);
+                }
+                if row_response.hovered() {
+                    ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
+                }
+
                 // Determine arrow color and thickness
                 // Current: bright blue, Related (parent/child): lighter blue, Others: theme-aware
                 let (arrow_color, arrow_width) = if is_current {
@@ -310,6 +324,11 @@ impl Chronograph {
             }
         });
 
+        if let Some(index) = clicked_index {
+            ui.ctx()
+                .data_mut(|data| data.insert_temp(egui::Id::new(NAVIGATE_REQUEST_ID), index));
+        }
+
         // Reset scroll flag after drawing
         self.should_scroll = false;
     }
@@ -319,6 +338,10 @@ impl Chronograph {
 impl EventSubscriber for Chronograph {
     fn name(&self) -> &'static str {
         "Chronograph RAN"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Nas
     }
 
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {}

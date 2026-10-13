@@ -1,6 +1,6 @@
 //! Logical Channels panel
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::PanelView;
 use crate::theme::{ChannelColors, ThemeColors};
 use eframe::egui;
@@ -459,6 +459,10 @@ impl super::PanelView for LogicalChannels {
 impl EventSubscriber for LogicalChannels {
     fn name(&self) -> &'static str {
         "Logical Channels"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Rrc
     }
 
     fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {

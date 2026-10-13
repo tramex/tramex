@@ -82,9 +82,10 @@ impl WsHandler {
     /// # Errors
     ///
     pub fn show_ui(&mut self, ui: &mut egui::Ui, source_connected: bool) -> Result<bool, TramexError> {
+        let colors = crate::theme::ThemeColors::get(ui);
         if source_connected {
             self.display_url(ui, false);
-            ui.label(egui::RichText::new("✓ Connected").color(egui::Color32::GREEN));
+            ui.label(egui::RichText::new("Connected").color(colors.success));
             return Ok(ui.button("Disconnect").clicked());
         }
 
@@ -117,9 +118,9 @@ impl WsHandler {
                         ui.label(egui::RichText::new("⏳ Connecting").color(egui::Color32::ORANGE));
                         ui.spinner();
                     } else if interface_ws.available {
-                        ui.label(egui::RichText::new("✓ Connected").color(egui::Color32::GREEN));
+                        ui.label(egui::RichText::new("Connected").color(colors.success));
                     } else {
-                        ui.label(egui::RichText::new("✗ Disconnected").color(egui::Color32::RED));
+                        ui.label(egui::RichText::new("Disconnected").color(colors.error));
                     }
                 });
 
@@ -128,7 +129,7 @@ impl WsHandler {
                         ui.label(format!("Server: {}", &interface_ws.name));
                     }
                     if let Some(error) = &self.last_error {
-                        ui.colored_label(egui::Color32::RED, error);
+                        ui.colored_label(colors.error, error);
                     }
                     if ui.button("Close").clicked() {
                         self.close_ws()?;
@@ -142,7 +143,7 @@ impl WsHandler {
         } else {
             // Show "Not connected" status
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("○ Not connected").color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new("○ Not connected").color(colors.text_weak));
             });
 
             let url_lost_focus = self.display_url(ui, true);

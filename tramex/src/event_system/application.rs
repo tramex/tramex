@@ -430,9 +430,16 @@ impl Application {
         self.data_source.as_deref()
     }
 
-    /// Get names of all subscribed panels
-    pub fn panel_names(&self) -> Vec<&'static str> {
-        self.event_bus.subscriber_names()
+    /// Get groups and names of all windowed subscribed panels
+    ///
+    /// `Main`-group panels are rendered inline and excluded from the list.
+    pub fn panel_groups(&self) -> Vec<(super::PanelGroup, &'static str)> {
+        self.event_bus.subscriber_groups()
+    }
+
+    /// Render all `Main`-group panels inline inside the given UI
+    pub fn show_main_panel(&mut self, ui: &mut egui::Ui) {
+        self.event_bus.show_main(ui);
     }
 
     /// Show windows for all subscribed panels

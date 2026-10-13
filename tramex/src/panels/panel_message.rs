@@ -1,5 +1,5 @@
 //! Message panel
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::PanelView;
 use eframe::egui;
 
@@ -180,8 +180,10 @@ impl MessageBox {
             .then_some("No API key set (configure in Settings > AI)")
             .or_else(|| matches!(self.ai_status, AIExplainStatus::Loading).then_some("Request in progress…"));
 
+        let colors = crate::theme::ThemeColors::get(ui);
         ui.horizontal(|ui| {
-            let button = egui::Button::new("AI Explain");
+            let button =
+                egui::Button::new(egui::RichText::new("AI Explain").color(colors.on_accent)).fill(colors.accent_fill);
             let enabled = can_request.is_none();
             let response = ui.add_enabled(enabled, button);
             let clicked = response.clicked();
@@ -199,10 +201,10 @@ impl MessageBox {
                 }
                 AIExplainStatus::Idle => {}
                 AIExplainStatus::Done(_) => {
-                    ui.colored_label(egui::Color32::GREEN, "OK");
+                    ui.colored_label(colors.success, "OK");
                 }
                 AIExplainStatus::Error(_) => {
-                    ui.colored_label(egui::Color32::RED, "Error");
+                    ui.colored_label(colors.error, "Error");
                 }
             }
         });
@@ -212,19 +214,13 @@ impl MessageBox {
             AIExplainStatus::Done(text) => {
                 ui.separator();
                 let text_clone = text.clone();
-                egui::ScrollArea::vertical()
-                    .id_salt("scroll_area_ai")
-                    .max_height(300.0)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        CommonMarkViewer::new()
-                            .max_image_width(Some(512))
-                            .show(ui, &mut self.commonmark_cache, &text_clone);
-                    });
+                CommonMarkViewer::new()
+                    .max_image_width(Some(512))
+                    .show(ui, &mut self.commonmark_cache, &text_clone);
             }
             AIExplainStatus::Error(err) => {
                 ui.separator();
-                ui.colored_label(egui::Color32::RED, format!("Error: {err}"));
+                ui.colored_label(colors.error, format!("Error: {err}"));
             }
             _ => {}
         }
@@ -244,12 +240,23 @@ impl super::PanelView for MessageBox {
 
 /// Display a Trace type
 fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _text: &[String]) {
-    // Display layer type in big heading
-    ui.heading(format!("Layer : {:?}", &curr_trace.layer));
-    ui.spacing();
+    let colors = crate::theme::ThemeColors::get(ui);
 
-    // Display additional infos
-    ui.label(format!("{:?}", &curr_trace.additional_infos));
+    // Layer pill badge + additional infos
+    ui.horizontal(|ui| {
+        egui::Frame::new()
+            .fill(colors.accent_fill)
+            .corner_radius(egui::CornerRadius::same(10))
+            .inner_margin(egui::Margin::symmetric(8, 2))
+            .show(ui, |ui| {
+                ui.label(
+                    egui::RichText::new(format!("{:?}", &curr_trace.layer))
+                        .color(colors.on_accent)
+                        .strong(),
+                );
+            });
+        ui.label(egui::RichText::new(format!("{:?}", &curr_trace.additional_infos)).color(colors.text_weak));
+    });
     ui.separator();
 
     // Show full message checkbox and copy button
@@ -274,17 +281,12 @@ fn display_log(ui: &mut egui::Ui, curr_trace: &Trace, show_full: &mut bool, _tex
             Some(vec_text) => {
                 let full_text = vec_text.join("\n");
                 let mut text_copy = full_text.as_str();
-                egui::ScrollArea::vertical()
-                    .id_salt("scroll_area_raw")
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        ui.add(
-                            egui::TextEdit::multiline(&mut text_copy)
-                                .desired_width(f32::INFINITY)
-                                // .font(egui::TextStyle::Monospace)
-                                .interactive(true),
-                        );
-                    });
+                ui.add(
+                    egui::TextEdit::multiline(&mut text_copy)
+                        .desired_width(f32::INFINITY)
+                        // .font(egui::TextStyle::Monospace)
+                        .interactive(true),
+                );
             }
             None => {
                 ui.label("No text available for this trame");
@@ -324,6 +326,23 @@ pub fn hexe_decoding(_curr_trace: &Trace) -> String {
 impl EventSubscriber for MessageBox {
     fn name(&self) -> &'static str {
         "Messages"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Main
+    }
+
+    fn show_inline(&mut self, ui: &mut egui::Ui) {
+        egui::ScrollArea::vertical()
+            .id_salt("scroll_area_message")
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                if self.current_trace.is_none() {
+                    ui.weak("No event selected — press Start");
+                } else {
+                    self.ui(ui);
+                }
+            });
     }
 
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {
@@ -377,16 +396,9 @@ impl EventSubscriber for MessageBox {
         self.ai_model = model.to_string();
     }
 
-    fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {
-        egui::Window::new("Messages")
-            .resizable(true)
-            .default_width(600.0)
-            .default_height(400.0)
-            .max_height(1200.0)
-            .open(open)
-            .show(ctx, |ui| {
-                self.ui(ui);
-            });
+    /// The Messages panel belongs to the `Main` group and is rendered inline
+    /// in the central view via `show_inline`, so there is no window to show.
+    fn show_window(&mut self, _ctx: &egui::Context, _open: &mut bool) -> Result<(), TramexError> {
         Ok(())
     }
 }

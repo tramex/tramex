@@ -2,7 +2,7 @@
 //!
 //! Displays parsed identity information from NAS messages (PDU session establishment, etc.)
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::PanelView;
 use crate::theme::ThemeColors;
 use egui::{self, RichText};
@@ -735,6 +735,10 @@ impl Identity {
 impl EventSubscriber for Identity {
     fn name(&self) -> &'static str {
         "Identity"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Nas
     }
 
     fn on_metadata_changed(&mut self, metadata: &FileMetadata) {

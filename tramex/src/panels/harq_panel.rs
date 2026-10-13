@@ -3,7 +3,7 @@
 //! Displays a chronograph-like timeline of PHY events (PDCCH, PDSCH, PUSCH, PUCCH),
 //! colored by HARQ process number. The focused event arrow is highlighted.
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::ThemeColors;
 use egui::{self, Color32, CursorIcon, Pos2, Rect, Sense, Stroke, Vec2};
@@ -508,6 +508,10 @@ impl HarqPanel {
 impl EventSubscriber for HarqPanel {
     fn name(&self) -> &'static str {
         "HARQ"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Radio
     }
 
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {}

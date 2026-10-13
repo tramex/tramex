@@ -17,6 +17,38 @@ pub struct EventContext<'a> {
     pub metadata: &'a FileMetadata,
 }
 
+/// UI grouping for subscriber panels
+///
+/// Panels in the `Main` group are rendered inline in fixed areas of the
+/// central view; all other groups correspond to floating windows that can be
+/// shown or hidden together via the toolbar toggles.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PanelGroup {
+    /// Fixed central view (e.g. the Messages panel)
+    Main,
+    /// RRC-related floating windows
+    Rrc,
+    /// NAS-related floating windows
+    Nas,
+    /// Radio-related floating windows
+    Radio,
+}
+
+impl PanelGroup {
+    /// Groups rendered as floating windows (all except `Main`)
+    pub const WINDOWED: [PanelGroup; 3] = [PanelGroup::Rrc, PanelGroup::Nas, PanelGroup::Radio];
+
+    /// Human-readable label for the group
+    pub fn label(self) -> &'static str {
+        match self {
+            PanelGroup::Main => "Main",
+            PanelGroup::Rrc => "RRC",
+            PanelGroup::Nas => "NAS",
+            PanelGroup::Radio => "Radio",
+        }
+    }
+}
+
 /// Trait for components that want to be notified of events
 pub trait EventSubscriber: Send {
     /// Called when a new event is added to the store
@@ -35,6 +67,15 @@ pub trait EventSubscriber: Send {
 
     /// Name of this subscriber (for debugging)
     fn name(&self) -> &'static str;
+
+    /// Panel group this subscriber belongs to
+    fn group(&self) -> PanelGroup;
+
+    /// Render this panel inside a fixed area of the UI
+    ///
+    /// Used by `Main`-group panels that are not shown as floating windows.
+    /// Default implementation does nothing.
+    fn show_inline(&mut self, _ui: &mut egui::Ui) {}
 
     /// Show window for this subscriber/panel
     /// Returns Result indicating if there was an error showing the window
@@ -103,9 +144,15 @@ impl EventBus {
         }
     }
 
-    /// Get subscriber names for tracking open windows
-    pub fn subscriber_names(&self) -> Vec<&'static str> {
-        self.subscribers.iter().map(|s| s.name()).collect()
+    /// Get subscriber groups and names for tracking open windows
+    ///
+    /// Returns all subscribers except `Main`-group panels (rendered inline).
+    pub fn subscriber_groups(&self) -> Vec<(PanelGroup, &'static str)> {
+        self.subscribers
+            .iter()
+            .filter(|s| s.group() != PanelGroup::Main)
+            .map(|s| (s.group(), s.name()))
+            .collect()
     }
 
     /// Show windows for all subscribers
@@ -118,6 +165,9 @@ impl EventBus {
         let mut results = Vec::new();
 
         for subscriber in &mut self.subscribers {
+            if subscriber.group() == PanelGroup::Main {
+                continue;
+            }
             let name = subscriber.name().to_owned();
             let mut is_open = open_windows.contains(&name);
 
@@ -126,6 +176,15 @@ impl EventBus {
         }
 
         results
+    }
+
+    /// Render all `Main`-group subscribers inline inside the given UI
+    pub fn show_main(&mut self, ui: &mut egui::Ui) {
+        for subscriber in &mut self.subscribers {
+            if subscriber.group() == PanelGroup::Main {
+                subscriber.show_inline(ui);
+            }
+        }
     }
 
     #[cfg(feature = "ai")]

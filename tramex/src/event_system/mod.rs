@@ -11,7 +11,7 @@ pub mod websocket_source;
 
 pub use application::Application;
 pub use data_source::{DataSource, DataSourceType, FileLoadingStrategy};
-pub use event_bus::{EventBus, EventContext, EventSubscriber};
+pub use event_bus::{EventBus, EventContext, EventSubscriber, PanelGroup};
 pub use event_store::EventStore;
 pub use file_source::FileSource;
 pub use integration::create_application_with_panels;

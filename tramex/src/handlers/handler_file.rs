@@ -386,13 +386,11 @@ impl FileHandler {
 impl FileHandler {
     /// Show file options UI
     pub fn ui_options(&mut self, ui: &mut egui::Ui) {
-        ui.collapsing("File Options", |ui| {
-            ui.label("Index of files URL:");
-            ui.add(egui::TextEdit::singleline(&mut self.url_files));
-            if ui.button("Reload list").clicked() {
-                self.get_file_list();
-            }
-        });
+        ui.label("Index of files URL:");
+        ui.add(egui::TextEdit::singleline(&mut self.url_files));
+        if ui.button("Reload list").clicked() {
+            self.get_file_list();
+        }
     }
 
     /// Show file selection UI.
