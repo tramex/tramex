@@ -139,10 +139,11 @@ impl AISettings {
             .desired_width(300.0);
         ui.add(key_edit);
 
+        let colors = crate::theme::ThemeColors::get(ui);
         if self.api_key.is_empty() {
-            ui.colored_label(eframe::egui::Color32::YELLOW, "No API key set");
+            ui.colored_label(colors.warning, "No API key set");
         } else {
-            ui.colored_label(eframe::egui::Color32::GREEN, "API key set");
+            ui.colored_label(colors.success, "API key set");
         }
     }
 }

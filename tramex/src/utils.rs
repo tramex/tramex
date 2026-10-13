@@ -22,12 +22,10 @@ pub fn set_open(open: &mut BTreeSet<String>, key: &'static str, is_open: bool) {
 
 /// Create a label with a background color
 pub fn color_label(job: &mut LayoutJob, ui: &Ui, label: &str, need_color: bool) {
-    let default_color = if ui.visuals().dark_mode {
-        Color32::LIGHT_GRAY
-    } else {
-        Color32::DARK_GRAY
-    };
-    let background_color = if need_color { Color32::DARK_BLUE } else { Color32::DARK_RED };
+    let colors = crate::theme::ThemeColors::get(ui);
+    let default_color = colors.text;
+    let background = if need_color { colors.accent } else { colors.error };
+    let background_color = Color32::from_rgba_unmultiplied(background.r(), background.g(), background.b(), 60);
     job.append(
         label,
         0.0,

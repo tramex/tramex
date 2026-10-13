@@ -24,20 +24,37 @@ pub struct TramexApp {
     /// Show about windows
     show_about_windows: bool,
 
-    #[cfg(feature = "ai")]
+    #[serde(skip)]
     /// Show settings window
     show_settings_window: bool,
+
+    #[serde(skip)]
+    /// Active tab in the settings window
+    settings_tab: SettingsTab,
 
     #[cfg(feature = "ai")]
     /// AI settings (provider, API key)
     pub ai_settings: AISettings,
 }
 
+/// Active tab in the Settings window
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+enum SettingsTab {
+    /// Layer filters
+    #[default]
+    Layers,
+    /// File loading options
+    File,
+    /// AI configuration
+    #[cfg(feature = "ai")]
+    Ai,
+}
+
 impl TramexApp {
     /// Load the app state from the given storage.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // This is also where you can customize the look and feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+        // Apply the tramex theme (colors, spacing, text styles) for both modes
+        crate::theme::ThemeColors::apply_style(&cc.egui_ctx);
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
@@ -69,10 +86,21 @@ impl TramexApp {
         // Windows menu button
         self.frontend.menu_bar(ui);
 
-        #[cfg(feature = "ai")]
         ui.menu_button("Settings", |ui| {
+            #[cfg(feature = "ai")]
             if ui.button("AI Configuration").clicked() {
-                self.show_settings_window = !self.show_settings_window;
+                self.settings_tab = SettingsTab::Ai;
+                self.show_settings_window = true;
+                ui.close_kind(egui::UiKind::Menu);
+            }
+            if ui.button("Layers").clicked() {
+                self.settings_tab = SettingsTab::Layers;
+                self.show_settings_window = true;
+                ui.close_kind(egui::UiKind::Menu);
+            }
+            if ui.button("File options").clicked() {
+                self.settings_tab = SettingsTab::File;
+                self.show_settings_window = true;
                 ui.close_kind(egui::UiKind::Menu);
             }
         });
@@ -130,16 +158,29 @@ impl TramexApp {
         }
     }
 
-    #[cfg(feature = "ai")]
-    /// Display the AI settings window
+    /// Display the settings window
     fn ui_settings_window(&mut self, ctx: &egui::Context) {
-        egui::Window::new("Settings — AI")
-            .open(&mut self.show_settings_window)
-            .resizable([true, false])
-            .default_width(320.0)
+        let mut open = self.show_settings_window;
+        egui::Window::new("Settings")
+            .open(&mut open)
+            .resizable([true, true])
+            .default_width(360.0)
             .show(ctx, |ui| {
-                self.ai_settings.ui(ui);
+                ui.horizontal(|ui| {
+                    #[cfg(feature = "ai")]
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Ai, "AI");
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Layers, "Layers");
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::File, "File options");
+                });
+                ui.separator();
+                match self.settings_tab {
+                    #[cfg(feature = "ai")]
+                    SettingsTab::Ai => self.ai_settings.ui(ui),
+                    SettingsTab::Layers => self.frontend.show_layer_options(ui),
+                    SettingsTab::File => self.frontend.show_file_options(ui),
+                }
             });
+        self.show_settings_window = open;
     }
 
     /// Display the about windows
@@ -189,8 +230,8 @@ impl Default for TramexApp {
             frontend: FrontEnd::new(),
             error_panel: vec![],
             show_about_windows: false,
-            #[cfg(feature = "ai")]
             show_settings_window: false,
+            settings_tab: SettingsTab::default(),
             #[cfg(feature = "ai")]
             ai_settings: AISettings::default(),
         }
@@ -218,21 +259,23 @@ impl eframe::App for TramexApp {
             self.ui_about_windows(ui.ctx());
         }
 
+        if self.show_settings_window {
+            self.ui_settings_window(ui.ctx());
+        }
+
         #[cfg(feature = "ai")]
         {
             self.ai_settings.try_load_env_key();
             self.frontend
                 .set_ai_config(&self.ai_settings.api_key, &self.ai_settings.provider, &self.ai_settings.model);
-            if self.show_settings_window {
-                self.ui_settings_window(ui.ctx());
-            }
         }
     }
 }
 
 /// Display an error
 fn show_error(ui: &mut egui::Ui, error_item: &TramexError) -> bool {
-    ui.colored_label(egui::Color32::RED, &error_item.message)
+    let colors = crate::theme::ThemeColors::get(ui);
+    ui.colored_label(colors.error, &error_item.message)
         .on_hover_text_at_pointer(&error_item.debug);
     if ui.button("Copy error").clicked() {
         ui.ctx()

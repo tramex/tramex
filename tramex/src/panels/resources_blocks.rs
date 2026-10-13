@@ -5,7 +5,7 @@
 //!
 //! Uses real PHY trace data (PDSCH/PUSCH) to populate the grid.
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::ThemeColors;
 use egui::{Color32, CursorIcon, PopupAnchor, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
@@ -837,11 +837,7 @@ impl ResourceBlocks {
                                     }
 
                                     if resource_type == ResourceType::Dmrs {
-                                        painter.circle_filled(
-                                            cell_rect.center(),
-                                            cell_size / 4.0,
-                                            Color32::from_rgb(180, 30, 30),
-                                        );
+                                        painter.circle_filled(cell_rect.center(), cell_size / 4.0, theme.error);
                                     }
 
                                     // Check hover
@@ -1425,6 +1421,10 @@ impl EventSubscriber for ResourceBlocks {
 
     fn name(&self) -> &'static str {
         "Resource Blocks"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Radio
     }
 
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

@@ -2,7 +2,6 @@
 
 use eframe::egui;
 use tramex_tools::data::Trace;
-use tramex_tools::errors::TramexError;
 
 /// Snapshot of application state needed by NavigationPanel
 pub struct NavState<'a> {
@@ -52,215 +51,117 @@ impl NavigationPanel {
         }
     }
 
-    /// Window title
-    pub fn window_title(&self) -> &'static str {
-        "📊 Navigation Panel"
-    }
+    /// Show the navigation toolbar as a single horizontal row
+    pub fn show_toolbar(&mut self, ui: &mut egui::Ui, state: &NavState<'_>) {
+        let colors = crate::theme::ThemeColors::get(ui);
 
-    /// Show the navigation panel
-    ///
-    /// # Errors
-    ///
-    pub fn show_nav(&mut self, ctx: &egui::Context, open: &mut bool, state: &NavState<'_>) -> Result<(), TramexError> {
-        egui::Window::new(self.window_title())
-            .open(open)
-            .resizable(true)
-            .default_width(350.0)
-            .show(ctx, |ui| {
-                // Everything in one horizontal row for maximum compactness
-                ui.horizontal(|ui| {
-                    let current_display = if state.event_count == 0 { 0 } else { state.current_index + 1 };
-                    let max_event = state.total_count.unwrap_or(state.event_count);
+        ui.horizontal(|ui| {
+            // Previous button
+            ui.add_enabled_ui(state.current_index > 0, |ui| {
+                let button = egui::Button::new(egui::RichText::new("◀ Previous").strong()).min_size(egui::vec2(90.0, 24.0));
 
-                    ui.label(egui::RichText::new("Event:").size(14.0));
-
-                    // Clickable index / inline editor
-                    if self.editing_index {
-                        let input = egui::TextEdit::singleline(&mut self.index_edit_buf)
-                            .desired_width(50.0)
-                            .font(egui::TextStyle::Monospace);
-                        let response = ui.add(input);
-
-                        // Auto-focus only on the first frame
-                        if self.just_entered_edit {
-                            response.request_focus();
-                            self.just_entered_edit = false;
-                        }
-
-                        let committed = response.lost_focus();
-                        if committed {
-                            // Validate and trigger goto
-                            if let Some(n) = self
-                                .index_edit_buf
-                                .parse::<usize>()
-                                .ok()
-                                .filter(|&n| n >= 1 && n <= max_event)
-                            {
-                                self.should_goto_event = Some(n - 1);
-                            }
-                            self.editing_index = false;
-                        }
-                    } else {
-                        // Show as clickable label
-                        let label = egui::RichText::new(format!("{}", current_display))
-                            .color(egui::Color32::from_rgb(100, 200, 255))
-                            .strong()
-                            .size(15.0)
-                            .underline();
-                        let response = ui.add(egui::Label::new(label).sense(egui::Sense::click()));
-                        if response.on_hover_text("Click to jump to event").clicked() {
-                            self.editing_index = true;
-                            self.just_entered_edit = true;
-                            self.index_edit_buf = format!("{}", current_display);
-                        }
-                    }
-
-                    if max_event > 0 {
-                        ui.label(
-                            egui::RichText::new(format!("/ {}", max_event))
-                                .color(egui::Color32::GRAY)
-                                .size(14.0),
-                        );
-                    }
-
-                    ui.add_space(10.0);
-                    ui.separator();
-                    ui.add_space(10.0);
-
-                    ui.label(egui::RichText::new("Loaded:").size(14.0));
-                    ui.label(
-                        egui::RichText::new(format!("{}", state.event_count))
-                            .color(egui::Color32::from_rgb(255, 200, 100))
-                            .size(15.0),
-                    );
-
-                    if let Some(trace) = state.current_event {
-                        ui.add_space(10.0);
-                        ui.separator();
-                        ui.add_space(10.0);
-
-                        ui.label(egui::RichText::new("Time:").size(14.0));
-                        ui.label(
-                            egui::RichText::new(Self::format_timestamp(trace.timestamp))
-                                .color(egui::Color32::from_rgb(200, 150, 255))
-                                .monospace()
-                                .size(14.0),
-                        );
-
-                        ui.add_space(10.0);
-                        ui.separator();
-                        ui.add_space(10.0);
-
-                        ui.label(egui::RichText::new("Layer:").size(14.0));
-                        ui.label(
-                            egui::RichText::new(format!("{:?}", trace.layer))
-                                .color(egui::Color32::from_rgb(255, 150, 150))
-                                .strong()
-                                .size(14.0),
-                        );
-                    }
-                });
-
-                ui.add_space(5.0);
-                ui.separator();
-                ui.add_space(5.0);
-
-                // Navigation Controls
-                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    ui.horizontal(|ui| {
-                        // Previous button
-                        ui.add_enabled_ui(state.current_index > 0, |ui| {
-                            let button = egui::Button::new(
-                                egui::RichText::new("◀ Previous")
-                                    .color(egui::Color32::WHITE)
-                                    .strong()
-                                    .size(15.0),
-                            )
-                            .fill(egui::Color32::from_rgb(150, 100, 50))
-                            .corner_radius(8.0)
-                            .min_size(egui::vec2(150.0, 40.0));
-
-                            if ui.add(button).clicked() {
-                                self.should_go_previous = true;
-                            }
-                        });
-
-                        ui.add_space(10.0);
-
-                        // Next/Start button
-                        let (button_text, button_color) = if state.event_count == 0 {
-                            ("▶ Start", egui::Color32::from_rgb(50, 180, 50))
-                        } else {
-                            ("▶ Next", egui::Color32::from_rgb(50, 120, 220))
-                        };
-
-                        // Only disable Next button if at end AND fully loaded
-                        let is_at_end =
-                            state.event_count > 0 && state.current_index >= state.event_count - 1 && state.is_fully_loaded;
-
-                        ui.add_enabled_ui(!is_at_end, |ui| {
-                            let button = egui::Button::new(
-                                egui::RichText::new(button_text)
-                                    .color(egui::Color32::WHITE)
-                                    .strong()
-                                    .size(15.0),
-                            )
-                            .fill(button_color)
-                            .corner_radius(8.0)
-                            .min_size(egui::vec2(150.0, 40.0));
-
-                            if ui.add(button).clicked() {
-                                self.should_go_next = true;
-                            }
-                        });
-
-                        // WebSocket Resume/Pause button
-                        if let Some((is_ws_available, is_auto_loading)) = state.ws_info
-                            && is_ws_available
-                        {
-                            ui.add_space(10.0);
-
-                            let (button_text, button_color) = if is_auto_loading {
-                                ("⏸ Pause", egui::Color32::from_rgb(120, 120, 120))
-                            } else {
-                                ("▶ Resume", egui::Color32::from_rgb(50, 180, 50))
-                            };
-
-                            let button = egui::Button::new(
-                                egui::RichText::new(button_text)
-                                    .color(egui::Color32::WHITE)
-                                    .strong()
-                                    .size(15.0),
-                            )
-                            .fill(button_color)
-                            .corner_radius(8.0)
-                            .min_size(egui::vec2(150.0, 40.0));
-
-                            if ui.add(button).clicked() {
-                                self.should_toggle_auto_loading = true;
-                            }
-                        }
-                    });
-
-                    // Status indicator
-                    if let Some((is_ws_available, is_auto_loading)) = state.ws_info
-                        && is_ws_available
-                    {
-                        ui.add_space(5.0);
-                        if is_auto_loading {
-                            ui.label(
-                                egui::RichText::new("🔄 Auto-loading enabled").color(egui::Color32::from_rgb(100, 200, 100)),
-                            );
-                        } else {
-                            ui.label(
-                                egui::RichText::new("⏸ Auto-loading paused").color(egui::Color32::from_rgb(200, 150, 100)),
-                            );
-                        }
-                    }
-                });
+                if ui.add(button).clicked() {
+                    self.should_go_previous = true;
+                }
             });
 
-        Ok(())
+            // Next/Start button
+            let button_text = if state.event_count == 0 { "▶ Start" } else { "▶ Next" };
+
+            // Only disable Next button if at end AND fully loaded
+            let is_at_end = state.event_count > 0 && state.current_index >= state.event_count - 1 && state.is_fully_loaded;
+
+            ui.add_enabled_ui(!is_at_end, |ui| {
+                let button = egui::Button::new(egui::RichText::new(button_text).color(colors.on_accent).strong())
+                    .fill(colors.accent_fill)
+                    .corner_radius(6.0)
+                    .min_size(egui::vec2(90.0, 24.0));
+
+                if ui.add(button).clicked() {
+                    self.should_go_next = true;
+                }
+            });
+
+            // WebSocket Resume/Pause button
+            if let Some((is_ws_available, is_auto_loading)) = state.ws_info
+                && is_ws_available
+            {
+                let button = if is_auto_loading {
+                    egui::Button::new(egui::RichText::new("⏸ Pause").strong())
+                } else {
+                    egui::Button::new(egui::RichText::new("▶ Resume").color(colors.on_accent).strong())
+                        .fill(colors.accent_fill)
+                }
+                .corner_radius(6.0)
+                .min_size(egui::vec2(90.0, 24.0));
+
+                if ui.add(button).clicked() {
+                    self.should_toggle_auto_loading = true;
+                }
+            }
+
+            ui.separator();
+
+            let current_display = if state.event_count == 0 { 0 } else { state.current_index + 1 };
+            let max_event = state.total_count.unwrap_or(state.event_count);
+
+            ui.label("Event");
+
+            // Clickable index / inline editor
+            if self.editing_index {
+                let input = egui::TextEdit::singleline(&mut self.index_edit_buf)
+                    .desired_width(50.0)
+                    .font(egui::TextStyle::Monospace);
+                let response = ui.add(input);
+
+                // Auto-focus only on the first frame
+                if self.just_entered_edit {
+                    response.request_focus();
+                    self.just_entered_edit = false;
+                }
+
+                let committed = response.lost_focus();
+                if committed {
+                    // Validate and trigger goto
+                    if let Some(n) = self
+                        .index_edit_buf
+                        .parse::<usize>()
+                        .ok()
+                        .filter(|&n| n >= 1 && n <= max_event)
+                    {
+                        self.should_goto_event = Some(n - 1);
+                    }
+                    self.editing_index = false;
+                }
+            } else {
+                // Show as clickable label
+                let label = egui::RichText::new(format!("{}", current_display))
+                    .color(colors.accent)
+                    .strong()
+                    .underline();
+                let response = ui.add(egui::Label::new(label).sense(egui::Sense::click()));
+                if response.on_hover_text("Click to jump to event").clicked() {
+                    self.editing_index = true;
+                    self.just_entered_edit = true;
+                    self.index_edit_buf = format!("{}", current_display);
+                }
+            }
+
+            if max_event > 0 {
+                ui.label(egui::RichText::new(format!("/ {}", max_event)).color(colors.text_weak));
+            }
+
+            if let Some(trace) = state.current_event {
+                ui.separator();
+
+                ui.label("Time");
+                ui.label(
+                    egui::RichText::new(Self::format_timestamp(trace.timestamp))
+                        .color(colors.text)
+                        .monospace(),
+                );
+            }
+        });
     }
 
     /// Convert milliseconds to HH:MM:SS.FFF format

@@ -35,7 +35,7 @@ In order to analyze frames, Tramex offers two processing modes:
 - File reader: read recorded data from a `.log` file.
 - Websocket: read real-time data from a server.
 
-The user can choose the processing mode using the buttons `Choose ws or file` on the top of the left vertical panel.
+The user can choose the processing mode using the buttons `Choose ws or file` on the top of the left vertical panel. This panel collapses automatically once a file is loaded or a websocket is connected; use the `◀` / `▶` button on the left edge to show or hide it at any time.
 
 #### File reader mode
 
@@ -56,38 +56,76 @@ The connection might take a few moments and if Tramex cannot connect to the serv
 
 ## Analyze frames with Tramex
 
-Regardless of the chosen mode, the display of the frame analysis using Tramex is always the same. Several windows called panels are available and each of them provide specific information.
+Regardless of the chosen mode, the display of the frame analysis using Tramex is always the same. The layout is made of fixed areas (navigation toolbar, Messages panel, status bar) and of floating windows called panels, each of them providing specific information.
 
-This section will define the various panels available.
+This section will define the layout and the various panels available.
 
 ---
 
-### Navigation Panel
+### Layout overview
 
-The Navigation panel provides controls for navigating through events and displays statistics about the current trace session.
+```
+┌ Menu bar ─────────────────────────────────────────────────────────┐
+├ Toolbar: ◀ Previous  ▶ Next  | Event 12 / 4567 | Time 12:03:01.234 │
+│                                             [ RRC ] [ NAS ] [ Radio ] │
+├────────┬──────────────────────────────────────────────────────────┤
+│ Source │  Messages (always visible)                               │
+│        │                     + floating panels of the active group │
+├────────┴──────────────────────────────────────────────────────────┤
+└ Status bar: source | Loaded N / total | auto-loading | Fully loaded ┘
+```
 
-**Statistics displayed:**
-- **Current event index**: The position of the currently focused event (clickable to jump to a specific event)
-- **Total loaded events**: Number of events currently loaded in memory
-- **Total events in source**: Total number of events available in the file (if known)
-- **Timestamp**: The timestamp of the current event
-- **Layer**: The protocol layer of the current event (e.g., RRC, NAS, PHY)
+---
+
+### Navigation Toolbar
+
+The navigation toolbar is fixed at the top of the main area and is always visible once a source is active.
 
 **Navigation controls:**
-- **Previous / Next buttons**: Navigate sequentially through events
-- **Clickable index**: Click on the event index to enter a specific event number and jump directly to it
+- **◀ Previous / ▶ Next buttons**: Navigate sequentially through events. `Next` is shown as `Start` before the first event is selected.
+- **Clickable index**: Click on the event index (`Event 12 / 4567`) to type an event number and jump directly to it
+- **Time**: The timestamp of the current event
 
 **WebSocket mode controls:**
-- **Pause / Resume buttons**: Control auto-loading of new events from the WebSocket connection
+- **⏸ Pause / ▶ Resume**: Control auto-loading of new events from the WebSocket connection
+
+**Panel groups** (right side of the toolbar): the `RRC`, `NAS` and `Radio` buttons open a set of panels in one click, see [Panel groups](#panel-groups).
+
+---
+
+### Status Bar
+
+The status bar at the bottom of the window shows:
+- The active source (file path or websocket URL)
+- **Loaded**: number of events in memory, with the total number of events in the file when known
+- The auto-loading state in websocket mode (`● auto-loading` / `● paused`)
+- `Fully loaded` once the whole source has been read
+
+---
+
+### Panel groups
+
+The analysis panels are floating windows grouped by topic. Selecting a group with the toolbar buttons opens its panels, closes the panels of the other groups and enables the matching protocol layers:
+
+| Group | Panels | Layers enabled |
+|-------|--------|----------------|
+| **RRC** | RAN Config, RRC Status, Logical Channels | RRC |
+| **NAS** | Chronograph RAN, Identity | RRC, NAS, NGAP, GTPU |
+| **Radio** | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
+
+- The **RRC** group is selected automatically when a file is opened or a websocket is connected.
+- Clicking the active group closes its panels.
+- To mix panels from several groups, or to show a single panel, use the **Windows** menu in the top bar: `Show all` / `Hide all` and one checkbox per panel. The menu stays open while you tick panels; click outside to close it.
+- The layer selection can be refined afterwards in **Settings → Layers**.
 
 ---
 
 ### Message Panel
 
-The Message panel displays the detailed content of the currently selected trace.
+The Message panel is fixed in the center of the window and displays the detailed content of the currently selected trace.
 
 **Information displayed:**
-- **Layer type**: The protocol layer (RRC, NAS, NGAP, PHY, etc.) shown as a heading
+- **Layer badge**: The protocol layer (RRC, NAS, NGAP, PHY, etc.) shown as a colored badge
 - **Additional information**: Direction (UL/DL), channel type, and message name
 
 **Features:**
@@ -208,9 +246,9 @@ The Identity panel displays parsed identity information from NAS messages.
 
 ---
 
-### Chronograph Panel
+### Chronograph RAN Panel
 
-The Chronograph panel displays a visual timeline of message exchanges between network elements.
+The Chronograph RAN panel displays a visual timeline of message exchanges between network elements.
 
 **Layout:**
 - Three vertical lifelines: **UE** (User Equipment), **BST** (Base Station), **CN** (Core Network)
@@ -237,6 +275,20 @@ The Chronograph panel displays a visual timeline of message exchanges between ne
 **Features:**
 - Auto-scrolls to center on the focused event
 - Displays layer type and message name on each arrow
+- Click an arrow to navigate to the corresponding trace
+
+---
+
+### Chronograph MAC-RLC-PDCP Panel
+
+This panel follows the same timeline, highlighting, auto-scroll, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
+
+- Two lifelines only: **UE** and **BST**
+- Displays **MAC**, **RLC**, and **PDCP** traces
+- **UL** arrows flow from UE to BST; **DL** arrows flow from BST to UE
+- Arrow labels contain the layer and full log message; hover an arrow to read the full message in a tooltip
+
+Refer to the [Chronograph RAN Panel](#chronograph-ran-panel) for the common chronograph behavior.
 
 ---
 
@@ -307,7 +359,7 @@ The HARQ panel provides a chronograph-style visualization of PHY layer events, s
 **Features:**
 - Color-coded HARQ processes for easy tracking
 - Focused event highlighted with background bar
-- Clicking on an arrow navigate to the corresponding trace
+- Click an arrow to navigate to the corresponding trace
 - Auto-scrolls to centered on focused event
 - Track retransmissions via `retx` and `rv_idx` fields
 
@@ -344,9 +396,11 @@ The Power panel displays three point graphs sharing a common SFN (System Frame N
 
 ## Options and Settings
 
+All options are grouped in the **Settings** window, opened from the **Settings** menu in the top bar. The window has three tabs: **AI**, **Layers** and **File options**.
+
 ### Layer Filtering
 
-The **Layers** option in the left panel allows filtering which protocol layers are displayed.
+The **Layers** tab allows filtering which protocol layers are displayed. Selecting a panel group in the toolbar applies a preset (see [Panel groups](#panel-groups)); this tab lets you adjust it.
 
 **Radio layers:**
 - PHY (Physical)
@@ -365,13 +419,19 @@ The **Layers** option in the left panel allows filtering which protocol layers a
 - M2AP, LPPa, NRPPa (positioning)
 - TRX (transceiver)
 
-Toggle checkboxes to enable/disable display of specific layers.
+Toggle checkboxes to enable/disable display of specific layers. In file mode, disabled layers are skipped when navigating with `Previous` / `Next`; in websocket mode, only the enabled layers are requested from the server.
+
+---
+
+### File options
+
+The **File options** tab (file mode only) sets the URL of the index of files used to populate the files list in the left panel, with a `Reload list` button.
 
 ---
 
 ### AI Settings
 
-The AI Settings panel (accessible via **Settings** menu) configures the AI-powered trace explanation feature.
+The **AI** tab configures the AI-powered trace explanation feature.
 
 **Configuration options:**
 - **Provider**: Select AI provider (e.g., Mistral)
@@ -393,15 +453,17 @@ The AI Settings panel (accessible via **Settings** menu) configures the AI-power
 
 ### Proceed through the frames
 
-To browse through the frames, use the **Previous** and **Next** buttons in the Navigation panel.
+To browse through the frames, use the **Previous** and **Next** buttons in the navigation toolbar.
 
 **Jump to specific event:**
-- Click on the event index number in the Navigation panel
+- Click on the event index number in the navigation toolbar
 - Enter the desired event number
 - Press Enter to jump directly to that event
 
 ### Panel management
 
-- Click on **Windows** in the top menu to show/hide panels
-- Panels can be resized and repositioned
-- Panel states are saved between sessions
+- Use the **RRC** / **NAS** / **Radio** buttons in the toolbar to switch between panel groups
+- Click on **Windows** in the top menu to show/hide individual panels
+- Panels can be resized and repositioned; `Menu → Organize windows` resets their positions
+- Open panels are saved between sessions
+- The light/dark theme switch is on the left of the top bar

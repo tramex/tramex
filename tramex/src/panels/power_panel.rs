@@ -7,7 +7,7 @@
 //! Only points are drawn (no lines) since events do not arrive in SFN order.
 //! The X axis shows a window of frames which is re-centered on the focused event.
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::panels::resources_blocks::ResourceType;
 use crate::theme::ThemeColors;
@@ -542,6 +542,10 @@ impl PowerPanel {
 impl EventSubscriber for PowerPanel {
     fn name(&self) -> &'static str {
         "Power"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Radio
     }
 
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {}

@@ -2,7 +2,7 @@
 //!
 //! Displays parsed ASN.1 fields from RRC messages based on configurable field mappings.
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::theme::ThemeColors;
 use egui::{self, RichText};
 use serde_json::Value;
@@ -735,6 +735,10 @@ impl EventSubscriber for BstConfig {
 
     fn name(&self) -> &'static str {
         "RAN Config"
+    }
+
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Rrc
     }
 
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

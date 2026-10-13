@@ -2,7 +2,7 @@
 //!
 //! Displays a visual timeline of MAC, RLC, and PDCP message exchanges between UE and BST
 
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::{ArrowColors, ThemeColors};
 use egui::{self, CursorIcon, PopupAnchor, Pos2, Rect, Stroke, Vec2};
@@ -372,7 +372,9 @@ impl EventSubscriber for ChronographMac {
     fn name(&self) -> &'static str {
         "Chronograph MAC-RLC-PDCP"
     }
-
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Radio
+    }
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {}
 
     fn on_event_added(&mut self, event: &Trace, index: usize, _context: &EventContext) {

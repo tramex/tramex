@@ -1,5 +1,5 @@
 //! Panel to display the RRC status
-use crate::event_system::{EventContext, EventSubscriber};
+use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::PanelView;
 use crate::theme::{ArrowColors, ChannelColors, ThemeColors};
 use egui::{Color32, TextFormat};
@@ -474,6 +474,10 @@ impl EventSubscriber for RRCStatusPanel {
         "RRC Status"
     }
 
+    fn group(&self) -> PanelGroup {
+        PanelGroup::Rrc
+    }
+
     fn on_metadata_changed(&mut self, metadata: &tramex_tools::interface::parse_config::FileMetadata) {
         // Update technology from context metadata
         if self.technology != metadata.technology {
@@ -603,6 +607,7 @@ impl super::PanelView for RRCStatusPanel {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::missing_panics_doc)]
     use super::*;
     use tramex_tools::interface::association::TraceRelation;
     use tramex_tools::interface::parser::parser_rrc::RRCInfos;
