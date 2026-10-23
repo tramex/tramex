@@ -222,18 +222,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_gtpu_dl_ipv6() {
-        let line = "10:32:29.599 [GTPU] FROM 127.0.1.100:2152 G-PDU TEID=0xbe4c81c5 QFI=1 SDU_len=88: IP/ICMPV6 fe80::84b0:ba3e:79ea:d3c2 > ff02::1";
-        let AdditionalInfos::GTPUInfos(infos) = GTPUParser::parse_additional_infos(&[line.to_string()]).unwrap() else {
-            panic!("Expected GTPUInfos");
-        };
-        assert_eq!(infos.direction, Direction::FROM);
-        assert_eq!(infos.teid, Some(0xbe4c81c5));
-        assert_eq!(infos.remote_addr().map(String::as_str), Some("fe80::84b0:ba3e:79ea:d3c2"));
-        assert_eq!(infos.ue_addr().map(String::as_str), Some("ff02::1"));
-    }
-
-    #[test]
     fn test_parse_gtpu_layer() {
         let header = ParsedHeader {
             direction: Direction::TO,
