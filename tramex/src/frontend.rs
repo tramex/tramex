@@ -305,6 +305,13 @@ impl FrontEnd {
         }
 
         if self.source_set {
+            // Windows toggled by each group button (computed before borrowing self in the closures)
+            let group_windows: Vec<(PanelGroup, Vec<&'static str>)> = PanelGroup::WINDOWED
+                .iter()
+                .rev()
+                .map(|g| (*g, self.windows_for_group(*g)))
+                .collect();
+
             // Build NavState from Application
             let nav_state = NavState {
                 current_index: self.application.current_index(),
@@ -332,15 +339,12 @@ impl FrontEnd {
                         self.nav_panel.show_toolbar(ui, &nav_state);
 
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            let panel_groups = self.application.panel_groups();
-                            for group in PanelGroup::WINDOWED.iter().rev() {
-                                let names: Vec<&'static str> =
-                                    panel_groups.iter().filter(|(g, _)| g == group).map(|(_, n)| *n).collect();
+                            for (group, names) in &group_windows {
                                 let all_open = names.iter().all(|n| self.open_windows.contains(*n));
                                 let response = ui.selectable_label(all_open, group.label()).on_hover_text(names.join("\n"));
                                 if response.clicked() {
                                     if all_open {
-                                        for name in &names {
+                                        for name in names {
                                             self.open_windows.remove(*name);
                                         }
                                     } else {
@@ -553,14 +557,31 @@ impl FrontEnd {
     /// Select a panel group: open its windows, close the other groups' windows
     /// and enable the layers relevant to it
     fn select_group(&mut self, group: PanelGroup) {
-        for (panel_group, name) in self.application.panel_groups() {
-            if panel_group == group {
+        let names = self.windows_for_group(group);
+        for (_, name) in self.application.panel_groups() {
+            if names.contains(&name) {
                 self.open_windows.insert(name.to_owned());
             } else {
                 self.open_windows.remove(name);
             }
         }
         self.application.set_layers(layers_for_group(group));
+    }
+
+    /// Windows opened by a group shortcut: the group's own panels plus a few
+    /// panels from other groups that are useful in that context
+    fn windows_for_group(&self, group: PanelGroup) -> Vec<&'static str> {
+        let mut names: Vec<&'static str> = self
+            .application
+            .panel_groups()
+            .into_iter()
+            .filter(|(g, _)| *g == group)
+            .map(|(_, n)| n)
+            .collect();
+        if group == PanelGroup::Rrc {
+            names.push("Chronograph RAN");
+        }
+        names
     }
 
     /// Collect errors, filtering out non-critical ones
