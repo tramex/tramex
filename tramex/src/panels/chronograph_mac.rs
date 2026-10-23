@@ -427,11 +427,9 @@ impl EventSubscriber for ChronographMac {
     fn name(&self) -> &'static str {
         "Chronograph MAC-RLC-PDCP"
     }
-
     fn group(&self) -> PanelGroup {
         PanelGroup::Radio
     }
-
     fn on_metadata_changed(&mut self, _metadata: &tramex_tools::interface::parse_config::FileMetadata) {}
 
     fn on_event_added(&mut self, event: &Trace, index: usize, _context: &EventContext) {
