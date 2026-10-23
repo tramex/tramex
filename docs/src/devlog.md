@@ -211,11 +211,10 @@ pub trait EventSubscriber: Send {
 | Group | Panels | Layer preset |
 |-------|--------|--------------|
 | Main | Messages (rendered inline in the central panel via `show_inline`) | — |
-| RRC | RAN Config, RRC Status, Logical Channels (+ Chronograph RAN) | RRC |
+| RRC | RAN Config, RRC Status, Logical Channels | RRC |
 | NAS | Chronograph RAN, Identity | RRC, NAS, NGAP, GTPU |
 | Radio | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
-- A panel declares a single `group()`, used for the Windows menu listing. The set of windows actually toggled by a group button is computed by `FrontEnd::windows_for_group`, which adds a few cross-group panels: the RRC shortcut also opens Chronograph RAN, which stays declared as a NAS panel.
 - `EventBus::show_windows` skips `Main` panels; `EventBus::show_main` renders them inline. The event notifications are unchanged: every panel keeps receiving events whether or not its window is open.
 - The group buttons on the right of the toolbar are **exclusive**: selecting a group opens its windows, closes the other groups' windows and applies its layer preset (`FrontEnd::select_group` / `layers_for_group`). Clicking the active group closes its windows.
 - **RRC is the default group**: it is selected as soon as a file is loaded or a WebSocket connects, before the first data request so the server receives the RRC-only filter.
