@@ -109,11 +109,12 @@ The analysis panels are floating windows grouped by topic. Selecting a group wit
 
 | Group | Panels | Layers enabled |
 |-------|--------|----------------|
-| **RRC** | RAN Config, RRC Status, Logical Channels | RRC |
-| **NAS** | Chronograph RAN, Identity | RRC, NAS, NGAP, GTPU |
+| **RRC** | RAN Config, RRC Status, Logical Channels, Chronograph | RRC |
+| **NAS** | Chronograph RAN, Identity, GTPU Tunnel | RRC, NAS, NGAP, GTPU |
 | **Radio** | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
 - The **RRC** group is selected automatically when a file is opened or a websocket is connected.
+- The Chronograph belongs to the NAS group (it is listed there in the Windows menu) but is also opened by the RRC shortcut, as it is useful in both contexts.
 - Clicking the active group closes its panels.
 - To mix panels from several groups, or to show a single panel, use the **Windows** menu in the top bar: `Show all` / `Hide all` and one checkbox per panel. The menu stays open while you tick panels; click outside to close it.
 - The layer selection can be refined afterwards in **Settings → Layers**.
@@ -276,6 +277,31 @@ The Chronograph RAN panel displays a visual timeline of message exchanges betwee
 - Auto-scrolls to center on the focused event
 - Displays layer type and message name on each arrow
 - Click an arrow to navigate to the corresponding trace
+
+---
+
+### GTPU Tunnel Panel
+
+The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, such as:
+
+```
+13:20:45.574 [GTPU] TO 127.0.1.100:2152 G-PDU TEID=0x5315caa3 QFI=1 SDU_len=1452: IP/TCP 192.168.3.2:51158 > 172.217.18.202:443
+```
+
+**Layout:**
+- Two lifelines: **BST** (Base Station) on the left and **UPF** on the right, with the GTP-U peer IP and port under the UPF label (e.g. `127.0.1.100:2152`)
+- One arrow per tunnel and direction, labeled with its **TEID** (Tunnel Endpoint Identifier) and **QFI** (QoS Flow Identifier):
+
+| Direction | Arrow |
+|-----------|-------|
+| UL (`TO`) | BST → UPF |
+| DL (`FROM`) | UPF → BST |
+
+**Behavior:**
+- Each new TEID adds a new arrow; previous tunnels are kept, ordered by first appearance
+- An existing arrow shows the QFI of the latest GTPU message on its TEID
+- Focusing a GTPU trace highlights the arrow of its tunnel in blue
+- Click an arrow to navigate to the latest trace of that tunnel
 
 ---
 

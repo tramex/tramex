@@ -6,6 +6,7 @@ use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::NAVIGATE_REQUEST_ID;
 use crate::theme::{ArrowColors, ThemeColors};
 use egui::{self, CursorIcon, PopupAnchor, Pos2, Rect, Stroke, Vec2};
+use std::collections::BTreeSet;
 use tramex_tools::{
     data::Trace,
     errors::TramexError,
@@ -118,6 +119,19 @@ impl MessageArrow {
     }
 }
 
+/// Layer filter selection. `None` means every supported layer is shown.
+type LayerFilter = Option<BTreeSet<String>>;
+
+/// Layers that can be displayed and filtered in this chronograph.
+const SUPPORTED_LAYERS: [Layer; 3] = [Layer::MAC, Layer::RLC, Layer::PDCP];
+
+/// Return whether an arrow for `layer` should be displayed.
+fn layer_enabled(filter: &LayerFilter, layer: &Layer) -> bool {
+    filter
+        .as_ref()
+        .is_none_or(|selected| selected.contains(&format!("{layer:?}")))
+}
+
 /// Chronograph MAC-RLC-PDCP Panel
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct ChronographMac {
@@ -143,9 +157,13 @@ pub struct ChronographMac {
     #[serde(skip)]
     related_child: Option<Vec<usize>>,
 
-    /// Hovered arrow index (for click-to-navigate)
+    /// Hovered arrow trace index (for click-to-navigate)
     #[serde(skip)]
     hovered_arrow: Option<usize>,
+
+    /// Layers shown in the timeline. `None` shows all supported layers.
+    #[serde(default)]
+    layer_filter: LayerFilter,
 }
 
 impl Default for ChronographMac {
@@ -165,7 +183,32 @@ impl ChronographMac {
             related_parent: None,
             related_child: None,
             hovered_arrow: None,
+            layer_filter: None,
         }
+    }
+
+    /// Draw layer filter toggles.
+    fn draw_layer_filter(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            ui.label("Layers:");
+            for layer in SUPPORTED_LAYERS {
+                let name = format!("{layer:?}");
+                let mut enabled = layer_enabled(&self.layer_filter, &layer);
+                if ui.checkbox(&mut enabled, name.clone()).changed() {
+                    let mut selected: BTreeSet<String> = self
+                        .layer_filter
+                        .clone()
+                        .unwrap_or_else(|| SUPPORTED_LAYERS.iter().map(|l| format!("{l:?}")).collect());
+                    if enabled {
+                        selected.insert(name);
+                    } else {
+                        selected.remove(&name);
+                    }
+                    self.layer_filter = (selected.len() != SUPPORTED_LAYERS.len()).then_some(selected);
+                }
+            }
+        });
+        ui.separator();
     }
 
     /// Get X position for a hardware element
@@ -180,6 +223,7 @@ impl ChronographMac {
 
     /// Draw the chronograph
     fn draw_chronograph(&mut self, ui: &mut egui::Ui) {
+        self.draw_layer_filter(ui);
         let available_size = ui.available_size();
 
         // Use a scroll area for the timeline
@@ -187,7 +231,12 @@ impl ChronographMac {
 
         // Conditionally scroll to current arrow if flag is set
         let scroll_area = if self.should_scroll {
-            if let Some(current_arrow_idx) = self.arrows.iter().position(|a| a.trace_index == self.current_index) {
+            if let Some(current_arrow_idx) = self
+                .arrows
+                .iter()
+                .filter(|arrow| layer_enabled(&self.layer_filter, &arrow.layer))
+                .position(|a| a.trace_index == self.current_index)
+            {
                 let arrow_height = 40.0;
                 let header_height = 50.0;
                 let arrow_y_position = (current_arrow_idx as f32 * arrow_height) + header_height + 10.0;
@@ -213,9 +262,15 @@ impl ChronographMac {
         self.hovered_arrow = None;
 
         scroll_area.show(ui, |ui| {
+            let displayed: Vec<&MessageArrow> = self
+                .arrows
+                .iter()
+                .filter(|arrow| layer_enabled(&self.layer_filter, &arrow.layer))
+                .collect();
+
             // Reserve space for all arrows + padding
             let arrow_height = 40.0;
-            let total_height = self.arrows.len() as f32 * arrow_height + 100.0;
+            let total_height = displayed.len() as f32 * arrow_height + 100.0;
             let (rect, response) =
                 ui.allocate_exact_size(Vec2::new(available_size.x - 20.0, total_height), egui::Sense::click());
 
@@ -260,7 +315,7 @@ impl ChronographMac {
 
             // Draw arrows
             let start_y = arrow_start_y + 10.0;
-            for (i, arrow) in self.arrows.iter().enumerate() {
+            for (i, arrow) in displayed.iter().enumerate() {
                 let y = start_y + (i as f32 * arrow_height);
                 let is_current: bool = arrow.trace_index == self.current_index;
                 let is_related_parent = self.related_parent.as_ref().is_some_and(|v| v.contains(&arrow.trace_index));
@@ -277,7 +332,7 @@ impl ChronographMac {
                 let is_hovered = mouse_pos.is_some_and(|pos| arrow_rect.contains(pos));
 
                 if is_hovered {
-                    self.hovered_arrow = Some(i);
+                    self.hovered_arrow = Some(arrow.trace_index);
                 }
 
                 // Determine arrow color and thickness
@@ -334,11 +389,12 @@ impl ChronographMac {
             }
 
             // Handle hover cursor and click-to-navigate
-            if let Some(hovered_idx) = self.hovered_arrow {
+            if let Some(hovered_trace_index) = self.hovered_arrow
+                && let Some(arrow) = self.arrows.iter().find(|arrow| arrow.trace_index == hovered_trace_index)
+            {
                 ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
 
                 // Show tooltip with full message
-                let arrow = &self.arrows[hovered_idx];
                 egui::Tooltip::always_open(
                     ui.ctx().clone(),
                     ui.layer_id(),
@@ -354,10 +410,9 @@ impl ChronographMac {
 
                 // Handle click
                 if response.clicked() {
-                    let trace_index = self.arrows[hovered_idx].trace_index;
                     ui.ctx()
-                        .data_mut(|d| d.insert_temp(egui::Id::new(NAVIGATE_REQUEST_ID), trace_index));
-                    log::debug!("ChronographMac: Click-to-navigate to trace {}", trace_index);
+                        .data_mut(|d| d.insert_temp(egui::Id::new(NAVIGATE_REQUEST_ID), hovered_trace_index));
+                    log::debug!("ChronographMac: Click-to-navigate to trace {}", hovered_trace_index);
                 }
             }
         });

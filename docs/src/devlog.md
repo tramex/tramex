@@ -211,10 +211,11 @@ pub trait EventSubscriber: Send {
 | Group | Panels | Layer preset |
 |-------|--------|--------------|
 | Main | Messages (rendered inline in the central panel via `show_inline`) | — |
-| RRC | RAN Config, RRC Status, Logical Channels | RRC |
+| RRC | RAN Config, RRC Status, Logical Channels (+ Chronograph RAN) | RRC |
 | NAS | Chronograph RAN, Identity | RRC, NAS, NGAP, GTPU |
 | Radio | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
+- A panel declares a single `group()`, used for the Windows menu listing. The set of windows actually toggled by a group button is computed by `FrontEnd::windows_for_group`, which adds a few cross-group panels: the RRC shortcut also opens Chronograph RAN, which stays declared as a NAS panel.
 - `EventBus::show_windows` skips `Main` panels; `EventBus::show_main` renders them inline. The event notifications are unchanged: every panel keeps receiving events whether or not its window is open.
 - The group buttons on the right of the toolbar are **exclusive**: selecting a group opens its windows, closes the other groups' windows and applies its layer preset (`FrontEnd::select_group` / `layers_for_group`). Clicking the active group closes its windows.
 - **RRC is the default group**: it is selected as soon as a file is loaded or a WebSocket connects, before the first data request so the server receives the RRC-only filter.
@@ -1929,3 +1930,61 @@ The panel specializes that model for the radio protocol stack:
 ### 12.2. Shared Click-to-Navigate Contract
 
 Interactive event visualizations do not navigate the event store directly. Chronograph RAN, Chronograph MAC-RLC-PDCP, HARQ, and Power publish a trace index into temporary egui memory using `NAVIGATE_REQUEST_ID`. After drawing panel windows, `FrontEnd` consumes that request and calls `Application::navigate_to`, ensuring every subscriber receives the normal focused-event notification.
+
+---
+
+## 13. GTPU Tunnel Panel
+
+### Implementation
+
+Implementation : 23/10/2026
+
+### 13.1. Motivation
+
+GTPU traces carry the user-plane tunnel parameters between the base station and the core network, but the parser only extracted the direction, the GTP-U peer and the message type. The TEID, the QFI and the encapsulated flow were only visible in the raw text. The GTPU Tunnel panel extracts and displays them for each direction of the tunnel.
+
+Example trace:
+
+```
+13:20:45.574 [GTPU] TO 127.0.1.100:2152 G-PDU TEID=0x5315caa3 QFI=1 SDU_len=1452: IP/TCP 192.168.3.2:51158 > 172.217.18.202:443
+```
+
+### 13.2. Parser Changes
+
+The GTPU parser (`tramex-tools/src/interface/parser/parser_gtpu.rs`) was extended:
+
+1. **`GTPUInfos`** gained the optional fields `teid: u32`, `qfi: u8`, `sdu_len: u32`, `src_addr` and `dst_addr`, and now derives `Default`.
+2. **`parse_payload()`** is shared by the file path (`FileParser::parse_additional_infos`) and the WebSocket path (`LayerParser::parse_layer`). It splits the payload on the first `": "`:
+   - the GTPU header (`G-PDU TEID=0x... QFI=... SDU_len=...`) gives the message type and the `KEY=VALUE` fields (TEID is decoded from hexadecimal);
+   - the encapsulated part (`IP/TCP src > dst`) gives the source/destination addresses. IPv6 addresses and addresses without port (ICMP) are kept as-is.
+3. **Helpers** `remote_addr()` and `ue_addr()` resolve the sides of the inner flow from the direction: for `TO` (uplink) the remote endpoint is the destination, for `FROM` (downlink) it is the source.
+4. **Tests** cover the uplink IPv4/TCP sample, a downlink IPv6/ICMPv6 sample, the WebSocket `parse_layer` path and a message without encapsulated payload.
+
+### 13.3. Panel Implementation
+
+`tramex/src/panels/gtpu_tunnel.rs` implements the `EventSubscriber` trait and belongs to the **NAS** panel group (GTPU is already among the layers enabled by this group).
+
+| Callback | Behavior |
+|----------|----------|
+| `on_event_added` | For GTPU traces, update the arrow keyed by (direction, TEID), or insert a new one if the TEID is unknown |
+| `on_event_focused` | Same update, then mark the trace's tunnel as current |
+| `on_events_cleared` | Reset the panel state |
+
+**Tunnel model:**
+- Arrows are stored in `tunnels: Vec<TunnelArrow>`, one per `TunnelKey = (uplink, TEID)`, so a new tunnel adds an arrow instead of replacing the previous one.
+- Each arrow keeps `first_index` (used to order arrows by first appearance, stable when events are re-added after a filter change) and `last_index` with the infos of the latest message (QFI shown, click target).
+
+**Rendering:**
+- Two lifelines: **BST** on the left and **UPF** on the right, with the GTP-U peer (`connection_info`) under the UPF label, taken from the focused tunnel or the most recent one.
+- One row per tunnel arrow: **UL** (BST → UPF) or **DL** (UPF → BST), labeled with its TEID and QFI. The diagram height grows with the number of tunnels inside a vertical scroll area.
+- The arrow of the focused tunnel uses `ArrowColors::CURRENT`; clicking an arrow navigates to its latest trace through `NAVIGATE_REQUEST_ID`.
+
+### 13.4. Files Changed
+
+**New Files:**
+- `tramex/src/panels/gtpu_tunnel.rs` — Panel implementation
+
+**Modified Files:**
+- `tramex-tools/src/interface/parser/parser_gtpu.rs` — New `GTPUInfos` fields, `parse_payload()`, `remote_addr()` / `ue_addr()`, tests
+- `tramex/src/panels/mod.rs` — Registered `gtpu_tunnel` module
+- `tramex/src/event_system/integration.rs` — Subscribed `GtpuTunnel`
