@@ -146,6 +146,10 @@ impl DataSource for FileSource {
         Some(&self.metadata)
     }
 
+    fn apply_parameters(&mut self, params: &crate::parameters::Parameters) {
+        self.handler.change_nb_read(params.file_batch_size);
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }

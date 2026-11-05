@@ -76,11 +76,8 @@ fn test_nas_rrc_associations() {
         "Parent index of trace 1 should be 0"
     );
 
-    assert!(data.events[2].relation.has_child() == false, "Trace 2 should have no child");
-    assert!(
-        data.events[13].relation.has_parent() == false,
-        "Trace 13 should have no parent"
-    );
+    assert!(!data.events[2].relation.has_child(), "Trace 2 should have no child");
+    assert!(!data.events[13].relation.has_parent(), "Trace 13 should have no parent");
 
     assert!(
         data.events[14].relation.get_child_indices() == Some(&vec![15]),

@@ -422,7 +422,7 @@ The Power panel displays three point graphs sharing a common SFN (System Frame N
 
 ## Options and Settings
 
-All options are grouped in the **Settings** window, opened from the **Settings** menu in the top bar. The window has three tabs: **AI**, **Layers** and **File options**.
+All options are grouped in the **Settings** window, opened from the **Settings** menu in the top bar. The window has four tabs: **AI**, **Layers**, **File options** and **Parameters**.
 
 ### Layer Filtering
 
@@ -452,6 +452,21 @@ Toggle checkboxes to enable/disable display of specific layers. In file mode, di
 ### File options
 
 The **File options** tab (file mode only) sets the URL of the index of files used to populate the files list in the left panel, with a `Reload list` button.
+
+---
+
+### Parameters
+
+The **Parameters** tab exposes runtime values that used to be hard-coded constants. All values are saved between sessions, and `Reset to defaults` restores them.
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| HARQ max arrows | 100 | Arrows kept in the HARQ panel buffer |
+| Chronograph RAN max arrows | 100 | Arrows kept in the Chronograph RAN panel; the oldest are dropped beyond it |
+| Chronograph MAC max arrows | 100 | Arrows kept in the Chronograph MAC-RLC-PDCP panel; the oldest are dropped beyond it |
+| File batch size | 100 | Events parsed per batch when loading a file |
+| WebSocket max request size | 1024 | Max events per `log_get` request (64–4096) |
+| WebSocket history | 12 h | How far back the server is asked for logs — applies to the next request |
 
 ---
 

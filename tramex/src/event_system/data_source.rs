@@ -1,5 +1,6 @@
 //! Data source abstraction for different input types
 
+use crate::parameters::Parameters;
 use std::any::Any;
 use std::path::PathBuf;
 use tramex_tools::data::Trace;
@@ -117,6 +118,10 @@ pub trait DataSource: Send {
         None
     }
 
+    /// Apply runtime parameters to the source
+    /// Default implementation does nothing.
+    fn apply_parameters(&mut self, _params: &Parameters) {}
+
     /// Cast to Any for downcasting (immutable)
     fn as_any(&self) -> &dyn Any;
 
@@ -156,6 +161,10 @@ pub trait DataSource {
     fn metadata(&self) -> Option<&FileMetadata> {
         None
     }
+
+    /// Apply runtime parameters to the source
+    /// Default implementation does nothing.
+    fn apply_parameters(&mut self, _params: &Parameters) {}
 
     /// Cast to Any for downcasting (immutable)
     fn as_any(&self) -> &dyn Any;

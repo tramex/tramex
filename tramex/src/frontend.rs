@@ -287,6 +287,11 @@ impl FrontEnd {
         Ok(())
     }
 
+    /// Forward runtime parameters to the application (subscribers + data source)
+    pub fn set_parameters(&mut self, params: &crate::parameters::Parameters) {
+        self.application.set_parameters(params);
+    }
+
     #[cfg(feature = "ai")]
     /// Forward AI config to all subscriber panels
     pub fn set_ai_config(&mut self, key: &str, provider: &tramex_tools::ai::AIProvider, model: &str) {

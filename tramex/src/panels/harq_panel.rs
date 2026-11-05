@@ -14,8 +14,8 @@ use tramex_tools::{
     interface::types::Direction,
 };
 
-/// Max arrow
-const MAX_ARROWS: usize = 100;
+/// Default maximum number of arrows kept in the buffer
+pub const DEFAULT_MAX_ARROWS: usize = 100;
 
 /// HARQ process color palette (16 colors for HARQ 0-15)
 const HARQ_COLORS: [Color32; 16] = [
@@ -190,6 +190,10 @@ pub struct HarqPanel {
     /// HARQ process id currently used to filter the timeline (None = show all).
     /// Toggled by clicking a HARQ id in the legend.
     filter_harq: Option<u8>,
+
+    /// Maximum number of arrows kept in the buffer (from Parameters)
+    #[serde(skip)]
+    max_arrows: usize,
 }
 
 impl Default for HarqPanel {
@@ -208,6 +212,7 @@ impl HarqPanel {
             end_limit: (0, 0, 0),
             has_first_event: false,
             filter_harq: None,
+            max_arrows: DEFAULT_MAX_ARROWS,
         }
     }
 
@@ -255,13 +260,13 @@ impl HarqPanel {
     /// Rebuild the arrow buffer centered on `index`.
     ///
     /// Used when navigating to an event that was dropped from the buffer
-    /// (older than `MAX_ARROWS` back) so arrows are regenerated on demand.
+    /// (older than `max_arrows` back) so arrows are regenerated on demand.
     fn rebuild_window(&mut self, all_events: &[Trace], index: usize) {
         if all_events.is_empty() {
             return;
         }
         let center = index.min(all_events.len() - 1);
-        let half = MAX_ARROWS / 2;
+        let half = self.max_arrows / 2;
 
         // Walk backwards from the focused event until half the buffer is filled
         let mut arrows: Vec<HarqArrow> = Vec::new();
@@ -279,7 +284,7 @@ impl HarqPanel {
 
         // Then forwards until the buffer is full
         for (j, event) in all_events.iter().enumerate().skip(center + 1) {
-            if arrows.len() >= MAX_ARROWS {
+            if arrows.len() >= self.max_arrows {
                 break;
             }
             if let Some(arrow) = HarqArrow::from_trace(event, j) {
@@ -535,9 +540,9 @@ impl EventSubscriber for HarqPanel {
 
             self.arrows.insert(insert_pos, arrow);
 
-            // Limit arrow history — drop first 50 when reaching limit
-            if self.arrows.len() >= MAX_ARROWS {
-                self.arrows.drain(0..50);
+            // Limit arrow history — drop the oldest half when reaching limit
+            if self.arrows.len() >= self.max_arrows {
+                self.arrows.drain(0..(self.max_arrows / 2).max(1));
             }
         }
     }
@@ -546,7 +551,7 @@ impl EventSubscriber for HarqPanel {
         self.current_index = index;
         self.should_scroll = true;
 
-        // The buffer only keeps MAX_ARROWS entries: navigating outside that window
+        // The buffer only keeps max_arrows entries: navigating outside that window
         // (typically backwards to dropped events) requires regenerating the arrows.
         let needs_rebuild = match self.buffered_range() {
             // Backwards out of the window: arrows were dropped, rebuild.
@@ -576,6 +581,15 @@ impl EventSubscriber for HarqPanel {
         self.should_scroll = false;
         self.end_limit = (0, 0, 0);
         self.has_first_event = false;
+    }
+
+    fn set_parameters(&mut self, params: &crate::parameters::Parameters) {
+        self.max_arrows = params.harq_max_arrows;
+        // Shrink the buffer immediately if it now exceeds the new limit
+        if self.arrows.len() > self.max_arrows {
+            let overflow = self.arrows.len() - self.max_arrows;
+            self.arrows.drain(0..overflow);
+        }
     }
 
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

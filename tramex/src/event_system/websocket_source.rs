@@ -126,6 +126,11 @@ impl DataSource for WebSocketSource {
         }
     }
 
+    fn apply_parameters(&mut self, params: &crate::parameters::Parameters) {
+        self.connection.asking_size_max = params.ws_request_max_size;
+        self.connection.history_hours = params.ws_history_hours;
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }

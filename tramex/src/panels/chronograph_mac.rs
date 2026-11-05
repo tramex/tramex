@@ -132,6 +132,9 @@ fn layer_enabled(filter: &LayerFilter, layer: &Layer) -> bool {
         .is_none_or(|selected| selected.contains(&format!("{layer:?}")))
 }
 
+/// Default maximum number of arrows kept in the buffer
+pub const DEFAULT_MAX_ARROWS: usize = 100;
+
 /// Chronograph MAC-RLC-PDCP Panel
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct ChronographMac {
@@ -164,6 +167,10 @@ pub struct ChronographMac {
     /// Layers shown in the timeline. `None` shows all supported layers.
     #[serde(default)]
     layer_filter: LayerFilter,
+
+    /// Maximum number of arrows kept in the buffer (from Parameters)
+    #[serde(skip)]
+    max_arrows: usize,
 }
 
 impl Default for ChronographMac {
@@ -184,7 +191,51 @@ impl ChronographMac {
             related_child: None,
             hovered_arrow: None,
             layer_filter: None,
+            max_arrows: DEFAULT_MAX_ARROWS,
         }
+    }
+
+    /// Trace index range currently held in the arrow buffer
+    fn buffered_range(&self) -> Option<(usize, usize)> {
+        Some((self.arrows.first()?.trace_index, self.arrows.last()?.trace_index))
+    }
+
+    /// Rebuild the arrow buffer centered on `index`.
+    ///
+    /// Used when navigating to an event that was dropped from the buffer
+    /// (older than `max_arrows` back) so arrows are regenerated on demand.
+    fn rebuild_window(&mut self, all_events: &[Trace], index: usize) {
+        if all_events.is_empty() {
+            return;
+        }
+        let center = index.min(all_events.len() - 1);
+        let half = self.max_arrows / 2;
+
+        // Walk backwards from the focused event until half the buffer is filled
+        let mut arrows: Vec<MessageArrow> = Vec::new();
+        let mut i = center;
+        loop {
+            if let Some(arrow) = MessageArrow::from_trace(&all_events[i], i) {
+                arrows.push(arrow);
+            }
+            if i == 0 || arrows.len() >= half {
+                break;
+            }
+            i -= 1;
+        }
+        arrows.reverse();
+
+        // Then forwards until the buffer is full
+        for (j, event) in all_events.iter().enumerate().skip(center + 1) {
+            if arrows.len() >= self.max_arrows {
+                break;
+            }
+            if let Some(arrow) = MessageArrow::from_trace(event, j) {
+                arrows.push(arrow);
+            }
+        }
+
+        self.arrows = arrows;
     }
 
     /// Draw layer filter toggles.
@@ -458,17 +509,40 @@ impl EventSubscriber for ChronographMac {
 
             self.arrows.insert(insert_pos, arrow);
 
-            // Limit arrow history (remove oldest)
-            if self.arrows.len() > 500 {
-                self.arrows.remove(0);
+            // Limit arrow history — drop the oldest half when reaching limit
+            if self.arrows.len() >= self.max_arrows {
+                self.arrows.drain(0..(self.max_arrows / 2).max(1));
             }
         }
     }
 
-    fn on_event_focused(&mut self, event: &Trace, index: usize, _context: &EventContext) {
+    fn on_event_focused(&mut self, event: &Trace, index: usize, context: &EventContext) {
         // When user navigates to an event, update current index and scroll
         self.current_index = index;
         self.should_scroll = true;
+
+        // The buffer only keeps max_arrows entries: navigating outside that window
+        // (typically backwards to dropped events) requires regenerating the arrows.
+        let needs_rebuild = match self.buffered_range() {
+            // Backwards out of the window: arrows were dropped, rebuild.
+            Some((lo, _)) if index < lo => true,
+            // Forwards out of the window: only rebuild if arrows are missing in between
+            // (otherwise the buffer already holds the newest arrows).
+            Some((_, hi)) if index > hi => context
+                .all_events
+                .get((hi + 1)..=index.min(context.all_events.len().saturating_sub(1)))
+                .is_some_and(|slice| {
+                    slice
+                        .iter()
+                        .enumerate()
+                        .any(|(offset, ev)| MessageArrow::from_trace(ev, hi + 1 + offset).is_some())
+                }),
+            Some(_) => false,
+            None => true,
+        };
+        if needs_rebuild {
+            self.rebuild_window(context.all_events, index);
+        }
 
         // Update related parent/child indices for highlighting
         self.related_parent = event.relation.get_parent_indices().cloned();
@@ -491,6 +565,15 @@ impl EventSubscriber for ChronographMac {
         self.related_parent = None;
         self.related_child = None;
         self.hovered_arrow = None;
+    }
+
+    fn set_parameters(&mut self, params: &crate::parameters::Parameters) {
+        self.max_arrows = params.chronograph_mac_max_arrows;
+        // Shrink the buffer immediately if it now exceeds the new limit
+        if self.arrows.len() > self.max_arrows {
+            let overflow = self.arrows.len() - self.max_arrows;
+            self.arrows.drain(0..overflow);
+        }
     }
 
     fn show_window(&mut self, ctx: &egui::Context, open: &mut bool) -> Result<(), TramexError> {

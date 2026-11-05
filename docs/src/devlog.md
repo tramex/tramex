@@ -146,6 +146,7 @@ while self.trame_manager.should_get_more_log {
 #### Implementation Date
 2025-10-10 : Dedicated Navigation Panel window (Previous/Next, event counter, jump to event)
 2026-10-13 : Fixed layout (navigation toolbar, inline Messages, status bar), panel groups with layer presets, Settings window, unified theme
+2026-11-05 : Settings → Parameters tab (HARQ max arrows, Chronograph RAN/MAC max arrows, file batch size, WebSocket request size and history window)
 
 ### 3.0. Overview
 #### 3.0.1. Problem Solved
@@ -250,6 +251,7 @@ pub trait EventSubscriber: Send {
 - `tramex/src/panels/panel_message.rs` - Inline rendering, layer badge
 - `tramex/src/panels/*.rs` - `group()` implementations
 - `tramex/src/handlers/handler_file.rs` - `ui_options` without collapsing header
+- `tramex/src/parameters.rs` - runtime `Parameters` struct, Settings tab UI
 ---
 
 ## 4. RRC Field Viewer & Message Panel Improvements
