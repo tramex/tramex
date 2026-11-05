@@ -198,7 +198,7 @@ impl File {
                     traces.push(trace);
                 }
                 Err(err) => {
-                    log::error!("{}", err.message);
+                    log::error!("{}, some events may be missing", err.message);
                     errors.push(err);
                 }
             };

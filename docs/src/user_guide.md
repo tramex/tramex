@@ -109,7 +109,7 @@ The analysis panels are floating windows grouped by topic. Selecting a group wit
 
 | Group | Panels | Layers enabled |
 |-------|--------|----------------|
-| **RRC** | RAN Config, RRC Status, Logical Channels, Chronograph | RRC |
+| **RRC** | RAN Config, RRC Status, Bearer Status, Logical Channels, Chronograph | RRC |
 | **NAS** | Chronograph RAN, Identity, GTPU Tunnel | RRC, NAS, NGAP, GTPU |
 | **Radio** | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
@@ -156,6 +156,31 @@ The RRC Status panel visualizes the Radio Resource Control (RRC) connection stat
 
 **Technology awareness:**
 - Automatically detects LTE or NR technology and applies the correct state transition rules
+- Maintains state history for accurate state reconstruction when navigating backward through events
+
+---
+
+### Bearer Status Panel
+
+The Bearer Status panel visualizes the radio bearers established between the base station and the UE, as two state machines:
+
+- **SRB (signaling)**: **SRB1**, **SRB2** or **SRB3**, highlighted in orange
+- **DRB (traffic)**: **DRB1**, **DRB2** or **DRB3**, highlighted in green
+
+**State transitions:**
+
+| Message | Content (`radioBearerConfig`) | New state |
+|---------|-------------------------------|-----------|
+| RRC setup | `srb-ToAddModList` → `srb-Identity 1` | SRB1, no DRB |
+| RRC reconfiguration | `srb-ToAddModList` → `srb-Identity 2` | SRB2 |
+| RRC reconfiguration | `drb-ToAddModList` → `drb-Identity 1` | DRB1 |
+| RRC release | — | no SRB, no DRB |
+
+SRB3, DRB2 and DRB3 are displayed but not triggered yet.
+
+**Behavior:**
+- The state does not change until a message updating the SRB or DRB is passed
+- The arrows between **BASE STATION** and **USER EQUIPMENT** light up when the focused message changes the bearers
 - Maintains state history for accurate state reconstruction when navigating backward through events
 
 ---

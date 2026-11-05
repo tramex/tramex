@@ -10,6 +10,7 @@ pub fn create_application_with_panels() -> Application {
     app.subscribe(Box::new(crate::panels::chronograph::Chronograph::new()));
     app.subscribe(Box::new(crate::panels::chronograph_mac::ChronographMac::new()));
     app.subscribe(Box::new(crate::panels::rrc_status::RRCStatusPanel::new()));
+    app.subscribe(Box::new(crate::panels::bearer_status::BearerStatusPanel::new()));
     app.subscribe(Box::new(crate::panels::bst_config::BstConfig::new()));
     app.subscribe(Box::new(crate::panels::logical_channels::LogicalChannels::new()));
     app.subscribe(Box::new(crate::panels::panel_message::MessageBox::new()));
