@@ -25,6 +25,9 @@ pub struct Application {
 
     /// Association rules for computing trace relationships
     association_rules: AssociationRules,
+
+    /// Runtime parameters forwarded to subscribers and data sources
+    parameters: crate::parameters::Parameters,
 }
 
 impl Application {
@@ -37,12 +40,14 @@ impl Application {
             layers: Layers::new_optiniated(),
             metadata: FileMetadata::default(),
             association_rules: AssociationRules::new(),
+            parameters: crate::parameters::Parameters::default(),
         }
     }
 
     /// Subscribe a panel to receive event notifications
-    pub fn subscribe(&mut self, subscriber: Box<dyn EventSubscriber>) {
+    pub fn subscribe(&mut self, mut subscriber: Box<dyn EventSubscriber>) {
         log::debug!("Application: Subscribing panel '{}'", subscriber.name());
+        subscriber.set_parameters(&self.parameters);
         self.event_bus.subscribe(subscriber);
     }
 
@@ -52,13 +57,30 @@ impl Application {
     }
 
     /// Set the data source
-    pub fn set_data_source(&mut self, source: Box<dyn DataSource>) {
+    pub fn set_data_source(&mut self, mut source: Box<dyn DataSource>) {
         log::info!("Application: Setting data source: {:?}", source.source_type());
 
         // Clear existing data when switching sources
         self.clear_all();
 
+        // Apply current parameters so the first batch already uses them
+        source.apply_parameters(&self.parameters);
+
         self.data_source = Some(source);
+    }
+
+    /// Forward runtime parameters to subscribers and the data source
+    ///
+    /// Returns early if the parameters haven't changed.
+    pub fn set_parameters(&mut self, params: &crate::parameters::Parameters) {
+        if *params == self.parameters {
+            return;
+        }
+        self.parameters = params.clone();
+        self.event_bus.set_parameters(&self.parameters);
+        if let Some(source) = &mut self.data_source {
+            source.apply_parameters(&self.parameters);
+        }
     }
 
     /// Drop the active data source and clear all loaded events

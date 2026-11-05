@@ -77,6 +77,10 @@ pub trait EventSubscriber: Send {
     /// Default implementation does nothing.
     fn show_inline(&mut self, _ui: &mut egui::Ui) {}
 
+    /// Forward runtime parameters to panels that use them
+    /// Default implementation does nothing.
+    fn set_parameters(&mut self, _params: &crate::parameters::Parameters) {}
+
     /// Show window for this subscriber/panel
     /// Returns Result indicating if there was an error showing the window
     ///
@@ -184,6 +188,13 @@ impl EventBus {
             if subscriber.group() == PanelGroup::Main {
                 subscriber.show_inline(ui);
             }
+        }
+    }
+
+    /// Forward runtime parameters to all subscribers
+    pub fn set_parameters(&mut self, params: &crate::parameters::Parameters) {
+        for subscriber in &mut self.subscribers {
+            subscriber.set_parameters(params);
         }
     }
 

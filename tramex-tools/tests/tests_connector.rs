@@ -89,7 +89,7 @@ mod tests {
             Ok(_) => {
                 // File now parses successfully - test updated to reflect this
                 eprintln!("File parsed successfully");
-                assert!(f.data.events.len() > 0);
+                assert!(!f.data.events.is_empty());
             }
             Err(e) => {
                 eprintln!("{e:?}");
@@ -108,7 +108,7 @@ mod tests {
         let mut f = DataHandler::new(file);
         match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                assert!(false);
+                panic!();
             }
             Err(e) => {
                 eprintln!("{e:?}");
@@ -124,7 +124,7 @@ mod tests {
         let mut f = DataHandler::new(file);
         match f.get_more_data(Layers::all_debug()) {
             Ok(_) => {
-                assert!(false);
+                panic!();
             }
             Err(e) => {
                 eprintln!("{e:?}");

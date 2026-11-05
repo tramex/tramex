@@ -33,9 +33,8 @@ impl LogGet {
     /// Create a new LogGet struct
     /// Note: layers_list parameter is ignored - we always request ALL layers
     /// The filtering is done by the Application, not by the server
-    pub fn new(id: u64, _layers_list: Layers, max_size: u64) -> Self {
+    pub fn new(id: u64, _layers_list: Layers, max_size: u64, history_hours: i64) -> Self {
         let max_size = max_size.clamp(64, 4096);
-        const HOURS_TO_FETCH: i64 = 12;
         Self {
             message: "log_get".to_owned(),
             message_id: id,
@@ -44,7 +43,7 @@ impl LogGet {
             max: max_size,
             layers: Layers::all_debug(), // Always request all layers
             headers: false,
-            start_timestamp: chrono::Utc::now().timestamp() - HOURS_TO_FETCH * 3600, // only fetch last 12h
+            start_timestamp: chrono::Utc::now().timestamp() - history_hours * 3600, // only fetch last `history_hours`
         }
     }
 

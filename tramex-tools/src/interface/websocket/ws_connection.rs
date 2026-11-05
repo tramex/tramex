@@ -9,6 +9,13 @@ use crate::tramex_error;
 use crate::{data::Data, errors::TramexError};
 
 use crate::interface::{layer::Layer, layer::Layers, log_get::LogGet, parse_config::FileMetadata, types::WebSocketLog};
+
+/// Default maximum number of events requested per `log_get` request
+pub const DEFAULT_ASKING_SIZE_MAX: u64 = 1024;
+
+/// Default number of hours back the server is asked for logs
+pub const DEFAULT_HISTORY_HOURS: i64 = 12;
+
 /// WsConnection struct
 pub struct WsConnection {
     /// WebSocket sender
@@ -25,6 +32,9 @@ pub struct WsConnection {
 
     /// Asking size max
     pub asking_size_max: u64,
+
+    /// How many hours back the server is asked for logs
+    pub history_hours: i64,
 
     /// Available flag
     pub available: bool,
@@ -51,7 +61,8 @@ impl WsConnection {
             ws_receiver,
             msg_id: 1,
             connecting: true,
-            asking_size_max: 1024,
+            asking_size_max: DEFAULT_ASKING_SIZE_MAX,
+            history_hours: DEFAULT_HISTORY_HOURS,
             available: false, // Start as unavailable until WsEvent::Opened is received
             name: "".to_string(),
             auto_loading: true, // Auto-loading enabled by default
@@ -88,7 +99,7 @@ impl InterfaceTrait for WsConnection {
             return Ok(());
         }
 
-        let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max);
+        let msg = LogGet::new(self.msg_id, layer_list, self.asking_size_max, self.history_hours);
         // Request headers on the first request to get FileMetadata (technology, pci, etc.)
         let msg = if !self.headers_received { msg.with_headers() } else { msg };
         log::debug!("📤 Sending log_get request #{}", self.msg_id);

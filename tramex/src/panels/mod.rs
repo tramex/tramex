@@ -1,5 +1,6 @@
 //! Module: panels
 
+pub mod bearer_status;
 pub mod bst_config;
 pub mod chronograph;
 pub mod chronograph_mac;

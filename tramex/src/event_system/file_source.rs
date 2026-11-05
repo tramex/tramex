@@ -78,7 +78,10 @@ impl DataSource for FileSource {
             self.pending_events.len()
         );
         self.temp_data.events.clear();
-        self.handler.get_more_data(Layers::default(), &mut self.temp_data)?;
+        // Capture the result instead of bailing out: get_more_data appends the
+        // successfully parsed traces to temp_data.events even when it also
+        // returns errors, so the bookkeeping below must run regardless.
+        let result = self.handler.get_more_data(Layers::default(), &mut self.temp_data);
 
         // Extract metadata on first batch
         if self.loaded_count == 0 {
@@ -106,7 +109,7 @@ impl DataSource for FileSource {
             log::info!("FileSource: File fully loaded ({} events total)", self.loaded_count);
         }
 
-        Ok(())
+        result
     }
 
     fn is_auto_loading(&self) -> bool {
@@ -146,11 +149,37 @@ impl DataSource for FileSource {
         Some(&self.metadata)
     }
 
+    fn apply_parameters(&mut self, params: &crate::parameters::Parameters) {
+        self.handler.change_nb_read(params.file_batch_size);
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::missing_panics_doc)]
+    use super::*;
+
+    #[test]
+    fn request_more_keeps_parsed_events_when_a_block_fails() {
+        // Middle block is malformed: "DCCH-NR:" has an empty message part.
+        let content = "\
+10:32:20.000 [RRC] DL 0001 01 CCCH-NR: RRC setup
+10:32:20.001 [RRC] DL 0001 01 DCCH-NR:
+10:32:20.002 [RRC] UL 0001 01 DCCH-NR: RRC setup complete
+";
+        let file = File::new(PathBuf::from("test.log"), content.to_string());
+        let mut source = FileSource::from_file(file);
+
+        assert!(source.request_more(&Layers::default()).is_err());
+        let events = source.poll().unwrap_or_default();
+        assert_eq!(events.len(), 2);
     }
 }

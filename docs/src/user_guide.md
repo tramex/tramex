@@ -109,11 +109,12 @@ The analysis panels are floating windows grouped by topic. Selecting a group wit
 
 | Group | Panels | Layers enabled |
 |-------|--------|----------------|
-| **RRC** | RAN Config, RRC Status, Logical Channels, Chronograph | RRC |
+| **RRC** | RAN Config, RRC Status, Bearer Status, Logical Channels, Chronograph | RRC |
 | **NAS** | Chronograph RAN, Identity, GTPU Tunnel | RRC, NAS, NGAP, GTPU |
 | **Radio** | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
 - The **RRC** group is selected automatically when a file is opened or a websocket is connected.
+- The Chronograph belongs to the NAS group (it is listed there in the Windows menu) but is also opened by the RRC shortcut, as it is useful in both contexts.
 - The Chronograph belongs to the NAS group (it is listed there in the Windows menu) but is also opened by the RRC shortcut, as it is useful in both contexts.
 - Clicking the active group closes its panels.
 - To mix panels from several groups, or to show a single panel, use the **Windows** menu in the top bar: `Show all` / `Hide all` and one checkbox per panel. The menu stays open while you tick panels; click outside to close it.
@@ -156,6 +157,31 @@ The RRC Status panel visualizes the Radio Resource Control (RRC) connection stat
 
 **Technology awareness:**
 - Automatically detects LTE or NR technology and applies the correct state transition rules
+- Maintains state history for accurate state reconstruction when navigating backward through events
+
+---
+
+### Bearer Status Panel
+
+The Bearer Status panel visualizes the radio bearers established between the base station and the UE, as two state machines:
+
+- **SRB (signaling)**: **SRB1**, **SRB2** or **SRB3**, highlighted in orange
+- **DRB (traffic)**: **DRB1**, **DRB2** or **DRB3**, highlighted in green
+
+**State transitions:**
+
+| Message | Content (`radioBearerConfig`) | New state |
+|---------|-------------------------------|-----------|
+| RRC setup | `srb-ToAddModList` → `srb-Identity 1` | SRB1, no DRB |
+| RRC reconfiguration | `srb-ToAddModList` → `srb-Identity 2` | SRB2 |
+| RRC reconfiguration | `drb-ToAddModList` → `drb-Identity 1` | DRB1 |
+| RRC release | — | no SRB, no DRB |
+
+SRB3, DRB2 and DRB3 are displayed but not triggered yet.
+
+**Behavior:**
+- The state does not change until a message updating the SRB or DRB is passed
+- The arrows between **BASE STATION** and **USER EQUIPMENT** light up when the focused message changes the bearers
 - Maintains state history for accurate state reconstruction when navigating backward through events
 
 ---
@@ -305,6 +331,31 @@ The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, su
 
 ---
 
+### GTPU Tunnel Panel
+
+The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, such as:
+
+```
+13:20:45.574 [GTPU] TO 127.0.1.100:2152 G-PDU TEID=0x5315caa3 QFI=1 SDU_len=1452: IP/TCP 192.168.3.2:51158 > 172.217.18.202:443
+```
+
+**Layout:**
+- Two lifelines: **BST** (Base Station) on the left and **UPF** on the right, with the GTP-U peer IP and port under the UPF label (e.g. `127.0.1.100:2152`)
+- One arrow per tunnel and direction, labeled with its **TEID** (Tunnel Endpoint Identifier) and **QFI** (QoS Flow Identifier):
+
+| Direction | Arrow |
+|-----------|-------|
+| UL (`TO`) | BST → UPF |
+| DL (`FROM`) | UPF → BST |
+
+**Behavior:**
+- Each new TEID adds a new arrow; previous tunnels are kept, ordered by first appearance
+- An existing arrow shows the QFI of the latest GTPU message on its TEID
+- Focusing a GTPU trace highlights the arrow of its tunnel in blue
+- Click an arrow to navigate to the latest trace of that tunnel
+
+---
+
 ### Chronograph MAC-RLC-PDCP Panel
 
 This panel follows the same timeline, highlighting, auto-scroll, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
@@ -422,7 +473,7 @@ The Power panel displays three point graphs sharing a common SFN (System Frame N
 
 ## Options and Settings
 
-All options are grouped in the **Settings** window, opened from the **Settings** menu in the top bar. The window has three tabs: **AI**, **Layers** and **File options**.
+All options are grouped in the **Settings** window, opened from the **Settings** menu in the top bar. The window has four tabs: **AI**, **Layers**, **File options** and **Parameters**.
 
 ### Layer Filtering
 
@@ -452,6 +503,21 @@ Toggle checkboxes to enable/disable display of specific layers. In file mode, di
 ### File options
 
 The **File options** tab (file mode only) sets the URL of the index of files used to populate the files list in the left panel, with a `Reload list` button.
+
+---
+
+### Parameters
+
+The **Parameters** tab exposes runtime values that used to be hard-coded constants. All values are saved between sessions, and `Reset to defaults` restores them.
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| HARQ max arrows | 100 | Arrows kept in the HARQ panel buffer |
+| Chronograph RAN max arrows | 100 | Arrows kept in the Chronograph RAN panel; the oldest are dropped beyond it |
+| Chronograph MAC max arrows | 100 | Arrows kept in the Chronograph MAC-RLC-PDCP panel; the oldest are dropped beyond it |
+| File batch size | 100 | Events parsed per batch when loading a file |
+| WebSocket max request size | 1024 | Max events per `log_get` request (64–4096) |
+| WebSocket history | 12 h | How far back the server is asked for logs — applies to the next request |
 
 ---
 

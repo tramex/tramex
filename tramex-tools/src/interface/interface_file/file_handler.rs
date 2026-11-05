@@ -14,7 +14,8 @@ use super::file_index::FileIndex;
 use super::utils_file::parse_one_block;
 
 /// The default number of log processed by batch
-const BATCH_SIZE: usize = 100;
+/// Number of events parsed per batch
+pub const BATCH_SIZE: usize = 100;
 
 #[derive(Debug, Clone)]
 /// Data structure to store the file.
@@ -197,7 +198,7 @@ impl File {
                     traces.push(trace);
                 }
                 Err(err) => {
-                    log::error!("{}", err.message);
+                    log::error!("{}, some events may be missing", err.message);
                     errors.push(err);
                 }
             };

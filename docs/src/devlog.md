@@ -146,6 +146,7 @@ while self.trame_manager.should_get_more_log {
 #### Implementation Date
 2025-10-10 : Dedicated Navigation Panel window (Previous/Next, event counter, jump to event)
 2026-10-13 : Fixed layout (navigation toolbar, inline Messages, status bar), panel groups with layer presets, Settings window, unified theme
+2026-11-05 : Settings → Parameters tab (HARQ max arrows, Chronograph RAN/MAC max arrows, file batch size, WebSocket request size and history window)
 
 ### 3.0. Overview
 #### 3.0.1. Problem Solved
@@ -211,10 +212,11 @@ pub trait EventSubscriber: Send {
 | Group | Panels | Layer preset |
 |-------|--------|--------------|
 | Main | Messages (rendered inline in the central panel via `show_inline`) | — |
-| RRC | RAN Config, RRC Status, Logical Channels | RRC |
-| NAS | Chronograph RAN, Identity | RRC, NAS, NGAP, GTPU |
+| RRC | RAN Config, RRC Status, Bearer Status, Logical Channels (+ Chronograph RAN) | RRC |
+| NAS | Chronograph RAN, Identity, GTPU Tunnel | RRC, NAS, NGAP, GTPU |
 | Radio | Resource Blocks, HARQ, Chronograph MAC-RLC-PDCP, Power | PHY |
 
+- A panel declares a single `group()`, used for the Windows menu listing. The set of windows actually toggled by a group button is computed by `FrontEnd::windows_for_group`, which adds a few cross-group panels: the RRC shortcut also opens Chronograph RAN, which stays declared as a NAS panel.
 - `EventBus::show_windows` skips `Main` panels; `EventBus::show_main` renders them inline. The event notifications are unchanged: every panel keeps receiving events whether or not its window is open.
 - The group buttons on the right of the toolbar are **exclusive**: selecting a group opens its windows, closes the other groups' windows and applies its layer preset (`FrontEnd::select_group` / `layers_for_group`). Clicking the active group closes its windows.
 - **RRC is the default group**: it is selected as soon as a file is loaded or a WebSocket connects, before the first data request so the server receives the RRC-only filter.
@@ -250,6 +252,7 @@ pub trait EventSubscriber: Send {
 - `tramex/src/panels/panel_message.rs` - Inline rendering, layer badge
 - `tramex/src/panels/*.rs` - `group()` implementations
 - `tramex/src/handlers/handler_file.rs` - `ui_options` without collapsing header
+- `tramex/src/parameters.rs` - runtime `Parameters` struct, Settings tab UI
 ---
 
 ## 4. RRC Field Viewer & Message Panel Improvements
@@ -1987,3 +1990,43 @@ The GTPU parser (`tramex-tools/src/interface/parser/parser_gtpu.rs`) was extende
 - `tramex-tools/src/interface/parser/parser_gtpu.rs` — New `GTPUInfos` fields, `parse_payload()`, `remote_addr()` / `ue_addr()`, tests
 - `tramex/src/panels/mod.rs` — Registered `gtpu_tunnel` module
 - `tramex/src/event_system/integration.rs` — Subscribed `GtpuTunnel`
+
+---
+
+## 14. Bearer Status Panel
+
+### Implementation
+
+Implementation : 23/10/2026
+
+### 14.1. Overview
+
+The Bearer Status panel (`tramex/src/panels/bearer_status.rs`, **RRC** group) shows the signaling (SRB) and traffic (DRB) radio bearers of the BST as two state machines. It follows the design of the RRC Status panel:
+
+- `process_event` advances a *build* state (`build_srb`, `build_drb`) on each added event and appends a `StateChange { index, srb, drb }` to `state_history` when a message affects the bearers.
+- `refresh_display` is the single writer of the displayed state: it binary-searches `state_history` for the last change at or before the focused index, so navigating backward restores the right state.
+- The BASE STATION / USER EQUIPMENT arrows light up only when the focused message is itself a state change.
+
+### 14.2. Transitions
+
+Transitions are declared in the `TRANSITIONS` table (`BearerTransition { messages, list, identity_field, identity, target }`). A transition applies when the RRC message matches and the ASN.1 block `list { ... }` of the trace text contains `identity_field N`:
+
+| Message | Path | Target |
+|---------|------|--------|
+| RRC setup | `radioBearerConfig > srb-ToAddModList > srb-Identity 1` | SRB1 |
+| RRC reconfiguration | `radioBearerConfig > srb-ToAddModList > srb-Identity 2` | SRB2 |
+| RRC reconfiguration | `radioBearerConfig > drb-ToAddModList > drb-Identity 1` | DRB1 |
+
+- `RRC setup` / `RRC connection setup` reset both bearers before applying the table (a new connection only has SRB1).
+- `RRC release` / `RRC connection release` reset both bearers.
+- `identities_in_list` tracks the brace depth of the list block and only accepts `field N` (not `field: N`), so `servedRadioBearer srb-Identity: 1` in the cell group config is ignored.
+- **SRB3, DRB2 and DRB3** have no transition yet (no sample message): placeholders with the expected format are left as `TODO` comments in `TRANSITIONS`.
+
+### 14.3. Files Changed
+
+**New Files:**
+- `tramex/src/panels/bearer_status.rs` — Panel implementation and tests
+
+**Modified Files:**
+- `tramex/src/panels/mod.rs` — Registered `bearer_status` module
+- `tramex/src/event_system/integration.rs` — Subscribed `BearerStatusPanel`

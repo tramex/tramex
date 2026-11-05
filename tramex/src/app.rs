@@ -32,6 +32,9 @@ pub struct TramexApp {
     /// Active tab in the settings window
     settings_tab: SettingsTab,
 
+    /// Runtime parameters (persisted between sessions)
+    pub parameters: crate::parameters::Parameters,
+
     #[cfg(feature = "ai")]
     /// AI settings (provider, API key)
     pub ai_settings: AISettings,
@@ -45,6 +48,8 @@ enum SettingsTab {
     Layers,
     /// File loading options
     File,
+    /// Runtime parameters
+    Parameters,
     /// AI configuration
     #[cfg(feature = "ai")]
     Ai,
@@ -100,6 +105,11 @@ impl TramexApp {
             }
             if ui.button("File options").clicked() {
                 self.settings_tab = SettingsTab::File;
+                self.show_settings_window = true;
+                ui.close_kind(egui::UiKind::Menu);
+            }
+            if ui.button("Parameters").clicked() {
+                self.settings_tab = SettingsTab::Parameters;
                 self.show_settings_window = true;
                 ui.close_kind(egui::UiKind::Menu);
             }
@@ -171,6 +181,7 @@ impl TramexApp {
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::Ai, "AI");
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::Layers, "Layers");
                     ui.selectable_value(&mut self.settings_tab, SettingsTab::File, "File options");
+                    ui.selectable_value(&mut self.settings_tab, SettingsTab::Parameters, "Parameters");
                 });
                 ui.separator();
                 match self.settings_tab {
@@ -178,6 +189,7 @@ impl TramexApp {
                     SettingsTab::Ai => self.ai_settings.ui(ui),
                     SettingsTab::Layers => self.frontend.show_layer_options(ui),
                     SettingsTab::File => self.frontend.show_file_options(ui),
+                    SettingsTab::Parameters => self.parameters.ui(ui),
                 }
             });
         self.show_settings_window = open;
@@ -232,6 +244,7 @@ impl Default for TramexApp {
             show_about_windows: false,
             show_settings_window: false,
             settings_tab: SettingsTab::default(),
+            parameters: crate::parameters::Parameters::default(),
             #[cfg(feature = "ai")]
             ai_settings: AISettings::default(),
         }
@@ -262,6 +275,8 @@ impl eframe::App for TramexApp {
         if self.show_settings_window {
             self.ui_settings_window(ui.ctx());
         }
+
+        self.frontend.set_parameters(&self.parameters);
 
         #[cfg(feature = "ai")]
         {
