@@ -333,6 +333,31 @@ The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, su
 
 ---
 
+### GTPU Tunnel Panel
+
+The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, such as:
+
+```
+13:20:45.574 [GTPU] TO 127.0.1.100:2152 G-PDU TEID=0x5315caa3 QFI=1 SDU_len=1452: IP/TCP 192.168.3.2:51158 > 172.217.18.202:443
+```
+
+**Layout:**
+- Two lifelines: **BST** (Base Station) on the left and **UPF** on the right, with the GTP-U peer IP and port under the UPF label (e.g. `127.0.1.100:2152`)
+- One arrow per tunnel and direction, labeled with its **TEID** (Tunnel Endpoint Identifier) and **QFI** (QoS Flow Identifier):
+
+| Direction | Arrow |
+|-----------|-------|
+| UL (`TO`) | BST → UPF |
+| DL (`FROM`) | UPF → BST |
+
+**Behavior:**
+- Each new TEID adds a new arrow; previous tunnels are kept, ordered by first appearance
+- An existing arrow shows the QFI of the latest GTPU message on its TEID
+- Focusing a GTPU trace highlights the arrow of its tunnel in blue
+- Click an arrow to navigate to the latest trace of that tunnel
+
+---
+
 ### Chronograph MAC-RLC-PDCP Panel
 
 This panel follows the same timeline, highlighting, auto-scroll, buffer rebuild, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
