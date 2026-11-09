@@ -82,7 +82,7 @@ This section will define the layout and the various panels available.
 The navigation toolbar is fixed at the top of the main area and is always visible once a source is active.
 
 **Navigation controls:**
-- **◀ Previous / ▶ Next buttons**: Navigate sequentially through events. `Next` is shown as `Start` before the first event is selected.
+- **◀ Previous / ▶ Next buttons**: Navigate sequentially through events. `Next` is shown as `Start` before the first event is selected. While searching for the next event with an enabled layer, the button shows a spinner and `Searching…`; click it again to stop the search (events already loaded stay loaded).
 - **Clickable index**: Click on the event index (`Event 12 / 4567`) to type an event number and jump directly to it
 - **Time**: The timestamp of the current event
 
@@ -302,7 +302,9 @@ The Chronograph RAN panel displays a visual timeline of message exchanges betwee
 **Features:**
 - Auto-scrolls to center on the focused event
 - Displays layer type and message name on each arrow
+- Layer checkboxes (RRC, NAS, NGAP, GTPU) filter the displayed arrows
 - Click an arrow to navigate to the corresponding trace
+- Navigating back to an event older than the kept buffer rebuilds the arrows around it
 
 ---
 
@@ -358,12 +360,32 @@ The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, su
 
 ### Chronograph MAC-RLC-PDCP Panel
 
-This panel follows the same timeline, highlighting, auto-scroll, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
+This panel follows the same timeline, highlighting, auto-scroll, buffer rebuild, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
 
 - Two lifelines only: **UE** and **BST**
 - Displays **MAC**, **RLC**, and **PDCP** traces
 - **UL** arrows flow from UE to BST; **DL** arrows flow from BST to UE
 - Arrow labels contain the layer and full log message; hover an arrow to read the full message in a tooltip
+- Layer checkboxes (MAC, RLC, PDCP) filter the displayed arrows
+
+**Layout:**
+
+The window is split horizontally:
+- **Left**: the message timeline (scrollable, resizable)
+- **Right**: a bearer status column showing which SRB/DRB channels are used by the focused trace, styled like the [Bearer Status panel](#bearer-status-panel)
+
+**Bearer detection:**
+
+- **RLC / PDCP**: the bearer name is read directly from the log line (e.g. `[RLC] DL 0001 DRB1 ...` → DRB1)
+- **MAC**: every `LCID:N` in the line is mapped to a channel (a MAC trace can activate several at once):
+
+| LCID | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Channel | NA | SRB0 | SRB1 | SRB2 | SRB3 | DRB1 | DRB2 | DRB3 |
+
+**Highlighting:**
+- Channels carried by the focused trace light up in orange (SRB) or green (DRB)
+- Several channels can be highlighted simultaneously for multi-LCID MAC traces
 
 Refer to the [Chronograph RAN Panel](#chronograph-ran-panel) for the common chronograph behavior.
 
@@ -513,8 +535,8 @@ The **Parameters** tab exposes runtime values that used to be hard-coded constan
 | Parameter | Default | Effect |
 |-----------|---------|--------|
 | HARQ max arrows | 100 | Arrows kept in the HARQ panel buffer |
-| Chronograph RAN max arrows | 100 | Arrows kept in the Chronograph RAN panel; the oldest are dropped beyond it |
-| Chronograph MAC max arrows | 100 | Arrows kept in the Chronograph MAC-RLC-PDCP panel; the oldest are dropped beyond it |
+| Chronograph RAN max arrows | 100 | Arrows kept in the Chronograph RAN panel buffer; dropped arrows are rebuilt around the focused event when navigating back |
+| Chronograph MAC max arrows | 100 | Arrows kept in the Chronograph MAC-RLC-PDCP panel buffer; dropped arrows are rebuilt around the focused event when navigating back |
 | File batch size | 100 | Events parsed per batch when loading a file |
 | WebSocket max request size | 1024 | Max events per `log_get` request (64–4096) |
 | WebSocket history | 12 h | How far back the server is asked for logs — applies to the next request |
