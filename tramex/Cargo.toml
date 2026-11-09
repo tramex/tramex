@@ -53,6 +53,7 @@ ehttp = { version = "0.7.1" }
 egui_commonmark = { version = "0.23", optional = true }
 types_lte_3gpp = { version = "1.0.9", features = ["rrc"], optional = true }
 chrono = "0.4"
+web-time = "1.1"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

@@ -147,6 +147,7 @@ while self.trame_manager.should_get_more_log {
 2025-10-10 : Dedicated Navigation Panel window (Previous/Next, event counter, jump to event)
 2026-10-13 : Fixed layout (navigation toolbar, inline Messages, status bar), panel groups with layer presets, Settings window, unified theme
 2026-11-05 : Settings → Parameters tab (HARQ max arrows, Chronograph RAN/MAC max arrows, file batch size, WebSocket request size and history window)
+2026-11-09 : Incremental next-event search with loading indicator on the Next button
 
 ### 3.0. Overview
 #### 3.0.1. Problem Solved
@@ -1932,6 +1933,28 @@ The panel specializes that model for the radio protocol stack:
 ### 12.2. Shared Click-to-Navigate Contract
 
 Interactive event visualizations do not navigate the event store directly. Chronograph RAN, Chronograph MAC-RLC-PDCP, HARQ, and Power publish a trace index into temporary egui memory using `NAVIGATE_REQUEST_ID`. After drawing panel windows, `FrontEnd` consumes that request and calls `Application::navigate_to`, ensuring every subscriber receives the normal focused-event notification.
+
+### 12.3. Buffer Management (HARQ-style)
+
+Both chronographs reuse the HARQ buffer model so that navigating backwards still works:
+
+- `buffered_range()` returns the trace-index span of the kept arrows.
+- On `on_event_added`, when the buffer reaches `max_arrows` the oldest half is drained instead of a single arrow.
+- On `on_event_focused`, a rebuild is triggered when the focused index is below the buffer (dropped arrows), above it with missing arrows in between, or when the buffer is empty. `rebuild_window` walks backwards from the focused event until half the buffer is filled, then forwards until it is full — recentered on the focus.
+- `set_parameters` applies the configurable limit (`chronograph_max_arrows` / `chronograph_mac_max_arrows`, Settings → Panels).
+
+### 12.4. Layer Filters
+
+Each chronograph keeps a `layer_filter: Option<BTreeSet<String>>` (`None` = all supported layers, persisted). A checkbox row above the timeline toggles each layer (RRC/NAS/NGAP/GTPU for RAN, MAC/RLC/PDCP for MAC). The filter applies to rendering, hover/click and auto-scroll positioning, but not to the underlying buffer — unchecking then rechecking a layer restores its arrows instantly.
+
+### 12.5. Bearer Column (MAC-RLC-PDCP only)
+
+The window is split with `egui::Panel::right(...).show_inside` (bearer column, resizable) + `CentralPanel::default().show_inside` (timeline) so the timeline keeps the full height. The right column reuses the `make_label` style of the Bearer Status panel and lists the channels used by the focused arrow:
+
+- **RLC / PDCP**: the `SRBx`/`DRBx` token is read directly from the first text line.
+- **MAC**: each `LCID:N` token is mapped — `1→SRB0, 2→SRB1, 3→SRB2, 4→SRB3, 5→DRB1, 6→DRB2, 7→DRB3` (`0` ignored) — and deduplicated, so a multi-SDU MAC trace lights several channels at once.
+
+Hover/click detection uses `response.hover_pos()` (layer-aware) so tooltips and clicks never trigger while the pointer is outside the panel or above a covering window.
 
 ---
 

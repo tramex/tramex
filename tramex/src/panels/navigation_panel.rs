@@ -17,6 +17,8 @@ pub struct NavState<'a> {
     pub is_fully_loaded: bool,
     /// WebSocket info: (is_ws_available, is_auto_loading)
     pub ws_info: Option<(bool, bool)>,
+    /// Whether an incremental next-event search is in progress
+    pub is_searching: bool,
 }
 
 /// Navigation Panel for event navigation
@@ -29,6 +31,8 @@ pub struct NavigationPanel {
     pub should_toggle_auto_loading: bool,
     /// Flag to trigger goto navigation (0-based index)
     pub should_goto_event: Option<usize>,
+    /// Flag to cancel an in-progress next-event search
+    pub should_cancel_search: bool,
     /// Whether the index label is in edit mode
     editing_index: bool,
     /// Whether we just entered edit mode (for auto-focus)
@@ -45,6 +49,7 @@ impl NavigationPanel {
             should_go_previous: false,
             should_toggle_auto_loading: false,
             should_goto_event: None,
+            should_cancel_search: false,
             editing_index: false,
             just_entered_edit: false,
             index_edit_buf: String::new(),
@@ -57,7 +62,7 @@ impl NavigationPanel {
 
         ui.horizontal(|ui| {
             // Previous button
-            ui.add_enabled_ui(state.current_index > 0, |ui| {
+            ui.add_enabled_ui(state.current_index > 0 && !state.is_searching, |ui| {
                 let button = egui::Button::new(egui::RichText::new("◀ Previous").strong()).min_size(egui::vec2(90.0, 24.0));
 
                 if ui.add(button).clicked() {
@@ -66,21 +71,47 @@ impl NavigationPanel {
             });
 
             // Next/Start button
-            let button_text = if state.event_count == 0 { "▶ Start" } else { "▶ Next" };
-
-            // Only disable Next button if at end AND fully loaded
-            let is_at_end = state.event_count > 0 && state.current_index >= state.event_count - 1 && state.is_fully_loaded;
-
-            ui.add_enabled_ui(!is_at_end, |ui| {
-                let button = egui::Button::new(egui::RichText::new(button_text).color(colors.on_accent).strong())
+            if state.is_searching {
+                // Searching: show a spinner and let the click cancel the search
+                let button = egui::Button::new(egui::RichText::new("   Searching…").color(colors.on_accent).strong())
                     .fill(colors.accent_fill)
                     .corner_radius(6.0)
                     .min_size(egui::vec2(90.0, 24.0));
 
-                if ui.add(button).clicked() {
-                    self.should_go_next = true;
+                let response = ui
+                    .add(button)
+                    .on_hover_text("Searching for the next event with an enabled layer — click to stop");
+                let spinner_rect = egui::Rect::from_center_size(
+                    egui::pos2(response.rect.left() + 14.0, response.rect.center().y),
+                    egui::vec2(14.0, 14.0),
+                );
+                // Paint only: `ui.put` would move the layout cursor back inside the button
+                egui::Spinner::new()
+                    .size(14.0)
+                    .color(colors.on_accent)
+                    .paint_at(ui, spinner_rect);
+
+                if response.clicked() {
+                    self.should_cancel_search = true;
                 }
-            });
+            } else {
+                let button_text = if state.event_count == 0 { "▶ Start" } else { "▶ Next" };
+
+                // Only disable Next button if at end AND fully loaded
+                let is_at_end =
+                    state.event_count > 0 && state.current_index >= state.event_count - 1 && state.is_fully_loaded;
+
+                ui.add_enabled_ui(!is_at_end, |ui| {
+                    let button = egui::Button::new(egui::RichText::new(button_text).color(colors.on_accent).strong())
+                        .fill(colors.accent_fill)
+                        .corner_radius(6.0)
+                        .min_size(egui::vec2(90.0, 24.0));
+
+                    if ui.add(button).clicked() {
+                        self.should_go_next = true;
+                    }
+                });
+            }
 
             // WebSocket Resume/Pause button
             if let Some((is_ws_available, is_auto_loading)) = state.ws_info
@@ -139,7 +170,7 @@ impl NavigationPanel {
                     .color(colors.accent)
                     .strong()
                     .underline();
-                let response = ui.add(egui::Label::new(label).sense(egui::Sense::click()));
+                let response = ui.add_enabled(!state.is_searching, egui::Label::new(label).sense(egui::Sense::click()));
                 if response.on_hover_text("Click to jump to event").clicked() {
                     self.editing_index = true;
                     self.just_entered_edit = true;

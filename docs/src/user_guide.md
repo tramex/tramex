@@ -82,7 +82,7 @@ This section will define the layout and the various panels available.
 The navigation toolbar is fixed at the top of the main area and is always visible once a source is active.
 
 **Navigation controls:**
-- **◀ Previous / ▶ Next buttons**: Navigate sequentially through events. `Next` is shown as `Start` before the first event is selected.
+- **◀ Previous / ▶ Next buttons**: Navigate sequentially through events. `Next` is shown as `Start` before the first event is selected. While searching for the next event with an enabled layer, the button shows a spinner and `Searching…`; click it again to stop the search (events already loaded stay loaded).
 - **Clickable index**: Click on the event index (`Event 12 / 4567`) to type an event number and jump directly to it
 - **Time**: The timestamp of the current event
 
@@ -302,32 +302,9 @@ The Chronograph RAN panel displays a visual timeline of message exchanges betwee
 **Features:**
 - Auto-scrolls to center on the focused event
 - Displays layer type and message name on each arrow
+- Layer checkboxes (RRC, NAS, NGAP, GTPU) filter the displayed arrows
 - Click an arrow to navigate to the corresponding trace
-
----
-
-### GTPU Tunnel Panel
-
-The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, such as:
-
-```
-13:20:45.574 [GTPU] TO 127.0.1.100:2152 G-PDU TEID=0x5315caa3 QFI=1 SDU_len=1452: IP/TCP 192.168.3.2:51158 > 172.217.18.202:443
-```
-
-**Layout:**
-- Two lifelines: **BST** (Base Station) on the left and **UPF** on the right, with the GTP-U peer IP and port under the UPF label (e.g. `127.0.1.100:2152`)
-- One arrow per tunnel and direction, labeled with its **TEID** (Tunnel Endpoint Identifier) and **QFI** (QoS Flow Identifier):
-
-| Direction | Arrow |
-|-----------|-------|
-| UL (`TO`) | BST → UPF |
-| DL (`FROM`) | UPF → BST |
-
-**Behavior:**
-- Each new TEID adds a new arrow; previous tunnels are kept, ordered by first appearance
-- An existing arrow shows the QFI of the latest GTPU message on its TEID
-- Focusing a GTPU trace highlights the arrow of its tunnel in blue
-- Click an arrow to navigate to the latest trace of that tunnel
+- Navigating back to an event older than the kept buffer rebuilds the arrows around it
 
 ---
 
@@ -358,12 +335,32 @@ The GTPU Tunnel panel displays the user-plane tunnel parsed from GTPU traces, su
 
 ### Chronograph MAC-RLC-PDCP Panel
 
-This panel follows the same timeline, highlighting, auto-scroll, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
+This panel follows the same timeline, highlighting, auto-scroll, buffer rebuild, and click-to-navigate principles as the [Chronograph RAN Panel](#chronograph-ran-panel). Its key differences are:
 
 - Two lifelines only: **UE** and **BST**
 - Displays **MAC**, **RLC**, and **PDCP** traces
 - **UL** arrows flow from UE to BST; **DL** arrows flow from BST to UE
 - Arrow labels contain the layer and full log message; hover an arrow to read the full message in a tooltip
+- Layer checkboxes (MAC, RLC, PDCP) filter the displayed arrows
+
+**Layout:**
+
+The window is split horizontally:
+- **Left**: the message timeline (scrollable, resizable)
+- **Right**: a bearer status column showing which SRB/DRB channels are used by the focused trace, styled like the [Bearer Status panel](#bearer-status-panel)
+
+**Bearer detection:**
+
+- **RLC / PDCP**: the bearer name is read directly from the log line (e.g. `[RLC] DL 0001 DRB1 ...` → DRB1)
+- **MAC**: every `LCID:N` in the line is mapped to a channel (a MAC trace can activate several at once):
+
+| LCID | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Channel | NA | SRB0 | SRB1 | SRB2 | SRB3 | DRB1 | DRB2 | DRB3 |
+
+**Highlighting:**
+- Channels carried by the focused trace light up in orange (SRB) or green (DRB)
+- Several channels can be highlighted simultaneously for multi-LCID MAC traces
 
 Refer to the [Chronograph RAN Panel](#chronograph-ran-panel) for the common chronograph behavior.
 
@@ -513,8 +510,8 @@ The **Parameters** tab exposes runtime values that used to be hard-coded constan
 | Parameter | Default | Effect |
 |-----------|---------|--------|
 | HARQ max arrows | 100 | Arrows kept in the HARQ panel buffer |
-| Chronograph RAN max arrows | 100 | Arrows kept in the Chronograph RAN panel; the oldest are dropped beyond it |
-| Chronograph MAC max arrows | 100 | Arrows kept in the Chronograph MAC-RLC-PDCP panel; the oldest are dropped beyond it |
+| Chronograph RAN max arrows | 100 | Arrows kept in the Chronograph RAN panel buffer; dropped arrows are rebuilt around the focused event when navigating back |
+| Chronograph MAC max arrows | 100 | Arrows kept in the Chronograph MAC-RLC-PDCP panel buffer; dropped arrows are rebuilt around the focused event when navigating back |
 | File batch size | 100 | Events parsed per batch when loading a file |
 | WebSocket max request size | 1024 | Max events per `log_get` request (64–4096) |
 | WebSocket history | 12 h | How far back the server is asked for logs — applies to the next request |

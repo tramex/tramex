@@ -103,10 +103,14 @@ const TRANSITIONS: &[BearerTransition] = &[
         identity: 1,
         target: BearerTarget::Drb(DrbState::Drb1),
     },
-    // TODO: DRB2 - add the message type and path, e.g.
-    // BearerTransition { messages: &[...], list: "drb-ToAddModList", identity_field: "drb-Identity", identity: 2,
-    //                    target: BearerTarget::Drb(DrbState::Drb2) },
-    //
+    // RRC reconfiguration > radioBearerConfig > drb-ToAddModList > drb-Identity 2
+    BearerTransition {
+        messages: RECONFIGURATION_MSGS,
+        list: "drb-ToAddModList",
+        identity_field: "drb-Identity",
+        identity: 2,
+        target: BearerTarget::Drb(DrbState::Drb2),
+    },
     // TODO: DRB3 - add the message type and path, e.g.
     // BearerTransition { messages: &[...], list: "drb-ToAddModList", identity_field: "drb-Identity", identity: 3,
     //                    target: BearerTarget::Drb(DrbState::Drb3) },

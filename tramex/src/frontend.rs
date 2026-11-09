@@ -61,6 +61,10 @@ pub struct FrontEnd {
     #[serde(skip)]
     /// Whether a data source has been set on Application for the current connector
     source_set: bool,
+
+    #[serde(skip)]
+    /// Whether an incremental next-event search is in progress
+    searching_next: bool,
 }
 
 impl Default for FrontEnd {
@@ -73,6 +77,7 @@ impl Default for FrontEnd {
             nav_panel: NavigationPanel::new(),
             application: Application::new(),
             source_set: false,
+            searching_next: false,
         }
     }
 }
@@ -214,6 +219,7 @@ impl FrontEnd {
                                             self.connector = Some(Connector::File(FileHandler::new()));
                                             self.application.clear_all();
                                             self.source_set = false;
+                                            self.searching_next = false;
                                             self.open_menu_connector = true;
                                         }
                                         Ok(false) => {
@@ -224,6 +230,7 @@ impl FrontEnd {
                                             {
                                                 log::info!("File loaded — creating FileSource");
                                                 let source = FileSource::from_file(file);
+                                                self.searching_next = false;
                                                 self.application.set_data_source(Box::new(source));
                                                 self.source_set = true;
                                                 self.open_menu_connector = false;
@@ -253,6 +260,7 @@ impl FrontEnd {
                                             self.connector = Some(Connector::WebSocket(WsHandler::new()));
                                             self.application.clear_data_source();
                                             self.source_set = false;
+                                            self.searching_next = false;
                                             self.open_menu_connector = true;
                                         }
                                         Ok(false) => {
@@ -264,6 +272,7 @@ impl FrontEnd {
                                                 log::info!("WebSocket connected — creating WebSocketSource");
                                                 let url = ws_handler.url.clone();
                                                 let source = WebSocketSource::new(url, connection);
+                                                self.searching_next = false;
                                                 self.application.set_data_source(Box::new(source));
                                                 self.source_set = true;
                                                 self.open_menu_connector = false;
@@ -310,6 +319,12 @@ impl FrontEnd {
         }
 
         if self.source_set {
+            // Advance any in-progress next-event search within its time
+            // budget so the toolbar below reflects this frame's result
+            if self.searching_next {
+                self.step_search_next(&mut error_to_return, ui.ctx());
+            }
+
             // Windows toggled by each group button (computed before borrowing self in the closures)
             let group_windows: Vec<(PanelGroup, Vec<&'static str>)> = PanelGroup::WINDOWED
                 .iter()
@@ -325,6 +340,7 @@ impl FrontEnd {
                 total_count: self.application.total_event_count(),
                 is_fully_loaded: self.application.is_fully_loaded(),
                 ws_info: self.get_ws_info(),
+                is_searching: self.searching_next,
             };
 
             let colors = crate::theme::ThemeColors::get(ui);
@@ -413,7 +429,11 @@ impl FrontEnd {
                     // Handle navigation
                     if self.nav_panel.should_go_next {
                         self.nav_panel.should_go_next = false;
-                        self.handle_navigate_next(&mut error_to_return);
+                        self.handle_navigate_next();
+                    }
+                    if self.nav_panel.should_cancel_search {
+                        self.nav_panel.should_cancel_search = false;
+                        self.searching_next = false;
                     }
                     if self.nav_panel.should_go_previous {
                         self.nav_panel.should_go_previous = false;
@@ -473,13 +493,12 @@ impl FrontEnd {
         Ok(())
     }
 
-    /// Handle navigate-next with on-demand loading
-    ///
-    /// Keeps requesting more data and retrying navigation until either a matching
-    /// (enabled-layer) event is found, or the data source is exhausted / stops
-    /// producing new events (e.g., WebSocket waiting for more data).
-    fn handle_navigate_next(&mut self, errors: &mut Vec<TramexError>) {
-        let mut navigated = self.application.navigate_next();
+    /// Handle navigate-next: try to move to the next event with an enabled
+    /// layer. If none is loaded yet, start an incremental search that
+    /// continues in `step_search_next` over the following frames instead of
+    /// blocking this frame in a synchronous loop.
+    fn handle_navigate_next(&mut self) {
+        let navigated = self.application.navigate_next();
         log::debug!(
             "Navigation result: {}, current: {}, total: {}",
             navigated,
@@ -487,29 +506,65 @@ impl FrontEnd {
             self.application.event_count()
         );
 
-        // If at end, keep loading more data until we find a matching event or run out of data
-        while !navigated && self.application.has_more_data() {
+        if !navigated && self.application.has_more_data() {
+            log::info!(
+                "Reached end of loaded events ({}), starting incremental search...",
+                self.application.event_count()
+            );
+            self.searching_next = true;
+        }
+    }
+
+    /// Advance the incremental next-event search by a bounded number of steps.
+    ///
+    /// Each step loads a batch (`request_more_data` + `update`) and retries
+    /// `navigate_next`. The search stops when a matching event is found, the
+    /// source is exhausted, a step loads no new events (e.g., WebSocket
+    /// waiting for data), or an error occurs. If the ~30 ms budget is
+    /// exceeded while still searching, a repaint is requested so the search
+    /// continues on the next frame.
+    fn step_search_next(&mut self, errors: &mut Vec<TramexError>, ctx: &egui::Context) {
+        const BUDGET: web_time::Duration = web_time::Duration::from_millis(30);
+        let start = web_time::Instant::now();
+
+        while self.searching_next {
+            if !self.application.has_more_data() {
+                self.searching_next = false;
+                break;
+            }
             let count_before = self.application.event_count();
-            log::info!("Reached end of loaded events ({}), loading more...", count_before);
             if let Err(err) = self.application.request_more_data() {
                 Self::collect_errors(errors, err);
-                return;
+                self.searching_next = false;
+                break;
             }
             // Process newly loaded events
             if let Err(err) = self.application.update() {
                 Self::collect_errors(errors, err);
-                return;
+                self.searching_next = false;
+                break;
             }
-            // Check if new events were actually loaded
             let count_after = self.application.event_count();
             if count_after > count_before {
                 // New events loaded, try navigating again
-                navigated = self.application.navigate_next();
+                if self.application.navigate_next() {
+                    self.searching_next = false;
+                    break;
+                }
             } else {
-                // No new events were loaded (e.g., WebSocket waiting for data), stop here
+                // No new events were loaded, stop here
                 // The user can click Next again when more data arrives
+                self.searching_next = false;
                 break;
             }
+            if start.elapsed() >= BUDGET {
+                // Keep searching next frame
+                break;
+            }
+        }
+
+        if self.searching_next {
+            ctx.request_repaint();
         }
     }
 
@@ -662,5 +717,44 @@ fn layer_checkbox(ui: &mut egui::Ui, layer: &mut tramex_tools::interface::layer:
 
     if ui.checkbox(&mut checked, text).changed() {
         *layer = if checked { LayerLogLevel::Debug } else { LayerLogLevel::Warn };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::missing_panics_doc)]
+    use super::*;
+    use std::path::PathBuf;
+    use tramex_tools::interface::interface_file::file_handler::File;
+
+    #[test]
+    fn incremental_search_navigates_to_next_enabled_event() {
+        // 50 NAS events followed by a single RRC event; only RRC is enabled.
+        let mut content = String::new();
+        for i in 0..50 {
+            content.push_str(&format!("10:32:{:02}.000 [NAS] UL 0048 5GMM: Service request\n", i));
+        }
+        content.push_str("10:33:00.000 [RRC] DL 0001 01 CCCH-NR: RRC setup\n");
+
+        let file = File::new(PathBuf::from("test.log"), content);
+        let mut frontend = FrontEnd::new();
+        frontend.application.set_data_source(Box::new(FileSource::from_file(file)));
+        frontend.source_set = true;
+        frontend.application.set_layers(layers_for_group(PanelGroup::Rrc));
+
+        frontend.handle_navigate_next();
+        assert!(frontend.searching_next);
+
+        let ctx = egui::Context::default();
+        let mut errors = vec![];
+        for _ in 0..100 {
+            frontend.step_search_next(&mut errors, &ctx);
+            if !frontend.searching_next {
+                break;
+            }
+        }
+        assert!(!frontend.searching_next);
+        assert!(errors.is_empty());
+        assert_eq!(frontend.application.current_index(), 50);
     }
 }

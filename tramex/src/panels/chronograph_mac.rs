@@ -4,7 +4,7 @@
 
 use crate::event_system::{EventContext, EventSubscriber, PanelGroup};
 use crate::panels::NAVIGATE_REQUEST_ID;
-use crate::theme::{ArrowColors, ThemeColors};
+use crate::theme::{ArrowColors, ChannelColors, ThemeColors};
 use egui::{self, CursorIcon, PopupAnchor, Pos2, Rect, Stroke, Vec2};
 use std::collections::BTreeSet;
 use tramex_tools::{
@@ -36,6 +36,8 @@ struct MessageArrow {
     layer: Layer,
     /// Full message content (direction + raw data)
     message: String,
+    /// Channels (SRB/DRB) carried by this trace
+    channels: Vec<String>,
 }
 
 impl MessageArrow {
@@ -66,7 +68,59 @@ impl MessageArrow {
             to,
             layer,
             message,
+            channels: Self::extract_channels(trace),
         })
+    }
+
+    /// Extract the SRB/DRB channel(s) carried by the trace.
+    ///
+    /// - RLC/PDCP: the bearer name appears directly in the line (`... DRB1 ...`)
+    /// - MAC: every `LCID:N` token is mapped to a channel (a trace can carry several)
+    fn extract_channels(trace: &Trace) -> Vec<String> {
+        let Some(line) = trace.text.as_ref().and_then(|t| t.first()) else {
+            return Vec::new();
+        };
+        match trace.layer {
+            Layer::RLC | Layer::PDCP => line
+                .split_whitespace()
+                .find(|token| Self::is_bearer_token(token))
+                .map(|bearer| vec![bearer.to_string()])
+                .unwrap_or_default(),
+            Layer::MAC => {
+                let mut channels: Vec<String> = line
+                    .split_whitespace()
+                    .filter_map(|token| token.strip_prefix("LCID:"))
+                    .filter_map(|lcid| lcid.parse::<u32>().ok())
+                    .filter_map(Self::lcid_to_channel)
+                    .map(str::to_string)
+                    .collect();
+                channels.sort();
+                channels.dedup();
+                channels
+            }
+            _ => Vec::new(),
+        }
+    }
+
+    /// Check if a token looks like a bearer name (`SRB1`, `DRB2`, ...)
+    fn is_bearer_token(token: &str) -> bool {
+        (token.starts_with("SRB") || token.starts_with("DRB"))
+            && token.len() > 3
+            && token[3..].chars().all(|c| c.is_ascii_digit())
+    }
+
+    /// Map a MAC LCID to its SRB/DRB channel (`0` is not applicable)
+    fn lcid_to_channel(lcid: u32) -> Option<&'static str> {
+        match lcid {
+            1 => Some("SRB0"),
+            2 => Some("SRB1"),
+            3 => Some("SRB2"),
+            4 => Some("SRB3"),
+            5 => Some("DRB1"),
+            6 => Some("DRB2"),
+            7 => Some("DRB3"),
+            _ => None,
+        }
     }
 
     /// Extract direction from trace text
@@ -134,6 +188,22 @@ fn layer_enabled(filter: &LayerFilter, layer: &Layer) -> bool {
 
 /// Default maximum number of arrows kept in the buffer
 pub const DEFAULT_MAX_ARROWS: usize = 100;
+
+/// Create a label with a background color (same style as the Bearer Status panel)
+fn make_label(ui: &mut egui::Ui, label: &str, show: bool, color: egui::Color32) {
+    let mut job = egui::text::LayoutJob::default();
+    let theme = ThemeColors::get(ui);
+    job.append(
+        label,
+        0.0,
+        egui::TextFormat {
+            color: if show { ChannelColors::TEXT_ON_COLOR } else { theme.text },
+            background: if show { color } else { egui::Color32::TRANSPARENT },
+            ..Default::default()
+        },
+    );
+    ui.label(job);
+}
 
 /// Chronograph MAC-RLC-PDCP Panel
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -272,9 +342,58 @@ impl ChronographMac {
         }
     }
 
-    /// Draw the chronograph
+    /// Draw the chronograph: layer filters on top, then a horizontal split —
+    /// timeline on the left, bearer status on the right.
     fn draw_chronograph(&mut self, ui: &mut egui::Ui) {
         self.draw_layer_filter(ui);
+
+        egui::Panel::right(egui::Id::new("chronograph_mac_bearers"))
+            .default_size(120.0)
+            .max_size(200.0)
+            .resizable(true)
+            .show_inside(ui, |ui| {
+                self.draw_bearer_column(ui);
+            });
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            self.draw_timeline(ui);
+        });
+    }
+
+    /// Draw the bearer status column (right side): which SRB/DRB channels are
+    /// used by the focused trace, styled like the Bearer Status panel.
+    fn draw_bearer_column(&mut self, ui: &mut egui::Ui) {
+        let focused = self.arrows.iter().find(|a| a.trace_index == self.current_index);
+        let is_active = |name: &str| focused.is_some_and(|a| a.channels.iter().any(|c| c == name));
+
+        ui.add_space(5.0);
+        ui.label(egui::RichText::new("CHANNELS").size(12.0).strong());
+        ui.add_space(8.0);
+
+        ui.horizontal(|ui| {
+            // SRB column (signaling)
+            ui.vertical(|ui| {
+                ui.label(egui::RichText::new("SRB").size(11.0).strong());
+                for name in ["SRB3", "SRB2", "SRB1", "SRB0"] {
+                    ui.add_space(4.0);
+                    make_label(ui, name, is_active(name), ChannelColors::ORANGE);
+                }
+            });
+
+            ui.separator();
+
+            // DRB column (traffic)
+            ui.vertical(|ui| {
+                ui.label(egui::RichText::new("DRB").size(11.0).strong());
+                for name in ["DRB3", "DRB2", "DRB1"] {
+                    ui.add_space(4.0);
+                    make_label(ui, name, is_active(name), ChannelColors::GREEN);
+                }
+            });
+        });
+    }
+
+    /// Draw the timeline of arrows (left side)
+    fn draw_timeline(&mut self, ui: &mut egui::Ui) {
         let available_size = ui.available_size();
 
         // Use a scroll area for the timeline
@@ -361,8 +480,10 @@ impl ChronographMac {
                 text_color,
             );
 
-            // Get mouse position for hover detection
-            let mouse_pos = ui.ctx().pointer_hover_pos();
+            // Get mouse position for hover detection. `hover_pos` is layer-aware:
+            // it returns None when the pointer is outside the panel or above a
+            // window that covers it, so hover/click never triggers off-panel.
+            let mouse_pos = response.hover_pos();
 
             // Draw arrows
             let start_y = arrow_start_y + 10.0;
